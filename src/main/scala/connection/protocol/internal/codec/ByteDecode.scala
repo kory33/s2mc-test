@@ -6,9 +6,9 @@ import fs2.Chunk
 import scala.annotation.tailrec
 
 /**
- * An object responsible for encoding(/decoding) the object of type [[T]] into(/from) [[Chunk]]s of [[Byte]].
+ * An object responsible for decoding the object of type [[T]] from [[Chunk]]s of [[Byte]].
  */
-trait ByteCodec[T]:
+trait ByteDecode[T]:
   /**
    * Represents the result of decoding some initial segment of a [[Chunk]] of [[Byte]]s.
    */
@@ -40,11 +40,3 @@ trait ByteCodec[T]:
         case DecodeResult(None, remainingBytes) => DecodeResult(accumulator, remainingBytes)
 
     go(Vector.empty, input)
-
-  /**
-   * Converts the given object into binary representation.
-   *
-   * This method and [[readOne]] must be mutually inverse, in a sense that
-   * `readOne(write(obj)) = SingleDecodeResult(Some(v), Chunk.empty)` holds.
-   */
-  def write(obj: T): Chunk[Byte]
