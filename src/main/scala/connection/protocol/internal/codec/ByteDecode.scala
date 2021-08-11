@@ -26,6 +26,9 @@ trait ByteDecode[+T]:
    *    return `DecodeResult.InputInvalid` with an optional error message.
    *    This occurs, for example, when we are expecting one of 0x00 or 0x01 at the beginning of chunk,
    *    and the given input's head is 0x02.
+   *
+   * It is expected that this function never `throw`s.
+   * Once again, if the input is invalid, return `DecodeResult.InputInvalid`.
    */
   def readOne(input: Chunk[Byte]): DecodeResult[T]
 
