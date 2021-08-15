@@ -1,5 +1,5 @@
 package com.github.kory33.s2mctest
-package connection.protocol.internal.codec
+package connection.protocol.codec
 
 import cats.{FlatMap, Functor, Monad}
 import fs2.Chunk
@@ -50,7 +50,7 @@ trait ByteDecode[+T]:
 
 object ByteDecode:
   import cats.implicits.given
-  import generic.FunctorDerives.{derived, given}
+  import generic.FunctorDerives.{given, *}
 
   /**
    * Represents the result of decoding some initial segment of a [[Chunk]] of [[Byte]]s.
