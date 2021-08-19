@@ -13,7 +13,7 @@ object DataPrimitives:
         else
           (short - Byte.MaxValue).toByte
       else
-        throw new IllegalArgumentException(s"Given Short is out of range: got ${short}, expected [0, ${maxAllowed}].")
+        throw new IllegalArgumentException(s"Given Short is out of range: got $short, expected [0, $maxAllowed].")
 
   extension (uByte: UByte)
     def asShort: Short =
@@ -35,7 +35,7 @@ object DataPrimitives:
         else
           (int - Short.MaxValue).toShort
       else
-        throw new IllegalArgumentException(s"Given Int is out of range: got ${int}, expected [0, ${maxAllowed}].")
+        throw new IllegalArgumentException(s"Given Int is out of range: got $int, expected [0, $maxAllowed].")
 
   extension (uShort: UShort)
     def asInt: Int =
