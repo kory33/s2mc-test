@@ -7,6 +7,7 @@ scalaVersion := "3.0.1"
 idePackagePrefix := Some("com.github.kory33.s2mctest")
 
 libraryDependencies ++= Seq(
+  "org.scala-lang" %% "scala3-tasty-inspector" % scalaVersion.value,
   "org.typelevel" %% "cats-effect" % "3.2.2",
   "co.fs2" %% "fs2-core" % "3.1.0",
   "co.fs2" %% "fs2-io" % "3.1.0",
