@@ -13,3 +13,5 @@ libraryDependencies ++= Seq(
 
   "org.typelevel" %% "shapeless3-deriving" % "3.0.2",
 )
+
+scalacOptions += "-Yretain-trees"
