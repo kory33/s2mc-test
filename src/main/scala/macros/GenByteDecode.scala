@@ -189,7 +189,7 @@ object GenByteDecode {
           val mapper: TreeMap = new TreeMap:
             override def transformTerm(tree: Term)(owner: Symbol): Term = tree match
               case Ident(name) =>
-                if (fields.find { _.fieldName == name }.nonEmpty)
+                if (fields.exists(_.fieldName == name))
                   params.find {
                     case t @ Ident(paramName) if paramName == name => true
                     case _ => false
