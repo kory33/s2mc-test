@@ -11,42 +11,6 @@ import scala.collection.immutable.Queue
 import scala.quoted.Expr
 import scala.quoted.runtime.impl.printers.{SourceCode, SyntaxHighlight}
 
-/**
- * TODO it would be great if the following can be auto-generated at compile time:
- *
- * case class UseEntity_SneakFlag(
- *     targetId: VarInt,
- *     ty: VarInt,
- *     targetX: Option[Float],
- *     targetY: Option[Float],
- *     targetZ: Option[Float],
- *     hand: Option[VarInt],
- *     sneaking: Boolean
- *   ):
- *   require((ty == VarInt(2)) == targetX.nonEmpty)
- *   require((ty == VarInt(2)) == targetY.nonEmpty)
- *   require((ty == VarInt(2)) == targetZ.nonEmpty)
- *   require((ty == VarInt(2) || ty == VarInt(0)) == hand.nonEmpty)
- *
- * object UseEntity_SneakFlag:
- *   given decode(using
- *     varIntDecode: ByteDecode[VarInt],
- *     floatDecode: ByteDecode[Float],
- *     booleanDecode: ByteDecode[Boolean],
- *     noneDecoder: ByteDecode[None.type] = Monad[ByteDecode].pure(None)
- *   ): ByteDecode[UseEntity_SneakFlag] =
- *     import cats.implicits.given
- *     for {
- *       targetId <- varIntDecode
- *       ty <- varIntDecode
- *       targetX <- if ty == VarInt(2) then floatDecode.map(Some(_)) else noneDecoder
- *       targetY <- if ty == VarInt(2) then floatDecode.map(Some(_)) else noneDecoder
- *       targetZ <- if ty == VarInt(2) then floatDecode.map(Some(_)) else noneDecoder
- *       hand <- if ty == VarInt(2) || ty == VarInt(0) then varIntDecode.map(Some(_)) else noneDecoder
- *       sneaking <- booleanDecode
- *     } yield UseEntity_SneakFlag(targetId, ty, targetX, targetY, targetZ, hand, sneaking)
- */
-
 object GenByteDecode {
   import scala.quoted.*
   import scala.tasty.inspector.*
