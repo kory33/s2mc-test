@@ -189,12 +189,16 @@ object GenByteDecode {
           val mapper: TreeMap = new TreeMap:
             override def transformTerm(tree: Term)(owner: Symbol): Term = tree match
               case Ident(name) =>
-                params.find {
-                  case t @ Ident(paramName) if paramName == name => true
-                  case _ => false
-                }.getOrElse {
-                  report.throwError(s"Reference to an unknown parameter \"$name\" in the expression ${expr.show}")
-                }
+                if (fields.find { _.fieldName == name }.nonEmpty)
+                  params.find {
+                    case t @ Ident(paramName) if paramName == name => true
+                    case _ => false
+                  }.getOrElse(report.throwError {
+                      s"\tReference to an identifier \"$name\" in the expression ${expr.show} is invalid.\n" +
+                      s"\tNote that a nonemptiness condition of an optional field can only refer to class fields declared before the optional field."
+                  })
+                else
+                  tree
               case _ => super.transformTerm(tree)(owner)
           mapper.transformTerm(expr.asTerm)(owner).asExprOf[Boolean]
 
