@@ -51,7 +51,7 @@ object GenByteDecode {
   import scala.quoted.*
   import scala.tasty.inspector.*
 
-  inline def gen[A]: Unit =
+  inline def gen[A]: ByteDecode[A] =
     ${ genImpl[A] }
 
   private def primaryConstructorHasTypeParameter[A: Type](quotes: Quotes): Boolean = {
