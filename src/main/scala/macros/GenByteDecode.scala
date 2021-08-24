@@ -1,8 +1,6 @@
 package com.github.kory33.s2mctest
 package macros
 
-import connection.protocol.packets.PacketIntent
-
 import cats.effect.kernel.Par.instance.T
 import com.github.kory33.s2mctest.connection.protocol.codec.ByteDecode
 
@@ -18,7 +16,9 @@ object GenByteDecode {
   inline def gen[A]: ByteDecode[A] =
     ${ genImpl[A] }
 
-  private def primaryConstructorHasTypeParameter[A: Type](quotes: Quotes): Boolean = {
+  private[this] case class OptionalFieldCondition(fieldName: String, condition: Expr[Boolean])
+
+  private def primaryConstructorHasTypeParameter[A: Type](using quotes: Quotes): Boolean = {
     import quotes.reflect.*
     val DefDef(_, paramClauses, _, _) = TypeRepr.of[A].typeSymbol.primaryConstructor.tree
     paramClauses match
@@ -30,58 +30,57 @@ object GenByteDecode {
       case _ => false // no clause found, so must be free of type parameters
   }
 
-  private def primaryConstructorTermOf[A: Type](quotes: Quotes): quotes.reflect.Term /* reference to a constructor, can be `Apply`ed */ = {
+  private def primaryConstructorTermOf[A](using quotes: Quotes, AType: Type[A]): quotes.reflect.Term /* reference to a constructor, can be `Apply`ed */ = {
     import quotes.reflect.*
     Select(New(TypeTree.of[A]), TypeRepr.of[A].typeSymbol.primaryConstructor)
   }
 
-  private def conjunctNonzeroClauses(clauses: List[Expr[Boolean]])(using quotes: Quotes): Option[Expr[Boolean]] =
+  private def conjunctNonzeroClauses(using quotes: Quotes)(clauses: List[Expr[Boolean]]): Option[Expr[Boolean]] =
     @tailrec def conjunctClauses(accum: Expr[Boolean], rest: List[Expr[Boolean]]): Expr[Boolean] = rest match {
       case first :: newRest => conjunctClauses('{ ${accum} && ${first} }, newRest)
       case Nil => accum
     }
-
-    import quotes.reflect.*
 
     clauses match {
       case first :: rest => Some(conjunctClauses(first, rest))
       case Nil => None
     }
 
-  private def genImpl[A: Type](using quotes: Quotes): Expr[ByteDecode[A]] = {
-    import quotes.reflect.*
-
-    case class OptionalFieldCondition(fieldName: String, condition: Expr[Boolean])
-    object OptionalFieldCondition {
-      def fromOptionExpr(expr: Expr[Option[Any]], condition: Expr[Boolean]): Option[OptionalFieldCondition] =
-        expr.asTerm match {
-          case Ident(identifierName) => Some(OptionalFieldCondition(identifierName, condition))
-          case _ => None
-        }
-    }
-    extension (conditions: List[OptionalFieldCondition]) {
-      def conditionsOn(fieldName: String): List[Expr[Boolean]] = conditions.flatMap {
-        case OptionalFieldCondition(n, c) if n == fieldName => Some(c)
+  extension (module: OptionalFieldCondition.type) {
+    private def fromOptionExpr(using quotes: Quotes)(expr: Expr[Option[Any]], condition: Expr[Boolean]): Option[OptionalFieldCondition] =
+      import quotes.reflect.*
+      expr.asTerm match {
+        case Ident(identifierName) => Some(OptionalFieldCondition(identifierName, condition))
         case _ => None
       }
+  }
+  extension (conditions: List[OptionalFieldCondition]) {
+    private def conditionsOn(fieldName: String): List[Expr[Boolean]] = conditions.flatMap {
+      case OptionalFieldCondition(n, c) if n == fieldName => Some(c)
+      case _ => None
     }
+  }
 
-    def summonDecoderTerm(tRepr: TypeRepr): Term /*: Expr[ByteDecode[TypeRepr]*/ =
-      tRepr.asType match {
-        case '[t] => Implicits.search(TypeRepr.of[ByteDecode[t]]) match {
+  private def summonDecoderTerm(using quotes: Quotes)(tRepr: quotes.reflect.TypeRepr): quotes.reflect.Term /*: Expr[ByteDecode[TypeRepr]*/ =
+    import quotes.reflect.*
+    tRepr.asType match
+      case '[t] => Implicits.search(TypeRepr.of[ByteDecode[t]]) match
       case s: ImplicitSearchSuccess => s.tree
       case _ => report.throwError(
-      s"\tAttemped to summon ByteDecode[${tRepr.show}] but could not be resolved.\n"
+        s"\tAttemped to summon ByteDecode[${tRepr.show}] but could not be resolved.\n"
       )
-      }
-      }
 
-    def summonDecoderExpr[T: Type] = Expr.summon[ByteDecode[T]] match {
+  private def summonDecoderExpr[T: Type](using quotes: Quotes) =
+    import quotes.reflect.*
+    Expr.summon[ByteDecode[T]] match {
       case Some(d) => d
       case _ => report.throwError(
         s"\tAttemped to summon ByteDecode[${TypeRepr.of[T].show}] but could not be resolved.\n"
       )
     }
+
+  private def genImpl[A: Type](using quotes: Quotes): Expr[ByteDecode[A]] = {
+    import quotes.reflect.*
 
     // this instance is provided in `ByteDecode`'s companion
     val byteDecodeMonad: Expr[cats.Monad[ByteDecode]] = Expr.summon[cats.Monad[ByteDecode]].get
@@ -105,7 +104,7 @@ object GenByteDecode {
     if !typeSymbol.flags.is(Flags.Case) then
       report.throwError(s"Expected a case class but found ${typeSymbol}")
 
-    if primaryConstructorHasTypeParameter[A](quotes) then
+    if primaryConstructorHasTypeParameter[A] then
       report.throwError(s"Classes with type parameters not supported, found ${typeSymbol}")
 
     typeSymbol.tree match {
@@ -145,7 +144,7 @@ object GenByteDecode {
         def finallyConstruct(constructorParameters: Queue[Term]): Expr[ByteDecode[A]] =
           '{
             ${byteDecodeMonad}.pure {
-              ${Apply(primaryConstructorTermOf[A](quotes), constructorParameters.toList).asExprOf[A]}
+              ${Apply(primaryConstructorTermOf[A](using quotes), constructorParameters.toList).asExprOf[A]}
             }
           }
 
@@ -203,11 +202,7 @@ object GenByteDecode {
             case Nil => finallyConstruct(parametersSoFar)
           }
 
-        val expr = recurse(Symbol.spliceOwner, Queue.empty, fields)
-
-        println(expr.show)
-
-        expr
+        recurse(Symbol.spliceOwner, Queue.empty, fields)
       case _ =>
         report.throwError(s"Class definition of the given type (${TypeRepr.of[A]}) was not found")
     }
