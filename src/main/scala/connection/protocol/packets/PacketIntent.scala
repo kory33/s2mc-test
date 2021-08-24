@@ -125,7 +125,7 @@ object PacketIntent {
                               text: String,
                               assumeCommand: Boolean,
                               hasTarget: Boolean,
-                              target: Option[Option[Position]],
+                              target: Option[Position],
                             ) {
         require(target.nonEmpty == (hasTarget))
 
@@ -135,7 +135,7 @@ object PacketIntent {
       case class TabComplete_NoAssume(
                                        text: String,
                                        hasTarget: Boolean,
-                                       target: Option[Option[Position]],
+                                       target: Option[Position],
                                      ) {
         require(target.nonEmpty == (hasTarget))
       }
@@ -1512,7 +1512,7 @@ object PacketIntent {
                                green: Option[Float],
                                blue: Option[Float],
                                scale: Option[Float],
-                               item: Option[Option[NamedTag]],
+                               item: Option[NamedTag],
                              ) {
         require(blockState.nonEmpty == (particleId == 3 || particleId == 23))
         require(red.nonEmpty == (particleId == 14))
@@ -1538,7 +1538,7 @@ object PacketIntent {
                                 green: Option[Float],
                                 blue: Option[Float],
                                 scale: Option[Float],
-                                item: Option[Option[NamedTag]],
+                                item: Option[NamedTag],
                               ) {
         require(blockState.nonEmpty == (particleId == 3 || particleId == 23))
         require(red.nonEmpty == (particleId == 14))
@@ -1564,7 +1564,7 @@ object PacketIntent {
                                   green: Option[Float],
                                   blue: Option[Float],
                                   scale: Option[Float],
-                                  item: Option[Option[NamedTag]],
+                                  item: Option[NamedTag],
                                 ) {
         require(blockState.nonEmpty == (particleId == 3 || particleId == 20))
         require(red.nonEmpty == (particleId == 11))
@@ -1779,9 +1779,9 @@ object PacketIntent {
                        locked: Boolean,
                        icons: LenPrefixed[VarInt, MapIcon],
                        columns: UByte,
-                       rows: Option[Option[UByte]],
-                       x: Option[Option[UByte]],
-                       z: Option[Option[UByte]],
+                       rows: Option[UByte],
+                       x: Option[UByte],
+                       z: Option[UByte],
                        data: Option[Option[LenPrefixedBytes[VarInt]]],
                      ) {
         require(rows.nonEmpty == (columns != UByte(0)))
@@ -1796,9 +1796,9 @@ object PacketIntent {
                                 trackingPosition: Boolean,
                                 icons: LenPrefixed[VarInt, MapIcon],
                                 columns: UByte,
-                                rows: Option[Option[UByte]],
-                                x: Option[Option[UByte]],
-                                z: Option[Option[UByte]],
+                                rows: Option[UByte],
+                                x: Option[UByte],
+                                z: Option[UByte],
                                 data: Option[Option[LenPrefixedBytes[VarInt]]],
                               ) {
         require(rows.nonEmpty == (columns != UByte(0)))
@@ -1812,9 +1812,9 @@ object PacketIntent {
                                   scale: Byte,
                                   icons: LenPrefixed[VarInt, MapIcon],
                                   columns: UByte,
-                                  rows: Option[Option[UByte]],
-                                  x: Option[Option[UByte]],
-                                  z: Option[Option[UByte]],
+                                  rows: Option[UByte],
+                                  x: Option[UByte],
+                                  z: Option[UByte],
                                   data: Option[Option[LenPrefixedBytes[VarInt]]],
                                 ) {
         require(rows.nonEmpty == (columns != UByte(0)))
@@ -1961,10 +1961,10 @@ object PacketIntent {
        */
       case class CombatEvent(
                               event: VarInt,
-                              direction: Option[Option[VarInt]],
-                              playerId: Option[Option[VarInt]],
-                              entityId: Option[Option[Int]],
-                              message: Option[Option[Component]],
+                              direction: Option[VarInt],
+                              playerId: Option[VarInt],
+                              entityId: Option[Int],
+                              message: Option[Component],
                             ) {
         require(direction.nonEmpty == (event == VarInt(1)))
         require(playerId.nonEmpty == (event == VarInt(2)))
@@ -1992,8 +1992,8 @@ object PacketIntent {
                              targetY: Double,
                              targetZ: Double,
                              isEntity: Boolean,
-                             entityId: Option[Option[VarInt]],
-                             entityFeetEyes: Option[Option[VarInt]],
+                             entityId: Option[VarInt],
+                             entityFeetEyes: Option[VarInt],
                            ) {
         require(entityId.nonEmpty == (isEntity))
         require(entityFeetEyes.nonEmpty == (isEntity))
@@ -2183,14 +2183,14 @@ object PacketIntent {
       /** WorldBorder configures the world's border. */
       case class WorldBorder(
                               action: VarInt,
-                              oldRadius: Option[Option[Double]],
-                              newRadius: Option[Option[Double]],
-                              speed: Option[Option[VarLong]],
-                              x: Option[Option[Double]],
-                              z: Option[Option[Double]],
-                              portalBoundary: Option[Option[VarInt]],
-                              warningTime: Option[Option[VarInt]],
-                              warningBlocks: Option[Option[VarInt]],
+                              oldRadius: Option[Double],
+                              newRadius: Option[Double],
+                              speed: Option[VarLong],
+                              x: Option[Double],
+                              z: Option[Double],
+                              portalBoundary: Option[VarInt],
+                              warningTime: Option[VarInt],
+                              warningBlocks: Option[VarInt],
                             ) {
         require(oldRadius.nonEmpty == (action == VarInt(3) || action == VarInt(1)))
         require(newRadius.nonEmpty == (action == VarInt(3) || action == VarInt(1) || action == VarInt(0)))
@@ -2357,13 +2357,13 @@ object PacketIntent {
       case class Teams_VarInt(
                                name: String,
                                mode: UByte,
-                               displayName: Option[Option[String]],
-                               flags: Option[Option[UByte]],
-                               nameTagVisibility: Option[Option[String]],
-                               collisionRule: Option[Option[String]],
-                               formatting: Option[Option[VarInt]],
-                               prefix: Option[Option[String]],
-                               suffix: Option[Option[String]],
+                               displayName: Option[String],
+                               flags: Option[UByte],
+                               nameTagVisibility: Option[String],
+                               collisionRule: Option[String],
+                               formatting: Option[VarInt],
+                               prefix: Option[String],
+                               suffix: Option[String],
                                players: Option[Option[LenPrefixed[VarInt, String]]],
                              ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
@@ -2380,13 +2380,13 @@ object PacketIntent {
                            name: String,
                            mode: UByte,
                            data: Vector[UByte],
-                           displayName: Option[Option[String]],
-                           prefix: Option[Option[String]],
-                           suffix: Option[Option[String]],
-                           flags: Option[Option[UByte]],
-                           nameTagVisibility: Option[Option[String]],
-                           collisionRule: Option[Option[String]],
-                           color: Option[Option[Byte]],
+                           displayName: Option[String],
+                           prefix: Option[String],
+                           suffix: Option[String],
+                           flags: Option[UByte],
+                           nameTagVisibility: Option[String],
+                           collisionRule: Option[String],
+                           color: Option[Byte],
                            players: Option[Option[LenPrefixed[VarInt, String]]],
                          ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
@@ -2402,10 +2402,10 @@ object PacketIntent {
       case class Teams_NoVisColor(
                                    name: String,
                                    mode: UByte,
-                                   displayName: Option[Option[String]],
-                                   prefix: Option[Option[String]],
-                                   suffix: Option[Option[String]],
-                                   flags: Option[Option[UByte]],
+                                   displayName: Option[String],
+                                   prefix: Option[String],
+                                   suffix: Option[String],
+                                   flags: Option[UByte],
                                    players: Option[Option[LenPrefixed[VarInt, String]]],
                                  ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
@@ -2423,7 +2423,7 @@ object PacketIntent {
                               name: String,
                               action: UByte,
                               objectName: String,
-                              value: Option[Option[VarInt]],
+                              value: Option[VarInt],
                             ) {
         require(value.nonEmpty == (action != UByte(1)))
       }
@@ -2432,7 +2432,7 @@ object PacketIntent {
                                   name: String,
                                   action: UByte,
                                   objectName: String,
-                                  value: Option[Option[Int]],
+                                  value: Option[Int],
                                 ) {
         require(value.nonEmpty == (action != UByte(1)))
       }
@@ -2464,8 +2464,8 @@ object PacketIntent {
 
       case class StopSound(
                             flags: UByte,
-                            source: Option[Option[VarInt]],
-                            sound: Option[Option[String]],
+                            source: Option[VarInt],
+                            sound: Option[String],
                           ) {
         require(source.nonEmpty == ((flags & 0x01) != UByte(0)))
         require(sound.nonEmpty == ((flags & 0x02) != UByte(0)))
@@ -2474,12 +2474,12 @@ object PacketIntent {
       /** Title configures an on-screen title. */
       case class Title(
                         action: VarInt,
-                        title: Option[Option[Component]],
-                        subTitle: Option[Option[Component]],
-                        actionBarText: Option[Option[String]],
-                        fadeIn: Option[Option[Int]],
-                        fadeStay: Option[Option[Int]],
-                        fadeOut: Option[Option[Int]],
+                        title: Option[Component],
+                        subTitle: Option[Component],
+                        actionBarText: Option[String],
+                        fadeIn: Option[Int],
+                        fadeStay: Option[Int],
+                        fadeOut: Option[Int],
                       ) {
         require(title.nonEmpty == (action == VarInt(0)))
         require(subTitle.nonEmpty == (action == VarInt(1)))
@@ -2491,11 +2491,11 @@ object PacketIntent {
 
       case class Title_notext(
                                action: VarInt,
-                               title: Option[Option[Component]],
-                               subTitle: Option[Option[Component]],
-                               fadeIn: Option[Option[Int]],
-                               fadeStay: Option[Option[Int]],
-                               fadeOut: Option[Option[Int]],
+                               title: Option[Component],
+                               subTitle: Option[Component],
+                               fadeIn: Option[Int],
+                               fadeStay: Option[Int],
+                               fadeOut: Option[Int],
                              ) {
         require(title.nonEmpty == (action == VarInt(0)))
         require(subTitle.nonEmpty == (action == VarInt(1)))
@@ -2506,11 +2506,11 @@ object PacketIntent {
 
       case class Title_notext_component(
                                          action: VarInt,
-                                         title: Option[Option[Component]],
-                                         subTitle: Option[Option[Component]],
-                                         fadeIn: Option[Option[Component]],
-                                         fadeStay: Option[Option[Component]],
-                                         fadeOut: Option[Option[Component]],
+                                         title: Option[Component],
+                                         subTitle: Option[Component],
+                                         fadeIn: Option[Component],
+                                         fadeStay: Option[Component],
+                                         fadeOut: Option[Component],
                                        ) {
         require(title.nonEmpty == (action == VarInt(0)))
         require(subTitle.nonEmpty == (action == VarInt(1)))
