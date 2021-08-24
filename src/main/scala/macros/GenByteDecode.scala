@@ -61,15 +61,6 @@ object GenByteDecode {
     }
   }
 
-  private def summonDecoderTerm(using quotes: Quotes)(tRepr: quotes.reflect.TypeRepr): quotes.reflect.Term /*: Expr[ByteDecode[TypeRepr]*/ =
-    import quotes.reflect.*
-    tRepr.asType match
-      case '[t] => Implicits.search(TypeRepr.of[ByteDecode[t]]) match
-      case s: ImplicitSearchSuccess => s.tree
-      case _ => report.throwError(
-        s"\tAttemped to summon ByteDecode[${tRepr.show}] but could not be resolved.\n"
-      )
-
   private def summonDecoderExpr[T: Type](using quotes: Quotes) =
     import quotes.reflect.*
     Expr.summon[ByteDecode[T]] match {
@@ -88,16 +79,12 @@ object GenByteDecode {
     sealed trait ClassField {
       val fieldType: TypeRepr
       val fieldName: String
-      val requiredDecoderType: TypeRepr
     }
-    case class OptionalField(fieldName: String, fieldType: TypeRepr, underlyingType: TypeRepr, nonEmptyIff: Expr[Boolean]) extends ClassField {
-      override val requiredDecoderType: TypeRepr = underlyingType.asType match
-        case '[u] => TypeRepr.of[ByteDecode[u]]
+    case class OptionalField(fieldName: String, underlyingType: TypeRepr, nonEmptyIff: Expr[Boolean]) extends ClassField {
+      override val fieldType = underlyingType.asType match
+        case '[u] => TypeRepr.of[Option[u]]
     }
-    case class RequiredField(fieldName: String, fieldType: TypeRepr) extends ClassField {
-      override val requiredDecoderType: TypeRepr = fieldType.asType match
-        case '[u] => TypeRepr.of[ByteDecode[u]]
-    }
+    case class RequiredField(fieldName: String, fieldType: TypeRepr) extends ClassField
 
     val typeSymbol = TypeRepr.of[A].typeSymbol
 
@@ -124,8 +111,8 @@ object GenByteDecode {
 
         val fields: List[ClassField] =
           params.map(_.params).flatten.flatMap {
-            case ValDef(fieldName, typeTree, _) => typeTree.tpe match
-              case fieldType @ AppliedType(typeCons, fieldTypeArgs) if typeCons =:= TypeRepr.of[Option] =>
+            case ValDef(fieldName, typeTree, _) => typeTree.tpe.asType match
+              case '[scala.Option[ut]] =>
                 val condition =
                   conjunctNonzeroClauses(conditions.conditionOn(fieldName))
                     .getOrElse(report.throwError {
@@ -135,22 +122,15 @@ object GenByteDecode {
                        "\t - add -Yretain-trees compiler flag" +
                        "\t - locate the target class in a file different from the expansion site"
                     })
-                Some(OptionalField(fieldName, fieldType, fieldTypeArgs.head, condition))
-              case fieldType =>
-                Some(RequiredField(fieldName, fieldType))
+                Some(OptionalField(fieldName, TypeRepr.of[ut], condition))
+              case '[t] =>
+                Some(RequiredField(fieldName, TypeRepr.of[t]))
             case _ => None
           }
 
-        def constructDecoderWithConstructorParameters(constructorParameters: Queue[Term]): Expr[ByteDecode[A]] =
-          '{
-            ${byteDecodeMonad}.pure {
-              ${Apply(primaryConstructorTermOf[A](using quotes), constructorParameters.toList).asExprOf[A]}
-            }
-          }
-
-        def replaceFieldReferencesWithParameters(owner: Symbol, params: Queue[Term])(expr: Expr[Boolean]): Expr[Boolean] =
+        def replaceFieldReferencesWithParameters(params: Queue[Term])(expr: Expr[Boolean]): Expr[Boolean] =
           val mapper: TreeMap = new TreeMap:
-            override def transformTerm(tree: Term)(owner: Symbol): Term = tree match
+            override def transformTerm(tree: Term)(/* virtually unused */ _owner: Symbol): Term = tree match
               case Ident(name) =>
                 if (fields.exists(_.fieldName == name))
                   params.find {
@@ -162,8 +142,15 @@ object GenByteDecode {
                   })
                 else
                   tree
-              case _ => super.transformTerm(tree)(owner)
-          mapper.transformTerm(expr.asTerm)(owner).asExprOf[Boolean]
+              case _ => super.transformTerm(tree)(_owner)
+          mapper.transformTerm(expr.asTerm)(Symbol.spliceOwner).asExprOf[Boolean]
+
+        def mapConstructorParamsToPureDecoder(constructorParameters: Queue[Term]): Expr[ByteDecode[A]] =
+          '{
+            ${byteDecodeMonad}.pure {
+              ${Apply(primaryConstructorTermOf[A](using quotes), constructorParameters.toList).asExprOf[A]}
+            }
+          }
 
         def recurse(currentOwner: Symbol, parametersSoFar: Queue[Term], remainingFields: List[ClassField]): Expr[ByteDecode[A]] =
           remainingFields match {
@@ -172,34 +159,33 @@ object GenByteDecode {
                 case '[ft] =>
                   val fieldDecoder: Expr[ByteDecode[ft]] = {
                     next match {
-                      case OptionalField (_, _, uType, cond) => uType.asType match
+                      case OptionalField(_, uType, cond) => uType.asType match
                         // ut is a type such that Option[ut] =:= ft
                         case '[ut] => '{
-                          if (${replaceFieldReferencesWithParameters(currentOwner, parametersSoFar)(cond)}) then
+                          if (${replaceFieldReferencesWithParameters(parametersSoFar)(cond)}) then
                             ${byteDecodeMonad}.map(${summonDecoderExpr[ut]})(Some(_))
                           else
                             ${byteDecodeMonad}.pure(None)
-                        }.asTerm // Expr of type ByteDecode[Option[ut]]
-                      case RequiredField (_, _) => summonDecoderTerm(next.fieldType)
+                        } // Expr of type ByteDecode[Option[ut]]
+                      case RequiredField(_, fieldType) => summonDecoderExpr[ft]
                     }
                   }.asExprOf[ByteDecode[ft]]
 
                   val continuation: Expr[ft => ByteDecode[A]] =
                     Lambda(
                       currentOwner,
-                      MethodType(
-                        List(next.fieldName))(_ => List(next.fieldType), _ => TypeRepr.of[ByteDecode[A]]
-                      ),
+                      MethodType(List(next.fieldName))(_ => List(next.fieldType), _ => TypeRepr.of[ByteDecode[A]]),
                       (innerOwner, params) => params.head match {
-                        case p: Term => recurse(innerOwner, parametersSoFar.enqueue(p), rest)
-                          .asTerm
+                        case p: Term => recurse(innerOwner, parametersSoFar.enqueue(p), rest).asTerm
+                          // we need explicit owner conversion
+                          // see https://github.com/lampepfl/dotty/issues/12309#issuecomment-831240766 for details
                           .changeOwner(innerOwner)
-                        case p => report.throwError(s"got unexpected $p")
+                        case p => report.throwError(s"Expected an identifier, got unexpected $p")
                       }
                     ).asExprOf[ft => ByteDecode[A]]
 
                   '{ ${byteDecodeMonad}.flatMap(${fieldDecoder})(${continuation}) }
-            case Nil => constructDecoderWithConstructorParameters(parametersSoFar)
+            case Nil => mapConstructorParamsToPureDecoder(parametersSoFar)
           }
 
         recurse(Symbol.spliceOwner, Queue.empty, fields)
