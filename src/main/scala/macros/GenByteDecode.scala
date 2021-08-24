@@ -55,7 +55,7 @@ object GenByteDecode {
       }
   }
   extension (conditions: List[OptionalFieldCondition]) {
-    private def conditionsOn(fieldName: String): List[Expr[Boolean]] = conditions.flatMap {
+    private def conditionOn(fieldName: String): List[Expr[Boolean]] = conditions.flatMap {
       case OptionalFieldCondition(n, c) if n == fieldName => Some(c)
       case _ => None
     }
@@ -110,38 +110,38 @@ object GenByteDecode {
     typeSymbol.tree match {
       case d @ ClassDef(className, DefDef(_, params, _, _), _, _, body) =>
         // list of conditions specifying that the field (_1) is nonEmpty precisely when condition (_2) is true
-        val conditions: List[OptionalFieldCondition] = body
-          .flatMap {
-            case a: Term =>
-              Some(a.asExpr)
-            case _ => None
-              None
-          }.flatMap {
-            case '{ scala.Predef.require((${ident}: Option[Any]).nonEmpty == (${cond}: Boolean)) } =>
-              OptionalFieldCondition.fromOptionExpr(ident, cond)
-            case _ =>
-              None
-          }
+        val conditions: List[OptionalFieldCondition] = {
+          body
+            .flatMap {
+              case a: Term => Some(a.asExpr)
+              case _ => None
+            }.flatMap {
+              case '{ scala.Predef.require((${ident}: Option[Any]).nonEmpty == (${cond}: Boolean)) } =>
+                OptionalFieldCondition.fromOptionExpr(ident, cond)
+              case _ => None
+            }
+        }
 
         val fields: List[ClassField] =
           params.map(_.params).flatten.flatMap {
             case ValDef(fieldName, typeTree, _) => typeTree.tpe match
               case fieldType @ AppliedType(typeCons, fieldTypeArgs) if typeCons =:= TypeRepr.of[Option] =>
-                val condition = conjunctNonzeroClauses(conditions.conditionsOn(fieldName)) match {
-                  case Some(expr) => expr
-                  case None => report.throwError {
-                    s"\tExpected nonemptyness test for the optional field $fieldName.\n" +
-                      "\tIt is possible that the macro could inspect the class definition body.\n" +
-                      "\tMake sure to locate the target class in a file different from the expansion site."
-                  }
-                }
+                val condition =
+                  conjunctNonzeroClauses(conditions.conditionOn(fieldName))
+                    .getOrElse(report.throwError {
+                      s"\tExpected nonemptyness test for the optional field $fieldName.\n" +
+                       "\tIt is possible that the macro could not inspect the class definition body.\n" +
+                       "\tMake sure to:\n" +
+                       "\t - add -Yretain-trees compiler flag" +
+                       "\t - locate the target class in a file different from the expansion site"
+                    })
                 Some(OptionalField(fieldName, fieldType, fieldTypeArgs.head, condition))
               case fieldType =>
                 Some(RequiredField(fieldName, fieldType))
             case _ => None
           }
 
-        def finallyConstruct(constructorParameters: Queue[Term]): Expr[ByteDecode[A]] =
+        def constructDecoderWithConstructorParameters(constructorParameters: Queue[Term]): Expr[ByteDecode[A]] =
           '{
             ${byteDecodeMonad}.pure {
               ${Apply(primaryConstructorTermOf[A](using quotes), constructorParameters.toList).asExprOf[A]}
@@ -199,7 +199,7 @@ object GenByteDecode {
                     ).asExprOf[ft => ByteDecode[A]]
 
                   '{ ${byteDecodeMonad}.flatMap(${fieldDecoder})(${continuation}) }
-            case Nil => finallyConstruct(parametersSoFar)
+            case Nil => constructDecoderWithConstructorParameters(parametersSoFar)
           }
 
         recurse(Symbol.spliceOwner, Queue.empty, fields)
