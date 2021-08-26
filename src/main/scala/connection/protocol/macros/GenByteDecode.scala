@@ -1,7 +1,6 @@
 package com.github.kory33.s2mctest
-package macros
+package connection.protocol.codec.macros
 
-import cats.effect.kernel.Par.instance.T
 import com.github.kory33.s2mctest.connection.protocol.codec.ByteDecode
 
 import scala.annotation.tailrec
