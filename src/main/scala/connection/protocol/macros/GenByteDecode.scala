@@ -12,7 +12,7 @@ object GenByteDecode {
   import scala.quoted.*
   import scala.tasty.inspector.*
 
-  inline def gen[A]: ByteDecode[A] =
+  inline given gen[A]: ByteDecode[A] =
     ${ genImpl[A] }
 
   private[this] case class OptionalFieldCondition(fieldName: String, condition: Expr[Boolean])
