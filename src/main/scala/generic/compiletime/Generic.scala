@@ -13,3 +13,11 @@ type Lock[X]
  * An implicit instance that the type [[S]] can be reduced to the singleton type [[true]].
  */
 type Require[S <: Boolean] = S =:= true
+
+/**
+ * Statically cast the argument to type [[T]].
+ * Results in a compile-time error if there is not enough information to make the cast safe.
+ */
+inline transparent def inlineRefineTo[T](x: Any): T =
+  inline x match
+    case y: T => y

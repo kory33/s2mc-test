@@ -4,20 +4,27 @@ package generic.compiletime
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.Queue
 import scala.compiletime.ops.boolean.*
+import scala.compiletime.ops.int.*
 
-type IncludedInT[T <: Tuple, S] <: Boolean =
+type IncludedInT[T <: Tuple, A] <: Boolean =
   // we lock types in T using an invariant abstract type [[Lock]]
   // to prevent S not being disjoint with some other type in T
   Tuple.Map[T, Lock] match {
     case EmptyTuple   => false
-    case Lock[S] *: _ => true
-    case _ *: tail    => IncludedInT[Tuple.InverseMap[tail, Lock], S]
+    case Lock[A] *: _ => true
+    case _ *: tail    => IncludedInT[Tuple.InverseMap[tail, Lock], A]
   }
 
 type ContainsDistinctT[T <: Tuple] <: Boolean =
   T match {
     case head *: tail => ![IncludedInT[tail, head]] && ContainsDistinctT[tail]
     case EmptyTuple => true
+  }
+
+type IndexOfT[A, T <: Tuple] <: Int =
+  Tuple.Map[T, Lock] match {
+    case Lock[A] *: _ => 0
+    case _ *: tail    => S[IndexOfT[A, Tuple.InverseMap[tail, Lock]]]
   }
 
 extension [F[_], BaseTuple <: Tuple](tuple: Tuple.Map[BaseTuple, F])

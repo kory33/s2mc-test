@@ -42,16 +42,11 @@ class PacketIdBindings[BindingTup <: NonEmptyTuple](bindings: BindingTup)
    * Statically resolve the codec associated with type [[O]].
    */
   inline def getBindingOf[O](using Require[IncludedInT[BindingTup, CodecBinding[O]]]): CodecBinding[O] =
-    import scala.compiletime.constValue
-    import scala.compiletime.ops.int.S
-
-    type IndexOfCodecBindingIn[O, Tup] <: Int = Tup match
-      case CodecBinding[O] *: tail => 0
-      case _ *: tail => S[IndexOfCodecBindingIn[O, tail]]
-
-    // if IndexOfCodecBindingIn[O, BindingTup] is const with value `index`,
-    // `bindings` must contain CodecBinding[O] at `index`
-    bindings(constValue[IndexOfCodecBindingIn[O, BindingTup]]).asInstanceOf[CodecBinding[O]]
+    inlineRefineTo[CodecBinding[O]](
+      bindings(
+        scala.compiletime.constValue[IndexOfT[CodecBinding[O], BindingTup]]
+      )
+    )
 
   /**
    * Statically encode a packet object using [[bindings]] provided.
