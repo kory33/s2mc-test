@@ -32,7 +32,9 @@ extension [F[_], BaseTuple <: Tuple](tuple: Tuple.Map[BaseTuple, F])
   def foldLeft[Z](init: Z)(f: [t] => (Z, F[t]) => Z): Z =
     tuple.toList.foldLeft
       (init)
-      (f.asInstanceOf[(Z, Tuple.Union[tuple.type]) => Z]) // safe, because f can handle (Z, F[t]) for any t
+      // safe, because f can handle (Z, F[t]) for any t
+      // and any element in tuple has type F[u] for some u
+      (f.asInstanceOf[(Z, Tuple.Union[tuple.type]) => Z])
 
   def foldToList[Z](f: [t] => F[t] => Z): List[Z] =
     foldLeft[Queue[Z]](Queue.empty)([t] => (acc: Queue[Z], next: F[t]) => acc.appended(f(next))).toList
