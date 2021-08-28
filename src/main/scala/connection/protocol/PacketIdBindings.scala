@@ -10,7 +10,18 @@ type PacketId = Int
 type CodecBinding[A] = (PacketId, ByteCodec[A])
 
 class PacketIdBindings[BindingTup <: NonEmptyTuple](bindings: BindingTup)
-                                                   (using ev: Tuple.IsMappedBy[CodecBinding][BindingTup]) {
+                                                   (using ev: Tuple.IsMappedBy[CodecBinding][BindingTup])
+                                                   (using Require[ContainsDistinctT[BindingTup]]) {
+
+  require({
+    val packetIds =
+      foldToList[CodecBinding, Tuple.InverseMap[BindingTup, CodecBinding]]
+        (ev(bindings))
+        ([t] => (binding: CodecBinding[t]) => binding._1)
+
+    packetIds.size == packetIds.toSet.size
+  }, "bindings must not contain duplicate packet IDs")
+
   def decoderFor(id: PacketId): Option[ByteDecode[Tuple.Union[Tuple.InverseMap[BindingTup, CodecBinding]]]] =
     // we can't use these types as type parameter bound or return type
     // because compiler does not reduce them to concrete types for some reason
