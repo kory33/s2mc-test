@@ -28,13 +28,9 @@ class PacketIdBindings[BindingTup <: NonEmptyTuple](bindings: BindingTup)
     type PacketTuple = Tuple.InverseMap[BindingTup, CodecBinding]
     type Packet = Tuple.Union[PacketTuple]
 
-    bindings
-      .toList
-      // each element `e` of `mapping.toList` satisfies
-      // `e: (PacketID, ByteCodec[_ <: Tuple.Union[Tup]]`
-      // but `(PacketID, ByteCodec[_ <: Tuple.Union[Tup]] <: (PacketID, ByteDecode[Tuple.Union[Tup]])`
-      // so this cast is safe
-      .asInstanceOf[List[(PacketId, ByteDecode[Packet])]]
+    foldToList[CodecBinding, PacketTuple](ev(bindings))([t <: Packet] => (pair: CodecBinding[t]) =>
+      pair: (PacketId, ByteDecode[Packet])
+    )
       .find { case (i, _) => i == id }
       .map { case (_, decoder) => decoder }
 
