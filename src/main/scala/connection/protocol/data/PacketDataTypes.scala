@@ -72,10 +72,17 @@ object PacketDataTypes:
 
   @NoGenByteDecode case class ChatComponent(/*TODO put something in here*/)
 
+  @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
+
+  case class Slot(present: Boolean, itemId: Option[VarInt], itemCount: Option[Byte], nbt: Option[NamedTag]) {
+    require(itemId.nonEmpty == (present))
+    require(itemCount.nonEmpty == (present))
+    require(nbt.nonEmpty == (present))
+  }
+
   @NoGenByteDecode case class Stack(/*TODO put something in here*/)
 
   @NoGenByteDecode case class ChunkMeta(/*TODO put something in here*/)
-  @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
   @NoGenByteDecode case class Trade(/*TODO put something in here*/)
   @NoGenByteDecode case class Recipe(/*TODO put something in here*/)
   @NoGenByteDecode case class EntityPropertyShort(/*TODO put something in here*/)

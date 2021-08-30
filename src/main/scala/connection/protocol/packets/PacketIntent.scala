@@ -197,7 +197,7 @@ object PacketIntent {
                               button: UByte,
                               actionNumber: UShort,
                               mode: VarInt,
-                              clickedItem: Option[Stack],
+                              clickedItem: Slot,
                             )
 
       case class ClickWindow_u8(
@@ -206,7 +206,7 @@ object PacketIntent {
                                  button: UByte,
                                  actionNumber: UShort,
                                  mode: UByte,
-                                 clickedItem: Option[Stack],
+                                 clickedItem: Slot,
                                )
 
       /** CloseWindow is sent when the client closes a window. */
@@ -230,7 +230,7 @@ object PacketIntent {
                                              )
 
       case class EditBook(
-                           newBook: Option[Stack],
+                           newBook: Slot,
                            isSigning: Boolean,
                            hand: VarInt,
                          )
@@ -549,7 +549,7 @@ object PacketIntent {
        */
       case class CreativeInventoryAction(
                                           slot: Short,
-                                          clickedItem: Option[Stack],
+                                          clickedItem: Slot,
                                         )
 
       case class UpdateJigsawBlock_Joint(
@@ -650,7 +650,7 @@ object PacketIntent {
       case class PlayerBlockPlacement_u8_Item(
                                                location: Position,
                                                face: UByte,
-                                               hand: Option[Stack],
+                                               hand: Slot,
                                                cursorX: UByte,
                                                cursorY: UByte,
                                                cursorZ: UByte,
@@ -661,7 +661,7 @@ object PacketIntent {
                                                    y: UByte,
                                                    z: Int,
                                                    face: UByte,
-                                                   hand: Option[Stack],
+                                                   hand: Slot,
                                                    cursorX: UByte,
                                                    cursorY: UByte,
                                                    cursorZ: UByte,
@@ -1203,7 +1203,7 @@ object PacketIntent {
       /** WindowItems sets every item in a window. */
       case class WindowItems(
                               id: UByte,
-                              items: LenPrefixed[Short, Option[Stack]],
+                              items: LenPrefixed[Short, Slot],
                             )
 
       /**
@@ -1220,7 +1220,7 @@ object PacketIntent {
       case class WindowSetSlot(
                                 id: UByte,
                                 property: Short,
-                                item: Option[Stack],
+                                item: Slot,
                               )
 
       /** SetCooldown disables a set item (by id) for the set number of ticks */
@@ -2263,19 +2263,19 @@ object PacketIntent {
       case class EntityEquipment_VarInt(
                                          entityId: VarInt,
                                          slot: VarInt,
-                                         item: Option[Stack],
+                                         item: Slot,
                                        )
 
       case class EntityEquipment_u16(
                                       entityId: VarInt,
                                       slot: UShort,
-                                      item: Option[Stack],
+                                      item: Slot,
                                     )
 
       case class EntityEquipment_u16_i32(
                                           entityId: Int,
                                           slot: UShort,
-                                          item: Option[Stack],
+                                          item: Slot,
                                         )
 
       /** SetExperience updates the experience bar on the client. */
