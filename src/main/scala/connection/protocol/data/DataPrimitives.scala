@@ -1,6 +1,8 @@
 package com.github.kory33.s2mctest
 package connection.protocol.data
 
+import connection.protocol.codec.macros.NoGenByteDecode
+
 object DataPrimitives:
   opaque type UByte = Byte
 
@@ -44,8 +46,48 @@ object DataPrimitives:
       else
         uShort.toInt
 
-  case class VarShort(raw: Short)
+  @NoGenByteDecode case class VarShort(raw: Short)
 
-  case class VarInt(raw: Int)
+  @NoGenByteDecode case class VarInt(raw: Int)
 
-  case class VarLong(raw: Long)
+  @NoGenByteDecode case class VarLong(raw: Long)
+
+  @NoGenByteDecode case class Position(x: Int, z: Int, y: Short) {
+    // x, z are 26 bits and y is 12 bits
+    require((x & 0xfc000000) == 0)
+    require((z & 0xfc000000) == 0)
+    require((y & 0xfffff000) == 0)
+  }
+
+  /** Fixed-point number where least 5 bits of [[rawValue]] is taken as the fractional part */
+  @NoGenByteDecode case class FixedPoint5[Num](rawValue: Num)
+
+  /** Fixed-point number where least 12 bits of [[rawValue]] is taken as the fractional part */
+  @NoGenByteDecode case class FixedPoint12[Num](rawValue: Num)
+
+  /** An array of [[Data]] together with length of the array in [[L]]. [[L]] is expected to be an integer type. */
+  @NoGenByteDecode case class LenPrefixed[Len, Data](length: Len, array: Array[Data])
+
+  type LenPrefixedBytes[Len] = LenPrefixed[Len, Byte]
+
+  @NoGenByteDecode case class ChatComponent(/*TODO put something in here*/)
+
+  @NoGenByteDecode case class Stack(/*TODO put something in here*/)
+
+  @NoGenByteDecode case class ChunkMeta(/*TODO put something in here*/)
+  @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
+  @NoGenByteDecode case class Trade(/*TODO put something in here*/)
+  @NoGenByteDecode case class Recipe(/*TODO put something in here*/)
+  @NoGenByteDecode case class EntityPropertyShort(/*TODO put something in here*/)
+  @NoGenByteDecode case class Metadata(/*TODO put something in here*/)
+  @NoGenByteDecode case class SpawnProperty(/*TODO put something in here*/)
+  @NoGenByteDecode case class Statistic(/*TODO put something in here*/)
+  @NoGenByteDecode case class Biomes3D(/*TODO put something in here*/)
+  @NoGenByteDecode case class MapIcon(/*TODO put something in here*/)
+  @NoGenByteDecode case class EntityProperty(/*TODO put something in here*/)
+  @NoGenByteDecode case class EntityEquipments(/*TODO put something in here*/)
+  @NoGenByteDecode case class PlayerInfoData(/*TODO put something in here*/)
+  @NoGenByteDecode case class ExplosionRecord(/*TODO put something in here*/)
+  @NoGenByteDecode case class CommandNode(/*TODO put something in here*/)
+  @NoGenByteDecode case class BlockChangeRecord(/*TODO put something in here*/)
+  
