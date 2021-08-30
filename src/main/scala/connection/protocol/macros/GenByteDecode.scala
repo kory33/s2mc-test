@@ -3,10 +3,15 @@ package connection.protocol.codec.macros
 
 import com.github.kory33.s2mctest.connection.protocol.codec.ByteDecode
 
-import scala.annotation.tailrec
+import scala.annotation.{StaticAnnotation, tailrec}
 import scala.collection.immutable.Queue
 import scala.quoted.Expr
 import scala.quoted.runtime.impl.printers.{SourceCode, SyntaxHighlight}
+
+/**
+ * An annotation that can be added to a case class `A` that makes `GenByteDecode.gen[A]` fail.
+ */
+final class NoGenByteDecode extends StaticAnnotation
 
 object GenByteDecode {
   import scala.quoted.*
@@ -86,6 +91,9 @@ object GenByteDecode {
     case class RequiredField(fieldName: String, fieldType: TypeRepr) extends ClassField
 
     val typeSymbol = TypeRepr.of[A].typeSymbol
+
+    if typeSymbol.hasAnnotation(TypeRepr.of[NoGenByteDecode].typeSymbol) then
+      report.throwError(s"The symbol ${typeSymbol} has NoGenByteDecode annotation.")
 
     if !typeSymbol.flags.is(Flags.Case) then
       report.throwError(s"Expected a case class but found ${typeSymbol}")
