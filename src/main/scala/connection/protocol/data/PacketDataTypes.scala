@@ -3,7 +3,7 @@ package connection.protocol.data
 
 import connection.protocol.codec.macros.NoGenByteDecode
 
-object DataPrimitives:
+object PacketDataTypes:
   opaque type UByte = Byte
 
   object UByte:
