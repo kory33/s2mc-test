@@ -9,9 +9,9 @@ import scala.collection.immutable.Queue
 type PacketId = Int
 type CodecBinding[A] = (PacketId, ByteCodec[A])
 
-class PacketIdBindings[BindingTup <: NonEmptyTuple](bindings: BindingTup)
-                                                   (using ev: Tuple.IsMappedBy[CodecBinding][BindingTup])
-                                                   (using Require[ContainsDistinctT[BindingTup]]) {
+class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
+                                           (using ev: Tuple.IsMappedBy[CodecBinding][BindingTup])
+                                           (using Require[ContainsDistinctT[BindingTup]]) {
 
   require({
     val packetIds =
@@ -39,7 +39,7 @@ class PacketIdBindings[BindingTup <: NonEmptyTuple](bindings: BindingTup)
    */
   inline def getBindingOf[O](using Require[IncludedInT[BindingTup, CodecBinding[O]]]): CodecBinding[O] =
     inlineRefineTo[CodecBinding[O]](
-      bindings(
+      inlineRefineTo[BindingTup & NonEmptyTuple](bindings).apply(
         scala.compiletime.constValue[IndexOfT[CodecBinding[O], BindingTup]]
       )
     )
