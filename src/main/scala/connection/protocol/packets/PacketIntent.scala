@@ -33,7 +33,6 @@ type EntityEquipments
 type PlayerInfoData
 type ExplosionRecord
 type CommandNode
-type ULong
 type BlockChangeRecord
 
 /**
@@ -1151,7 +1150,7 @@ object PacketIntent {
 
       /** MultiBlockChange is used to update a batch of blocks in a single packet. */
       case class MultiBlockChange_Packed(
-                                          chunkSectionPos: ULong,
+                                          chunkSectionPos: Long,
                                           noTrustEdges: Boolean,
                                           records: LenPrefixed[VarInt, VarLong],
                                         )
