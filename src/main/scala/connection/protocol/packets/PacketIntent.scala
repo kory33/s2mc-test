@@ -1,39 +1,14 @@
 package com.github.kory33.s2mctest
 package connection.protocol.packets
 
-import connection.protocol.data.DataPrimitives.{UByte, UShort, VarInt, VarLong, VarShort}
 import connection.protocol.data.SupportedProtocolVersions
+import connection.protocol.data.PacketDataTypes.*
 
 import cats.Monad
 import cats.instances.map
 import fs2.Chunk
 
 import java.util.UUID
-import scala.compiletime.ops.int.{-, S}
-
-type Position
-type LenPrefixedBytes[_]
-type LenPrefixed[_, _]
-type FixedPoint5[_]
-type FixedPoint12[_]
-type Component
-type Stack
-type ChunkMeta
-type NamedTag
-type Trade
-type Recipe
-type EntityPropertyShort
-type Metadata
-type SpawnProperty
-type Statistic
-type Biomes3D
-type MapIcon
-type EntityProperty
-type EntityEquipments
-type PlayerInfoData
-type ExplosionRecord
-type CommandNode
-type BlockChangeRecord
 
 /**
  * -- from Stevenarella(https://github.com/iceiix/stevenarella),
@@ -1086,7 +1061,7 @@ object PacketIntent {
       case class BossBar(
                           uuid: UUID,
                           action: VarInt,
-                          title: Option[Component],
+                          title: Option[ChatComponent],
                           health: Option[Float],
                           color: Option[VarInt],
                           style: Option[VarInt],
@@ -1132,20 +1107,20 @@ object PacketIntent {
        * message is displayed at and when the message is displayed.
        */
       case class ServerMessage_Sender(
-                                       message: Component,
+                                       message: ChatComponent,
                                        /** 0 - Chat message, 1 - System message, 2 - Action bar message */
                                        position: UByte,
                                        sender: UUID,
                                      )
 
       case class ServerMessage_Position(
-                                         message: Component,
+                                         message: ChatComponent,
                                          /** 0 - Chat message, 1 - System message, 2 - Action bar message */
                                          position: UByte,
                                        )
 
       case class ServerMessage_NoPosition(
-                                           message: Component,
+                                           message: ChatComponent,
                                          )
 
       /** MultiBlockChange is used to update a batch of blocks in a single packet. */
@@ -1195,7 +1170,7 @@ object PacketIntent {
       case class WindowOpen(
                              id: UByte,
                              ty: String,
-                             title: Component,
+                             title: ChatComponent,
                              slotCount: UByte,
                              entityId: Option[Int],
                            ) {
@@ -1211,7 +1186,7 @@ object PacketIntent {
       case class WindowOpen_u8(
                                 id: UByte,
                                 ty: UByte,
-                                title: Component,
+                                title: ChatComponent,
                                 slotCount: UByte,
                                 useProvidedWindowTitle: Boolean,
                                 entityId: Option[Int],
@@ -1222,7 +1197,7 @@ object PacketIntent {
       case class WindowOpen_VarInt(
                                     id: VarInt,
                                     ty: VarInt,
-                                    title: Component,
+                                    title: ChatComponent,
                                   )
 
       /** WindowItems sets every item in a window. */
@@ -1301,7 +1276,7 @@ object PacketIntent {
 
       /** Disconnect causes the client to disconnect displaying the passed reason. */
       case class Disconnect(
-                             reason: Component,
+                             reason: ChatComponent,
                            )
 
       /**
@@ -1963,7 +1938,7 @@ object PacketIntent {
                               direction: Option[VarInt],
                               playerId: Option[VarInt],
                               entityId: Option[Int],
-                              message: Option[Component],
+                              message: Option[ChatComponent],
                             ) {
         require(direction.nonEmpty == (event == VarInt(1)))
         require(playerId.nonEmpty == (event == VarInt(2)))
@@ -2473,8 +2448,8 @@ object PacketIntent {
       /** Title configures an on-screen title. */
       case class Title(
                         action: VarInt,
-                        title: Option[Component],
-                        subTitle: Option[Component],
+                        title: Option[ChatComponent],
+                        subTitle: Option[ChatComponent],
                         actionBarText: Option[String],
                         fadeIn: Option[Int],
                         fadeStay: Option[Int],
@@ -2490,8 +2465,8 @@ object PacketIntent {
 
       case class Title_notext(
                                action: VarInt,
-                               title: Option[Component],
-                               subTitle: Option[Component],
+                               title: Option[ChatComponent],
+                               subTitle: Option[ChatComponent],
                                fadeIn: Option[Int],
                                fadeStay: Option[Int],
                                fadeOut: Option[Int],
@@ -2505,11 +2480,11 @@ object PacketIntent {
 
       case class Title_notext_component(
                                          action: VarInt,
-                                         title: Option[Component],
-                                         subTitle: Option[Component],
-                                         fadeIn: Option[Component],
-                                         fadeStay: Option[Component],
-                                         fadeOut: Option[Component],
+                                         title: Option[ChatComponent],
+                                         subTitle: Option[ChatComponent],
+                                         fadeIn: Option[ChatComponent],
+                                         fadeStay: Option[ChatComponent],
+                                         fadeOut: Option[ChatComponent],
                                        ) {
         require(title.nonEmpty == (action == VarInt(0)))
         require(subTitle.nonEmpty == (action == VarInt(1)))
@@ -2521,20 +2496,20 @@ object PacketIntent {
       /** UpdateSign sets or changes the text on a sign. */
       case class UpdateSign(
                              location: Position,
-                             line1: Component,
-                             line2: Component,
-                             line3: Component,
-                             line4: Component,
+                             line1: ChatComponent,
+                             line2: ChatComponent,
+                             line3: ChatComponent,
+                             line4: ChatComponent,
                            )
 
       case class UpdateSign_u16(
                                  x: Int,
                                  y: UShort,
                                  z: Int,
-                                 line1: Component,
-                                 line2: Component,
-                                 line3: Component,
-                                 line4: Component,
+                                 line1: ChatComponent,
+                                 line2: ChatComponent,
+                                 line3: ChatComponent,
+                                 line4: ChatComponent,
                                )
 
       /** SoundEffect plays the named sound at the target location. */
@@ -2569,8 +2544,8 @@ object PacketIntent {
 
       /** PlayerListHeaderFooter updates the header/footer of the player list. */
       case class PlayerListHeaderFooter(
-                                         header: Component,
-                                         footer: Component,
+                                         header: ChatComponent,
+                                         footer: ChatComponent,
                                        )
 
       /**
@@ -2777,7 +2752,7 @@ object PacketIntent {
        * issues (e.g. too many players).
        */
       case class LoginDisconnect(
-                                  reason: Component,
+                                  reason: ChatComponent,
                                 )
 
       /**
