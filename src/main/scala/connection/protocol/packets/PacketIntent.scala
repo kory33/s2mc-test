@@ -221,12 +221,12 @@ object PacketIntent {
        */
       case class PluginMessageServerbound(
                                            channel: String,
-                                           data: UnknownLengthByteArray,
+                                           data: UnspecifiedLengthByteArray,
                                          )
 
       case class PluginMessageServerbound_i16(
                                                channel: String,
-                                               data: LenPrefixedBytes[VarShort],
+                                               data: LenPrefixedByteArray[VarShort],
                                              )
 
       case class EditBook(
@@ -964,7 +964,7 @@ object PacketIntent {
                                                   entityId: VarInt,
                                                   uuid: String,
                                                   name: String,
-                                                  properties: LenPrefixed[VarInt, SpawnProperty],
+                                                  properties: LenPrefixedArray[VarInt, SpawnProperty],
                                                   x: FixedPoint5[Int],
                                                   y: FixedPoint5[Int],
                                                   z: FixedPoint5[Int],
@@ -982,7 +982,7 @@ object PacketIntent {
 
       /** Statistics is used to update the statistics screen for the client. */
       case class Statistics(
-                             statistices: LenPrefixed[VarInt, Statistic],
+                             statistices: LenPrefixedArray[VarInt, Statistic],
                            )
 
       /**
@@ -1018,7 +1018,7 @@ object PacketIntent {
                                          y: Short,
                                          z: Int,
                                          action: UByte,
-                                         gzippedNbt: LenPrefixedBytes[Short],
+                                         gzippedNbt: LenPrefixedByteArray[Short],
                                        )
 
       /** BlockAction triggers different actions depending on the target block. */
@@ -1092,11 +1092,11 @@ object PacketIntent {
        * player sent.
        */
       case class TabCompleteReply(
-                                   matches: LenPrefixed[VarInt, String],
+                                   matches: LenPrefixedArray[VarInt, String],
                                  )
 
       case class DeclareCommands(
-                                  nodes: LenPrefixed[VarInt, CommandNode],
+                                  nodes: LenPrefixedArray[VarInt, CommandNode],
                                   rootIndex: VarInt,
                                 )
 
@@ -1126,13 +1126,13 @@ object PacketIntent {
       case class MultiBlockChange_Packed(
                                           chunkSectionPos: Long,
                                           noTrustEdges: Boolean,
-                                          records: LenPrefixed[VarInt, VarLong],
+                                          records: LenPrefixedArray[VarInt, VarLong],
                                         )
 
       case class MultiBlockChange_VarInt(
                                           chunkX: Int,
                                           chunkZ: Int,
-                                          records: LenPrefixed[VarInt, BlockChangeRecord],
+                                          records: LenPrefixedArray[VarInt, BlockChangeRecord],
                                         )
 
       case class MultiBlockChange_u16(
@@ -1140,7 +1140,7 @@ object PacketIntent {
                                        chunkZ: Int,
                                        recordCount: UShort,
                                        dataSize: Int,
-                                       data: UnknownLengthByteArray,
+                                       data: UnspecifiedLengthByteArray,
                                      )
 
       /**
@@ -1202,7 +1202,7 @@ object PacketIntent {
       /** WindowItems sets every item in a window. */
       case class WindowItems(
                               id: UByte,
-                              items: LenPrefixed[Short, Slot],
+                              items: LenPrefixedArray[Short, Slot],
                             )
 
       /**
@@ -1235,12 +1235,12 @@ object PacketIntent {
        */
       case class PluginMessageClientbound(
                                            channel: String,
-                                           data: UnknownLengthByteArray,
+                                           data: UnspecifiedLengthByteArray,
                                          )
 
       case class PluginMessageClientbound_i16(
                                                channel: String,
-                                               data: LenPrefixedBytes[VarShort],
+                                               data: LenPrefixedByteArray[VarShort],
                                              )
 
       /** Plays a sound by name on the client */
@@ -1296,7 +1296,7 @@ object PacketIntent {
                             y: Float,
                             z: Float,
                             radius: Float,
-                            records: LenPrefixed[Int, ExplosionRecord],
+                            records: LenPrefixedArray[Int, ExplosionRecord],
                             velocityX: Float,
                             velocityY: Float,
                             velocityZ: Float,
@@ -1353,9 +1353,9 @@ object PacketIntent {
                                             isNew: Boolean,
                                             bitmask: VarInt,
                                             heightmaps: NamedTag,
-                                            biomes: Option[LenPrefixed[VarInt, VarInt]],
-                                            data: LenPrefixedBytes[VarInt],
-                                            blockEntities: LenPrefixed[VarInt, NamedTag],
+                                            biomes: Option[LenPrefixedArray[VarInt, VarInt]],
+                                            data: LenPrefixedByteArray[VarInt],
+                                            blockEntities: LenPrefixedArray[VarInt, NamedTag],
                                           ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1368,8 +1368,8 @@ object PacketIntent {
                                           bitmask: VarInt,
                                           heightmaps: NamedTag,
                                           biomes: Option[Biomes3D],
-                                          data: LenPrefixedBytes[VarInt],
-                                          blockEntities: LenPrefixed[VarInt, NamedTag],
+                                          data: LenPrefixedByteArray[VarInt],
+                                          blockEntities: LenPrefixedArray[VarInt, NamedTag],
                                         ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1381,8 +1381,8 @@ object PacketIntent {
                                      bitmask: VarInt,
                                      heightmaps: NamedTag,
                                      biomes: Option[Biomes3D],
-                                     data: LenPrefixedBytes[VarInt],
-                                     blockEntities: LenPrefixed[VarInt, NamedTag],
+                                     data: LenPrefixedByteArray[VarInt],
+                                     blockEntities: LenPrefixedArray[VarInt, NamedTag],
                                    ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1393,8 +1393,8 @@ object PacketIntent {
                                       isNew: Boolean,
                                       bitmask: VarInt,
                                       heightmaps: NamedTag,
-                                      data: LenPrefixedBytes[VarInt],
-                                      blockEntities: LenPrefixed[VarInt, NamedTag],
+                                      data: LenPrefixedByteArray[VarInt],
+                                      blockEntities: LenPrefixedArray[VarInt, NamedTag],
                                     )
 
       case class ChunkData(
@@ -1402,8 +1402,8 @@ object PacketIntent {
                             chunkZ: Int,
                             isNew: Boolean,
                             bitmask: VarInt,
-                            data: LenPrefixedBytes[VarInt],
-                            blockEntities: LenPrefixed[VarInt, NamedTag],
+                            data: LenPrefixedByteArray[VarInt],
+                            blockEntities: LenPrefixedArray[VarInt, NamedTag],
                           )
 
       case class ChunkData_NoEntities(
@@ -1411,7 +1411,7 @@ object PacketIntent {
                                        chunkZ: Int,
                                        isNew: Boolean,
                                        bitmask: VarInt,
-                                       data: LenPrefixedBytes[VarInt],
+                                       data: LenPrefixedByteArray[VarInt],
                                      )
 
       case class ChunkData_NoEntities_u16(
@@ -1419,7 +1419,7 @@ object PacketIntent {
                                            chunkZ: Int,
                                            isNew: Boolean,
                                            bitmask: UShort,
-                                           data: LenPrefixedBytes[VarInt],
+                                           data: LenPrefixedByteArray[VarInt],
                                          )
 
       case class ChunkData_17(
@@ -1428,20 +1428,20 @@ object PacketIntent {
                                isNew: Boolean,
                                bitmask: UShort,
                                addBitmask: UShort,
-                               compressedData: LenPrefixedBytes[Int],
+                               compressedData: LenPrefixedByteArray[Int],
                              )
 
       case class ChunkDataBulk(
                                 skylight: Boolean,
-                                chunkMeta: LenPrefixed[VarInt, ChunkMeta],
-                                chunkData: UnknownLengthByteArray,
+                                chunkMeta: LenPrefixedArray[VarInt, ChunkMeta],
+                                chunkData: UnspecifiedLengthByteArray,
                               )
 
       case class ChunkDataBulk_17(
                                    chunkColumnCount: UShort,
                                    dataLength: Int,
                                    skylight: Boolean,
-                                   chunkDataAndMeta: UnknownLengthByteArray,
+                                   chunkDataAndMeta: UnspecifiedLengthByteArray,
                                  )
 
       /**
@@ -1591,7 +1591,7 @@ object PacketIntent {
                                              /** The previous gamemode of the client */
                                              previousGamemode: UByte,
                                              /** Identifiers for all worlds on the server */
-                                             worldNames: LenPrefixed[VarInt, String],
+                                             worldNames: LenPrefixedArray[VarInt, String],
                                              /** Represents a dimension registry */
                                              dimensionCodec: NamedTag,
                                              /** The dimension the client is starting in */
@@ -1625,7 +1625,7 @@ object PacketIntent {
                                       /** The previous gamemode of the client */
                                       previousGamemode: UByte,
                                       /** Identifiers for all worlds on the server */
-                                      worldNames: LenPrefixed[VarInt, String],
+                                      worldNames: LenPrefixedArray[VarInt, String],
                                       /** Represents a dimension registry */
                                       dimensionCodec: NamedTag,
                                       /** The dimension the client is starting in */
@@ -1750,12 +1750,12 @@ object PacketIntent {
                        scale: Byte,
                        trackingPosition: Boolean,
                        locked: Boolean,
-                       icons: LenPrefixed[VarInt, MapIcon],
+                       icons: LenPrefixedArray[VarInt, MapIcon],
                        columns: UByte,
                        rows: Option[UByte],
                        x: Option[UByte],
                        z: Option[UByte],
-                       data: Option[LenPrefixedBytes[VarInt]],
+                       data: Option[LenPrefixedByteArray[VarInt]],
                      ) {
         require(rows.nonEmpty == (columns != UByte(0)))
         require(x.nonEmpty == (columns != UByte(0)))
@@ -1767,12 +1767,12 @@ object PacketIntent {
                                 itemDamage: VarInt,
                                 scale: Byte,
                                 trackingPosition: Boolean,
-                                icons: LenPrefixed[VarInt, MapIcon],
+                                icons: LenPrefixedArray[VarInt, MapIcon],
                                 columns: UByte,
                                 rows: Option[UByte],
                                 x: Option[UByte],
                                 z: Option[UByte],
-                                data: Option[LenPrefixedBytes[VarInt]],
+                                data: Option[LenPrefixedByteArray[VarInt]],
                               ) {
         require(rows.nonEmpty == (columns != UByte(0)))
         require(x.nonEmpty == (columns != UByte(0)))
@@ -1783,12 +1783,12 @@ object PacketIntent {
       case class Maps_NoTracking(
                                   itemDamage: VarInt,
                                   scale: Byte,
-                                  icons: LenPrefixed[VarInt, MapIcon],
+                                  icons: LenPrefixedArray[VarInt, MapIcon],
                                   columns: UByte,
                                   rows: Option[UByte],
                                   x: Option[UByte],
                                   z: Option[UByte],
-                                  data: Option[LenPrefixedBytes[VarInt]],
+                                  data: Option[LenPrefixedByteArray[VarInt]],
                                 ) {
         require(rows.nonEmpty == (columns != UByte(0)))
         require(x.nonEmpty == (columns != UByte(0)))
@@ -1798,7 +1798,7 @@ object PacketIntent {
 
       case class Maps_NoTracking_Data(
                                        itemDamage: VarInt,
-                                       data: LenPrefixedBytes[Short],
+                                       data: LenPrefixedByteArray[Short],
                                      )
 
       /** EntityMove moves the entity with the id by the offsets provided. */
@@ -2022,8 +2022,8 @@ object PacketIntent {
                                            action: VarInt,
                                            craftingBookOpen: Boolean,
                                            filteringCraftable: Boolean,
-                                           recipeIds: LenPrefixed[VarInt, VarInt],
-                                           recipeIds2: Option[LenPrefixed[VarInt, VarInt]],
+                                           recipeIds: LenPrefixedArray[VarInt, VarInt],
+                                           recipeIds2: Option[LenPrefixedArray[VarInt, VarInt]],
                                          ) {
         require(recipeIds2.nonEmpty == (action == VarInt(0)))
       }
@@ -2034,8 +2034,8 @@ object PacketIntent {
                                              filteringCraftable: Boolean,
                                              smeltingBookOpen: Boolean,
                                              filteringSmeltable: Boolean,
-                                             recipeIds: LenPrefixed[VarInt, String],
-                                             recipeIds2: Option[LenPrefixed[VarInt, String]],
+                                             recipeIds: LenPrefixedArray[VarInt, String],
+                                             recipeIds2: Option[LenPrefixedArray[VarInt, String]],
                                            ) {
         require(recipeIds2.nonEmpty == (action == VarInt(0)))
       }
@@ -2050,19 +2050,19 @@ object PacketIntent {
                                                 filteringBlastFurnace: Boolean,
                                                 smokerOpen: Boolean,
                                                 filteringSmoker: Boolean,
-                                                recipeIds: LenPrefixed[VarInt, String],
-                                                recipeIds2: Option[LenPrefixed[VarInt, String]],
+                                                recipeIds: LenPrefixedArray[VarInt, String],
+                                                recipeIds2: Option[LenPrefixedArray[VarInt, String]],
                                               ) {
         require(recipeIds2.nonEmpty == (action == VarInt(0)))
       }
 
       /** EntityDestroy destroys the entities with the ids in the provided slice. */
       case class EntityDestroy(
-                                entityIds: LenPrefixed[VarInt, VarInt],
+                                entityIds: LenPrefixedArray[VarInt, VarInt],
                               )
 
       case class EntityDestroy_u8(
-                                   entityIds: LenPrefixed[UByte, Int],
+                                   entityIds: LenPrefixedArray[UByte, Int],
                                  )
 
       /** EntityRemoveEffect removes an effect from an entity. */
@@ -2323,7 +2323,7 @@ object PacketIntent {
       /** SetPassengers mounts entities to an entity */
       case class SetPassengers(
                                 entityId: VarInt,
-                                passengers: LenPrefixed[VarInt, VarInt],
+                                passengers: LenPrefixedArray[VarInt, VarInt],
                               )
 
       /** Teams creates and updates teams */
@@ -2337,7 +2337,7 @@ object PacketIntent {
                                formatting: Option[VarInt],
                                prefix: Option[String],
                                suffix: Option[String],
-                               players: Option[LenPrefixed[VarInt, String]],
+                               players: Option[LenPrefixedArray[VarInt, String]],
                              ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
         require(flags.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
@@ -2359,7 +2359,7 @@ object PacketIntent {
                            nameTagVisibility: Option[String],
                            collisionRule: Option[String],
                            color: Option[Byte],
-                           players: Option[LenPrefixed[VarInt, String]],
+                           players: Option[LenPrefixedArray[VarInt, String]],
                          ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
         require(prefix.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
@@ -2378,7 +2378,7 @@ object PacketIntent {
                                    prefix: Option[String],
                                    suffix: Option[String],
                                    flags: Option[UByte],
-                                   players: Option[LenPrefixed[VarInt, String]],
+                                   players: Option[LenPrefixedArray[VarInt, String]],
                                  ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
         require(prefix.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
@@ -2600,7 +2600,7 @@ object PacketIntent {
                                                 )
 
       case class Advancements(
-                               data: UnknownLengthByteArray,
+                               data: UnspecifiedLengthByteArray,
                                /**
                                 * TODO: fix parsing modded advancements 1.12.2 (e.g. SevTech Ages)
                                 * see https://github.com/iceiix/stevenarella/issues/148
@@ -2614,12 +2614,12 @@ object PacketIntent {
       /** EntityProperties updates the properties for an entity. */
       case class EntityProperties(
                                    entityId: VarInt,
-                                   properties: LenPrefixed[Int, EntityProperty],
+                                   properties: LenPrefixedArray[Int, EntityProperty],
                                  )
 
       case class EntityProperties_i32(
                                        entityId: Int,
-                                       properties: LenPrefixed[Int, EntityPropertyShort],
+                                       properties: LenPrefixedArray[Int, EntityPropertyShort],
                                      )
 
       /** EntityEffect applies a status effect to an entity for a given duration. */
@@ -2639,20 +2639,20 @@ object PacketIntent {
                                  )
 
       case class DeclareRecipes(
-                                 recipes: LenPrefixed[VarInt, Recipe],
+                                 recipes: LenPrefixedArray[VarInt, Recipe],
                                )
 
       case class Tags(
-                       blockTags: LenPrefixed[VarInt, Tags],
-                       itemTags: LenPrefixed[VarInt, Tags],
-                       fluidTags: LenPrefixed[VarInt, Tags],
+                       blockTags: LenPrefixedArray[VarInt, TagArray],
+                       itemTags: LenPrefixedArray[VarInt, TagArray],
+                       fluidTags: LenPrefixedArray[VarInt, TagArray],
                      )
 
       case class TagsWithEntities(
-                                   blockTags: LenPrefixed[VarInt, Tags],
-                                   itemTags: LenPrefixed[VarInt, Tags],
-                                   fluidTags: LenPrefixed[VarInt, Tags],
-                                   entityTags: LenPrefixed[VarInt, Tags],
+                                   blockTags: LenPrefixedArray[VarInt, TagArray],
+                                   itemTags: LenPrefixedArray[VarInt, TagArray],
+                                   fluidTags: LenPrefixedArray[VarInt, TagArray],
+                                   entityTags: LenPrefixedArray[VarInt, TagArray],
                                  )
 
       case class AcknowledgePlayerDigging(
@@ -2669,7 +2669,7 @@ object PacketIntent {
                                         skyLightMask: VarInt,
                                         blockLightMask: VarInt,
                                         emptySkyLightMask: VarInt,
-                                        lightArrays: UnknownLengthByteArray,
+                                        lightArrays: UnspecifiedLengthByteArray,
                                       )
 
       case class UpdateLight_NoTrust(
@@ -2678,12 +2678,12 @@ object PacketIntent {
                                       skyLightMask: VarInt,
                                       blockLightMask: VarInt,
                                       emptySkyLightMask: VarInt,
-                                      lightArrays: UnknownLengthByteArray,
+                                      lightArrays: UnspecifiedLengthByteArray,
                                     )
 
       case class TradeList_WithoutRestock(
                                            id: VarInt,
-                                           trades: LenPrefixed[UByte, Trade],
+                                           trades: LenPrefixedArray[UByte, Trade],
                                            villagerLevel: VarInt,
                                            experience: VarInt,
                                            isRegularVillager: Boolean,
@@ -2691,7 +2691,7 @@ object PacketIntent {
 
       case class TradeList_WithRestock(
                                         id: VarInt,
-                                        trades: LenPrefixed[UByte, Trade],
+                                        trades: LenPrefixedArray[UByte, Trade],
                                         villagerLevel: VarInt,
                                         experience: VarInt,
                                         isRegularVillager: Boolean,
@@ -2724,23 +2724,23 @@ object PacketIntent {
                                       * The key for the AES/CFB8 cipher encrypted with the
                                       * public key
                                       */
-                                     sharedSecret: LenPrefixedBytes[VarInt],
+                                     sharedSecret: LenPrefixedByteArray[VarInt],
                                      /**
                                       * The verify token from the request encrypted with the
                                       * public key
                                       */
-                                     verifyToken: LenPrefixedBytes[VarInt],
+                                     verifyToken: LenPrefixedByteArray[VarInt],
                                    )
 
       case class EncryptionResponse_i16(
-                                         sharedSecret: LenPrefixedBytes[Short],
-                                         verifyToken: LenPrefixedBytes[Short],
+                                         sharedSecret: LenPrefixedByteArray[Short],
+                                         verifyToken: LenPrefixedByteArray[Short],
                                        )
 
       case class LoginPluginResponse(
                                       messageId: VarInt,
                                       successful: Boolean,
-                                      data: UnknownLengthByteArray,
+                                      data: UnspecifiedLengthByteArray,
                                     )
     }
     object ClientBound {
@@ -2765,18 +2765,18 @@ object PacketIntent {
                                      */
                                     serverId: String,
                                     /** A RSA Public key serialized in x.509 PRIX format */
-                                    publicKey: LenPrefixedBytes[VarInt],
+                                    publicKey: LenPrefixedByteArray[VarInt],
                                     /**
                                      * Token used by the server to verify encryption is working
                                      * correctly
                                      */
-                                    verifyToken: LenPrefixedBytes[VarInt],
+                                    verifyToken: LenPrefixedByteArray[VarInt],
                                   )
 
       case class EncryptionRequest_i16(
                                         serverId: String,
-                                        publicKey: LenPrefixedBytes[Short],
-                                        verifyToken: LenPrefixedBytes[Short],
+                                        publicKey: LenPrefixedByteArray[Short],
+                                        verifyToken: LenPrefixedByteArray[Short],
                                       )
 
       /**
@@ -2807,7 +2807,7 @@ object PacketIntent {
       case class LoginPluginRequest(
                                      messageId: VarInt,
                                      channel: String,
-                                     data: UnknownLengthByteArray,
+                                     data: UnspecifiedLengthByteArray,
                                    )
     }
   }

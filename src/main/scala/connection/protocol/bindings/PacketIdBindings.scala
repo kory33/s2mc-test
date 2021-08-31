@@ -1,5 +1,5 @@
 package com.github.kory33.s2mctest
-package connection.protocol
+package connection.protocol.bindings
 
 import connection.protocol.codec.{ByteCodec, ByteDecode}
 import generic.compiletime.*
@@ -11,7 +11,7 @@ type CodecBinding[A] = (PacketId, ByteCodec[A])
 
 class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
                                            (using ev: Tuple.IsMappedBy[CodecBinding][BindingTup])
-                                           (using Require[ContainsDistinctT[BindingTup]]) {
+                                           /*(using Require[ContainsDistinctT[BindingTup]])*/ {
 
   require({
     val packetIds =

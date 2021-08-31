@@ -66,9 +66,22 @@ object PacketDataTypes:
   @NoGenByteDecode case class FixedPoint12[Num](rawValue: Num)
 
   /** An array of [[Data]] together with length of the array in [[L]]. [[L]] is expected to be an integer type. */
-  @NoGenByteDecode case class LenPrefixed[Len, Data](length: Len, array: Array[Data])
+  @NoGenByteDecode case class LenPrefixedArray[Len, Data](length: Len, array: Array[Data])
 
-  type LenPrefixedBytes[Len] = LenPrefixed[Len, Byte]
+  type LenPrefixedByteArray[Len] = LenPrefixedArray[Len, Byte]
+
+  /**
+   * A byte array whose length is not specified by the packet data.
+   *
+   * An encoder of this data would just write out the content of the byte array,
+   * while the decoder of this data should <strong>keep reading the input</strong> until
+   * it meets the end of packet (which is known at runtime thanks to packet length specifier).
+   *
+   * That being set, a packet definition <strong>should not</strong> contain [[UnspecifiedLengthByteArray]]
+   * before any other field of the packet, since a parser will be unable to know the end of array
+   * unless it meets the end of packet.
+   */
+  @NoGenByteDecode case class UnspecifiedLengthByteArray(array: Array[Byte])
 
   @NoGenByteDecode case class ChatComponent(/*TODO put something in here*/)
 
@@ -81,6 +94,10 @@ object PacketDataTypes:
   }
 
   @NoGenByteDecode case class Stack(/*TODO put something in here*/)
+
+  case class Tag(identifier: String, ids: LenPrefixedArray[VarInt, VarInt])
+
+  type TagArray = LenPrefixedArray[VarInt, Tag]
 
   @NoGenByteDecode case class ChunkMeta(/*TODO put something in here*/)
   @NoGenByteDecode case class Trade(/*TODO put something in here*/)
