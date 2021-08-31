@@ -2352,7 +2352,6 @@ object PacketIntent {
       case class Teams_u8(
                            name: String,
                            mode: UByte,
-                           data: Vector[UByte],
                            displayName: Option[String],
                            prefix: Option[String],
                            suffix: Option[String],
