@@ -221,7 +221,7 @@ object PacketIntent {
        */
       case class PluginMessageServerbound(
                                            channel: String,
-                                           data: Vector[UByte],
+                                           data: UnknownLengthByteArray,
                                          )
 
       case class PluginMessageServerbound_i16(
@@ -1140,7 +1140,7 @@ object PacketIntent {
                                        chunkZ: Int,
                                        recordCount: UShort,
                                        dataSize: Int,
-                                       data: Vector[UByte],
+                                       data: UnknownLengthByteArray,
                                      )
 
       /**
@@ -1235,7 +1235,7 @@ object PacketIntent {
        */
       case class PluginMessageClientbound(
                                            channel: String,
-                                           data: Vector[UByte],
+                                           data: UnknownLengthByteArray,
                                          )
 
       case class PluginMessageClientbound_i16(
@@ -1434,14 +1434,14 @@ object PacketIntent {
       case class ChunkDataBulk(
                                 skylight: Boolean,
                                 chunkMeta: LenPrefixed[VarInt, ChunkMeta],
-                                chunkData: Vector[UByte],
+                                chunkData: UnknownLengthByteArray,
                               )
 
       case class ChunkDataBulk_17(
                                    chunkColumnCount: UShort,
                                    dataLength: Int,
                                    skylight: Boolean,
-                                   chunkDataAndMeta: Vector[UByte],
+                                   chunkDataAndMeta: UnknownLengthByteArray,
                                  )
 
       /**
@@ -2601,7 +2601,7 @@ object PacketIntent {
                                                 )
 
       case class Advancements(
-                               data: Vector[UByte],
+                               data: UnknownLengthByteArray,
                                /**
                                 * TODO: fix parsing modded advancements 1.12.2 (e.g. SevTech Ages)
                                 * see https://github.com/iceiix/stevenarella/issues/148
@@ -2670,7 +2670,7 @@ object PacketIntent {
                                         skyLightMask: VarInt,
                                         blockLightMask: VarInt,
                                         emptySkyLightMask: VarInt,
-                                        lightArrays: Vector[UByte],
+                                        lightArrays: UnknownLengthByteArray,
                                       )
 
       case class UpdateLight_NoTrust(
@@ -2679,7 +2679,7 @@ object PacketIntent {
                                       skyLightMask: VarInt,
                                       blockLightMask: VarInt,
                                       emptySkyLightMask: VarInt,
-                                      lightArrays: Vector[UByte],
+                                      lightArrays: UnknownLengthByteArray,
                                     )
 
       case class TradeList_WithoutRestock(
@@ -2741,7 +2741,7 @@ object PacketIntent {
       case class LoginPluginResponse(
                                       messageId: VarInt,
                                       successful: Boolean,
-                                      data: Vector[UByte],
+                                      data: UnknownLengthByteArray,
                                     )
     }
     object ClientBound {
@@ -2808,7 +2808,7 @@ object PacketIntent {
       case class LoginPluginRequest(
                                      messageId: VarInt,
                                      channel: String,
-                                     data: Vector[UByte],
+                                     data: UnknownLengthByteArray,
                                    )
     }
   }
