@@ -1010,7 +1010,7 @@ object PacketIntent {
       case class UpdateBlockEntity(
                                     location: Position,
                                     action: UByte,
-                                    nbt: Option[NamedTag],
+                                    nbt: NamedTag,
                                   )
 
       case class UpdateBlockEntity_Data(
@@ -1018,8 +1018,7 @@ object PacketIntent {
                                          y: Short,
                                          z: Int,
                                          action: UByte,
-                                         dataLength: Short,
-                                         gzippedNbt: Vector[UByte],
+                                         gzippedNbt: LenPrefixedBytes[Short],
                                        )
 
       /** BlockAction triggers different actions depending on the target block. */
@@ -1353,10 +1352,10 @@ object PacketIntent {
                                             chunkZ: Int,
                                             isNew: Boolean,
                                             bitmask: VarInt,
-                                            heightmaps: Option[NamedTag],
+                                            heightmaps: NamedTag,
                                             biomes: Option[LenPrefixed[VarInt, VarInt]],
                                             data: LenPrefixedBytes[VarInt],
-                                            blockEntities: LenPrefixed[VarInt, Option[NamedTag]],
+                                            blockEntities: LenPrefixed[VarInt, NamedTag],
                                           ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1367,10 +1366,10 @@ object PacketIntent {
                                           isNew: Boolean,
                                           ignoreOldData: Boolean,
                                           bitmask: VarInt,
-                                          heightmaps: Option[NamedTag],
+                                          heightmaps: NamedTag,
                                           biomes: Option[Biomes3D],
                                           data: LenPrefixedBytes[VarInt],
-                                          blockEntities: LenPrefixed[VarInt, Option[NamedTag]],
+                                          blockEntities: LenPrefixed[VarInt, NamedTag],
                                         ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1380,10 +1379,10 @@ object PacketIntent {
                                      chunkZ: Int,
                                      isNew: Boolean,
                                      bitmask: VarInt,
-                                     heightmaps: Option[NamedTag],
+                                     heightmaps: NamedTag,
                                      biomes: Option[Biomes3D],
                                      data: LenPrefixedBytes[VarInt],
-                                     blockEntities: LenPrefixed[VarInt, Option[NamedTag]],
+                                     blockEntities: LenPrefixed[VarInt, NamedTag],
                                    ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1393,9 +1392,9 @@ object PacketIntent {
                                       chunkZ: Int,
                                       isNew: Boolean,
                                       bitmask: VarInt,
-                                      heightmaps: Option[NamedTag],
+                                      heightmaps: NamedTag,
                                       data: LenPrefixedBytes[VarInt],
-                                      blockEntities: LenPrefixed[VarInt, Option[NamedTag]],
+                                      blockEntities: LenPrefixed[VarInt, NamedTag],
                                     )
 
       case class ChunkData(
@@ -1404,7 +1403,7 @@ object PacketIntent {
                             isNew: Boolean,
                             bitmask: VarInt,
                             data: LenPrefixedBytes[VarInt],
-                            blockEntities: LenPrefixed[VarInt, Option[NamedTag]],
+                            blockEntities: LenPrefixed[VarInt, NamedTag],
                           )
 
       case class ChunkData_NoEntities(
@@ -1594,9 +1593,9 @@ object PacketIntent {
                                              /** Identifiers for all worlds on the server */
                                              worldNames: LenPrefixed[VarInt, String],
                                              /** Represents a dimension registry */
-                                             dimensionCodec: Option[NamedTag],
+                                             dimensionCodec: NamedTag,
                                              /** The dimension the client is starting in */
-                                             dimension: Option[NamedTag],
+                                             dimension: NamedTag,
                                              /** The world being spawned into */
                                              worldName: String,
                                              /** Truncated SHA-256 hash of world's seed */
@@ -1628,7 +1627,7 @@ object PacketIntent {
                                       /** Identifiers for all worlds on the server */
                                       worldNames: LenPrefixed[VarInt, String],
                                       /** Represents a dimension registry */
-                                      dimensionCodec: Option[NamedTag],
+                                      dimensionCodec: NamedTag,
                                       /** The dimension the client is starting in */
                                       dimension: String,
                                       /** The world being spawned into */
@@ -1756,7 +1755,7 @@ object PacketIntent {
                        rows: Option[UByte],
                        x: Option[UByte],
                        z: Option[UByte],
-                       data: Option[Option[LenPrefixedBytes[VarInt]]],
+                       data: Option[LenPrefixedBytes[VarInt]],
                      ) {
         require(rows.nonEmpty == (columns != UByte(0)))
         require(x.nonEmpty == (columns != UByte(0)))
@@ -1773,7 +1772,7 @@ object PacketIntent {
                                 rows: Option[UByte],
                                 x: Option[UByte],
                                 z: Option[UByte],
-                                data: Option[Option[LenPrefixedBytes[VarInt]]],
+                                data: Option[LenPrefixedBytes[VarInt]],
                               ) {
         require(rows.nonEmpty == (columns != UByte(0)))
         require(x.nonEmpty == (columns != UByte(0)))
@@ -1789,7 +1788,7 @@ object PacketIntent {
                                   rows: Option[UByte],
                                   x: Option[UByte],
                                   z: Option[UByte],
-                                  data: Option[Option[LenPrefixedBytes[VarInt]]],
+                                  data: Option[LenPrefixedBytes[VarInt]],
                                 ) {
         require(rows.nonEmpty == (columns != UByte(0)))
         require(x.nonEmpty == (columns != UByte(0)))
@@ -1882,7 +1881,7 @@ object PacketIntent {
       /** EntityUpdateNBT updates the entity named binary tag. */
       case class EntityUpdateNBT(
                                   entityId: VarInt,
-                                  nbt: Option[NamedTag],
+                                  nbt: NamedTag,
                                 )
 
       /** Teleports the player's vehicle */
@@ -2104,7 +2103,7 @@ object PacketIntent {
                                    )
 
       case class Respawn_NBT(
-                              dimension: Option[NamedTag],
+                              dimension: NamedTag,
                               worldName: String,
                               hashedSeed: Long,
                               gamemode: UByte,
@@ -2143,7 +2142,7 @@ object PacketIntent {
 
       case class NBTQueryResponse(
                                    transactionId: VarInt,
-                                   nbt: Option[NamedTag],
+                                   nbt: NamedTag,
                                  )
 
       /** SelectAdvancementTab indicates the client should switch the advancement tab. */
@@ -2338,7 +2337,7 @@ object PacketIntent {
                                formatting: Option[VarInt],
                                prefix: Option[String],
                                suffix: Option[String],
-                               players: Option[Option[LenPrefixed[VarInt, String]]],
+                               players: Option[LenPrefixed[VarInt, String]],
                              ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
         require(flags.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
@@ -2361,7 +2360,7 @@ object PacketIntent {
                            nameTagVisibility: Option[String],
                            collisionRule: Option[String],
                            color: Option[Byte],
-                           players: Option[Option[LenPrefixed[VarInt, String]]],
+                           players: Option[LenPrefixed[VarInt, String]],
                          ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
         require(prefix.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
@@ -2380,7 +2379,7 @@ object PacketIntent {
                                    prefix: Option[String],
                                    suffix: Option[String],
                                    flags: Option[UByte],
-                                   players: Option[Option[LenPrefixed[VarInt, String]]],
+                                   players: Option[LenPrefixed[VarInt, String]],
                                  ) {
         require(displayName.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
         require(prefix.nonEmpty == (mode == UByte(0) || mode == UByte(2)))
