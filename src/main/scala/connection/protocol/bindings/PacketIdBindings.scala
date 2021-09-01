@@ -9,6 +9,12 @@ import scala.collection.immutable.Queue
 type PacketId = Int
 type CodecBinding[A] = (PacketId, ByteCodec[A])
 
+/**
+ * An object that associates packet IDs with corresponding datatypes' codec.
+ *
+ * [[BindingTup]] is a tuple of [[CodecBinding]]s that contain no duplicate types.
+ * It is also required that [[bindings]] should not contain two entries with the same packet ID.
+ */
 class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
                                            (using ev: Tuple.IsMappedBy[CodecBinding][BindingTup])
                                            (using Require[ContainsDistinctT[BindingTup]]) {
