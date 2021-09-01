@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest
-package com.github.kory33.s2mctest.connection.protocol.bindings.versions
+package com.github.kory33.s2mctest.connection.protocol.versions
 
-import connection.protocol.bindings.{Protocol, PacketIdBindings}
+import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
 import connection.protocol.codec.ByteCodecs.Common.given
 import connection.protocol.codec.macros.GenByteDecode.given
@@ -14,7 +14,7 @@ import connection.protocol.packets.PacketIntent.Play.ServerBound.*
 import connection.protocol.packets.PacketIntent.Status.ClientBound.*
 import connection.protocol.packets.PacketIntent.Status.ServerBound.*
 
-object v1_14_3 {
+object v1_14_2 {
   val playProtocol = Protocol(
     PacketIdBindings((
       0x00 -> ByteCodec.summon[TeleportConfirm],
@@ -104,7 +104,7 @@ object v1_14_3 {
       0x24 -> ByteCodec.summon[UpdateLight_NoTrust],
       0x25 -> ByteCodec.summon[JoinGame_i32_ViewDistance],
       0x26 -> ByteCodec.summon[Maps],
-      0x27 -> ByteCodec.summon[TradeList_WithRestock],
+      0x27 -> ByteCodec.summon[TradeList_WithoutRestock],
       0x28 -> ByteCodec.summon[EntityMove_i16],
       0x29 -> ByteCodec.summon[EntityLookAndMove_i16],
       0x2a -> ByteCodec.summon[EntityLook_VarInt],

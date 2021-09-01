@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest
-package com.github.kory33.s2mctest.connection.protocol.bindings.versions
+package com.github.kory33.s2mctest.connection.protocol.versions
 
-import connection.protocol.bindings.{Protocol, PacketIdBindings}
+import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
 import connection.protocol.codec.ByteCodecs.Common.given
 import connection.protocol.codec.macros.GenByteDecode.given
@@ -15,7 +15,7 @@ import PacketIntent.Login.ClientBound.*
 import PacketIntent.Status.ClientBound.*
 import PacketIntent.Status.ServerBound.*
 
-object v18w50a {
+object v19w02a {
   val playProtocol = Protocol(
     PacketIdBindings((
       0x00 -> ByteCodec.summon[TeleportConfirm],
@@ -83,7 +83,7 @@ object v18w50a {
       0x11 -> ByteCodec.summon[DeclareCommands],
       0x12 -> ByteCodec.summon[ConfirmTransaction],
       0x13 -> ByteCodec.summon[WindowClose],
-      0x14 -> ByteCodec.summon[WindowOpen],
+      0x14 -> ByteCodec.summon[WindowOpenHorse],
       0x15 -> ByteCodec.summon[WindowItems],
       0x16 -> ByteCodec.summon[WindowProperty],
       0x17 -> ByteCodec.summon[WindowSetSlot],
@@ -99,9 +99,9 @@ object v18w50a {
       0x21 -> ByteCodec.summon[KeepAliveClientbound_i64],
       0x22 -> ByteCodec.summon[ChunkData_HeightMap],
       0x23 -> ByteCodec.summon[Effect],
-      0x24 -> ByteCodec.summon[Particle_VarIntArray],
+      0x24 -> ByteCodec.summon[Particle_Data13],
       0x25 -> ByteCodec.summon[JoinGame_i32],
-      0x26 -> ByteCodec.summon[Maps_NoLocked],
+      0x26 -> ByteCodec.summon[Maps],
       0x27 -> ByteCodec.summon[Entity],
       0x28 -> ByteCodec.summon[EntityMove_i16],
       0x29 -> ByteCodec.summon[EntityLookAndMove_i16],
@@ -151,6 +151,8 @@ object v18w50a {
       0x56 -> ByteCodec.summon[DeclareRecipes],
       0x57 -> ByteCodec.summon[TagsWithEntities],
       0x58 -> ByteCodec.summon[UpdateLight_NoTrust],
+      0x59 -> ByteCodec.summon[WindowOpen_VarInt],
+      0x5a -> ByteCodec.summon[TradeList_WithoutRestock],
     ))
   )
 

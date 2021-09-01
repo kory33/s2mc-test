@@ -1,21 +1,20 @@
 package com.github.kory33.s2mctest
-package com.github.kory33.s2mctest.connection.protocol.bindings.versions
+package com.github.kory33.s2mctest.connection.protocol.versions
 
-import connection.protocol.bindings.{Protocol, PacketIdBindings}
+import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
 import connection.protocol.codec.ByteCodecs.Common.given
 import connection.protocol.codec.macros.GenByteDecode.given
 import connection.protocol.packets.PacketIntent
+import connection.protocol.packets.PacketIntent.Handshaking.ServerBound.*
+import connection.protocol.packets.PacketIntent.Login.ClientBound.*
+import connection.protocol.packets.PacketIntent.Login.ServerBound.*
+import connection.protocol.packets.PacketIntent.Play.ClientBound.*
+import connection.protocol.packets.PacketIntent.Play.ServerBound.*
+import connection.protocol.packets.PacketIntent.Status.ClientBound.*
+import connection.protocol.packets.PacketIntent.Status.ServerBound.*
 
-import PacketIntent.Handshaking.ServerBound.*
-import PacketIntent.Play.ServerBound.*
-import PacketIntent.Play.ClientBound.*
-import PacketIntent.Login.ServerBound.*
-import PacketIntent.Login.ClientBound.*
-import PacketIntent.Status.ClientBound.*
-import PacketIntent.Status.ServerBound.*
-
-object v1_9 {
+object v1_11_2 {
   val playProtocol = Protocol(
     PacketIdBindings((
       0x00 -> ByteCodec.summon[TeleportConfirm],
@@ -40,20 +39,20 @@ object v1_9 {
       0x13 -> ByteCodec.summon[PlayerDigging],
       0x14 -> ByteCodec.summon[PlayerAction],
       0x15 -> ByteCodec.summon[SteerVehicle],
-      0x16 -> ByteCodec.summon[ResourcePackStatus_hash],
+      0x16 -> ByteCodec.summon[ResourcePackStatus],
       0x17 -> ByteCodec.summon[HeldItemChange],
       0x18 -> ByteCodec.summon[CreativeInventoryAction],
       0x19 -> ByteCodec.summon[SetSign],
       0x1a -> ByteCodec.summon[ArmSwing],
       0x1b -> ByteCodec.summon[SpectateTeleport],
-      0x1c -> ByteCodec.summon[PlayerBlockPlacement_u8],
+      0x1c -> ByteCodec.summon[PlayerBlockPlacement_f32],
       0x1d -> ByteCodec.summon[UseItem],
     )),
     PacketIdBindings((
       0x00 -> ByteCodec.summon[SpawnObject],
       0x01 -> ByteCodec.summon[SpawnExperienceOrb],
       0x02 -> ByteCodec.summon[SpawnGlobalEntity],
-      0x03 -> ByteCodec.summon[SpawnMob_u8],
+      0x03 -> ByteCodec.summon[SpawnMob_WithMeta],
       0x04 -> ByteCodec.summon[SpawnPainting_String],
       0x05 -> ByteCodec.summon[SpawnPlayer_f64],
       0x06 -> ByteCodec.summon[Animation],
@@ -75,17 +74,17 @@ object v1_9 {
       0x16 -> ByteCodec.summon[WindowSetSlot],
       0x17 -> ByteCodec.summon[SetCooldown],
       0x18 -> ByteCodec.summon[PluginMessageClientbound],
-      0x19 -> ByteCodec.summon[NamedSoundEffect_u8],
+      0x19 -> ByteCodec.summon[NamedSoundEffect],
       0x1a -> ByteCodec.summon[Disconnect],
       0x1b -> ByteCodec.summon[EntityAction],
       0x1c -> ByteCodec.summon[Explosion],
       0x1d -> ByteCodec.summon[ChunkUnload],
       0x1e -> ByteCodec.summon[ChangeGameState],
       0x1f -> ByteCodec.summon[KeepAliveClientbound_VarInt],
-      0x20 -> ByteCodec.summon[ChunkData_NoEntities],
+      0x20 -> ByteCodec.summon[ChunkData],
       0x21 -> ByteCodec.summon[Effect],
       0x22 -> ByteCodec.summon[Particle_VarIntArray],
-      0x23 -> ByteCodec.summon[JoinGame_i8],
+      0x23 -> ByteCodec.summon[JoinGame_i32],
       0x24 -> ByteCodec.summon[Maps_NoLocked],
       0x25 -> ByteCodec.summon[EntityMove_i16],
       0x26 -> ByteCodec.summon[EntityLookAndMove_i16],
@@ -119,14 +118,13 @@ object v1_9 {
       0x42 -> ByteCodec.summon[UpdateScore],
       0x43 -> ByteCodec.summon[SpawnPosition],
       0x44 -> ByteCodec.summon[TimeUpdate],
-      0x45 -> ByteCodec.summon[Title_notext],
-      0x46 -> ByteCodec.summon[UpdateSign],
-      0x47 -> ByteCodec.summon[SoundEffect_u8],
-      0x48 -> ByteCodec.summon[PlayerListHeaderFooter],
-      0x49 -> ByteCodec.summon[CollectItem_nocount],
-      0x4a -> ByteCodec.summon[EntityTeleport_f64],
-      0x4b -> ByteCodec.summon[EntityProperties],
-      0x4c -> ByteCodec.summon[EntityEffect],
+      0x45 -> ByteCodec.summon[Title],
+      0x46 -> ByteCodec.summon[SoundEffect],
+      0x47 -> ByteCodec.summon[PlayerListHeaderFooter],
+      0x48 -> ByteCodec.summon[CollectItem],
+      0x49 -> ByteCodec.summon[EntityTeleport_f64],
+      0x4a -> ByteCodec.summon[EntityProperties],
+      0x4b -> ByteCodec.summon[EntityEffect],
     ))
   )
 

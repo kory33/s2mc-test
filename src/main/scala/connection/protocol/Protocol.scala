@@ -1,5 +1,5 @@
 package com.github.kory33.s2mctest
-package connection.protocol.bindings
+package connection.protocol
 
 import connection.protocol.codec.{ByteCodec, ByteDecode}
 
