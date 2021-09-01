@@ -226,7 +226,7 @@ object PacketIntent {
 
       case class PluginMessageServerbound_i16(
                                                channel: String,
-                                               data: LenPrefixedByteArray[VarShort],
+                                               data: LenPrefixedByteArray[Short],
                                              )
 
       case class EditBook(
@@ -1240,7 +1240,7 @@ object PacketIntent {
 
       case class PluginMessageClientbound_i16(
                                                channel: String,
-                                               data: LenPrefixedByteArray[VarShort],
+                                               data: LenPrefixedByteArray[Short],
                                              )
 
       /** Plays a sound by name on the client */
