@@ -7,6 +7,8 @@ object PacketDataTypes:
   opaque type UByte = Byte
 
   object UByte:
+    def fromRawByte(byte: Byte): UByte = byte
+
     def apply(short: Short): UByte =
       val maxAllowed = (Byte.MaxValue.toShort + 1) * 2 - 1
       if 0 <= short && short <= maxAllowed then
@@ -18,6 +20,8 @@ object PacketDataTypes:
         throw new IllegalArgumentException(s"Given Short is out of range: got $short, expected [0, $maxAllowed].")
 
   extension (uByte: UByte)
+    def asRawByte: Byte = uByte
+
     def asShort: Short =
       if uByte < 0 then
         (uByte.toShort + (Byte.MaxValue.toShort + 1) * 2).toShort
@@ -29,6 +33,8 @@ object PacketDataTypes:
   opaque type UShort = Short
 
   object UShort:
+    def fromRawShort(short: Short): UShort = short
+
     def apply(int: Int): UShort =
       val maxAllowed = (Short.MaxValue.toInt + 1) * 2 - 1
       if 0 <= int && int <= maxAllowed then
@@ -40,13 +46,13 @@ object PacketDataTypes:
         throw new IllegalArgumentException(s"Given Int is out of range: got $int, expected [0, $maxAllowed].")
 
   extension (uShort: UShort)
+    def asRawShort: Short = uShort
+
     def asInt: Int =
       if uShort < 0 then
         uShort.toInt + (Short.MaxValue.toInt + 1) * 2
       else
         uShort.toInt
-
-  @NoGenByteDecode case class VarShort(raw: Short)
 
   @NoGenByteDecode case class VarInt(raw: Int)
 

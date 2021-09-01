@@ -1,5 +1,7 @@
 package com.github.kory33.s2mctest
 package connection.protocol.codec
+
+import cats.Invariant
 import fs2.Chunk
 
 /**
@@ -8,6 +10,12 @@ import fs2.Chunk
 case class ByteCodec[A](decode: ByteDecode[A], encode: ByteEncode[A])
 
 object ByteCodec {
+
+  import cats.implicits.given
+
+  given Invariant[ByteCodec] with
+    override def imap[A, B](fa: ByteCodec[A])(f: A => B)(g: B => A): ByteCodec[B] =
+      ByteCodec(fa.decode.map(f), fa.encode.contramap(g))
 
   def apply[A: ByteCodec]: ByteCodec[A] = summon
 

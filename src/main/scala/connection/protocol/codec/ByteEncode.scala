@@ -1,6 +1,7 @@
 package com.github.kory33.s2mctest
 package connection.protocol.codec
 
+import cats.Contravariant
 import fs2.Chunk
 import shapeless3.deriving.K0
 
@@ -14,6 +15,9 @@ trait ByteEncode[T]:
   def write(obj: T): Chunk[Byte]
 
 object ByteEncode:
+
+  given Contravariant[ByteEncode] with
+    override def contramap[A, B](fa: ByteEncode[A])(f: B => A): ByteEncode[B] = obj => fa.write(f(obj))
 
   /**
    * canonical instance of `ByteEncode` for any algebraic data type

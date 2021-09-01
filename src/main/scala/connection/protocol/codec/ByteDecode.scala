@@ -61,6 +61,20 @@ object ByteDecode:
     case InvalidInput(reason: Option[String]) extends DecodeResult[Nothing]
 
   /**
+   * A decoder that consumes precisely [[n]] bytes from the input.
+   */
+  def readByteBlock(n: Int): ByteDecode[Chunk[Byte]] =
+    input =>
+      if input.size >= n then
+        val (result, rest) = input.splitAt(n)
+        DecodeResult.Decoded(result, rest)
+      else
+        DecodeResult.InsufficientInput
+
+  def raiseParseError(reason: String): ByteDecode[Nothing] =
+    _ => DecodeResult.InvalidInput(Some(reason))
+
+  /**
    * The [[Monad]] instance for [[ByteDecode]].
    */
   given Monad[ByteDecode] with
