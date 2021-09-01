@@ -6,6 +6,11 @@ import scala.collection.immutable.Queue
 import scala.compiletime.ops.boolean.*
 import scala.compiletime.ops.int.*
 
+/**
+ * A type-level boolean indicating if Lock[A] is contained in T.
+ *
+ * Takes O(|T|) to compute.
+ */
 type IncludedInLockedT[T <: Tuple, A] <: Boolean =
   // we lock types in T using an invariant abstract type [[Lock]]
   // to prevent S not being disjoint from some other type in T
@@ -15,6 +20,11 @@ type IncludedInLockedT[T <: Tuple, A] <: Boolean =
     case _ *: tail    => IncludedInLockedT[tail, A]
   }
 
+/**
+ * A type-level boolean indicating if T, mapped with [[Lock]], contains no duplicate types.
+ *
+ * Takes O(|T|^2) to compute.
+ */
 type ContainsDistinctLockedT[T <: Tuple] <: Boolean =
   T match {
     case Lock[head] *: tail => ![IncludedInLockedT[tail, head]] && ContainsDistinctLockedT[tail]
@@ -22,6 +32,8 @@ type ContainsDistinctLockedT[T <: Tuple] <: Boolean =
   }
 
 type LockTuple[T <: Tuple] = Tuple.Map[T, Lock]
+
+type IncludedInT[T <: Tuple, A] = IncludedInLockedT[LockTuple[T], A]
 
 type ContainsDistinctT[T <: Tuple] = ContainsDistinctLockedT[LockTuple[T]]
 
