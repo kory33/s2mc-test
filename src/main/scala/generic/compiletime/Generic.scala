@@ -10,7 +10,7 @@ package generic.compiletime
 type Lock[X]
 
 /**
- * An implicit instance that the type [[S]] can be reduced to the singleton type [[true]].
+ * An implicit evidence that the type [[S]] can be reduced to the singleton type [[true]].
  */
 type Require[S <: Boolean] = S =:= true
 
