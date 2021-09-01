@@ -5,7 +5,7 @@ package generic.compiletime
  * An invariant abstract type with a single type parameter.
  * This can be useful when we wish to match types in an invariant manner.
  *
- * @see [[IncludedInT]] for an example usage.
+ * @see [[IncludedInLockedT]] for an example usage.
  */
 type Lock[X]
 

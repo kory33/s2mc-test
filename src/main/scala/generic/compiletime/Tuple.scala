@@ -6,20 +6,24 @@ import scala.collection.immutable.Queue
 import scala.compiletime.ops.boolean.*
 import scala.compiletime.ops.int.*
 
-type IncludedInT[T <: Tuple, A] <: Boolean =
+type IncludedInLockedT[T <: Tuple, A] <: Boolean =
   // we lock types in T using an invariant abstract type [[Lock]]
-  // to prevent S not being disjoint with some other type in T
-  Tuple.Map[T, Lock] match {
+  // to prevent S not being disjoint from some other type in T
+  T match {
     case EmptyTuple   => false
     case Lock[A] *: _ => true
-    case _ *: tail    => IncludedInT[Tuple.InverseMap[tail, Lock], A]
+    case _ *: tail    => IncludedInLockedT[tail, A]
   }
 
-type ContainsDistinctT[T <: Tuple] <: Boolean =
+type ContainsDistinctLockedT[T <: Tuple] <: Boolean =
   T match {
-    case head *: tail => ![IncludedInT[tail, head]] && ContainsDistinctT[tail]
+    case Lock[head] *: tail => ![IncludedInLockedT[tail, head]] && ContainsDistinctLockedT[tail]
     case EmptyTuple => true
   }
+
+type LockTuple[T <: Tuple] = Tuple.Map[T, Lock]
+
+type ContainsDistinctT[T <: Tuple] = ContainsDistinctLockedT[LockTuple[T]]
 
 type IndexOfT[A, T <: Tuple] <: Int =
   Tuple.Map[T, Lock] match {

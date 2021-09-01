@@ -11,7 +11,7 @@ type CodecBinding[A] = (PacketId, ByteCodec[A])
 
 class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
                                            (using ev: Tuple.IsMappedBy[CodecBinding][BindingTup])
-                                           /*(using Require[ContainsDistinctT[BindingTup]])*/ {
+                                           (using Require[ContainsDistinctT[BindingTup]]) {
 
   require({
     val packetIds =
@@ -37,7 +37,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
   /**
    * Statically resolve the codec associated with type [[O]].
    */
-  inline def getBindingOf[O](using Require[IncludedInT[BindingTup, CodecBinding[O]]]): CodecBinding[O] =
+  inline def getBindingOf[O](using Require[IncludedInLockedT[BindingTup, CodecBinding[O]]]): CodecBinding[O] =
     inlineRefineTo[CodecBinding[O]](
       inlineRefineTo[BindingTup & NonEmptyTuple](bindings).apply(
         scala.compiletime.constValue[IndexOfT[CodecBinding[O], BindingTup]]
@@ -48,7 +48,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
    * Statically encode a packet object using [[bindings]] provided.
    */
   inline def encodeKnown[O](obj: O)
-                           (using Require[IncludedInT[BindingTup, CodecBinding[O]]]): (PacketId, fs2.Chunk[Byte]) =
+                           (using Require[IncludedInLockedT[BindingTup, CodecBinding[O]]]): (PacketId, fs2.Chunk[Byte]) =
     val (id, codec) = getBindingOf[O]
     (id, codec.write(obj))
 }
