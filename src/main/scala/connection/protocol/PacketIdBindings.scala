@@ -35,7 +35,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
     type Packet = Tuple.Union[PacketTuple]
 
     foldToList[CodecBinding, PacketTuple](ev(bindings))([t <: Packet] => (pair: CodecBinding[t]) =>
-      pair: (PacketId, ByteDecode[Packet])
+      (pair._1, pair._2.decode): (PacketId, ByteDecode[Packet])
     )
       .find { case (i, _) => i == id }
       .map { case (_, decoder) => decoder }
@@ -56,5 +56,5 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
   inline def encodeKnown[O](obj: O)
                            (using Require[IncludedInT[BindingTup, CodecBinding[O]]]): (PacketId, fs2.Chunk[Byte]) =
     val (id, codec) = getBindingOf[O]
-    (id, codec.write(obj))
+    (id, codec.encode.write(obj))
 }

@@ -24,19 +24,19 @@ object Protocol {
   object common {
     val handshakeProtocol = Protocol(
       PacketIdBindings(Tuple(
-        0x00 -> ByteCodec.summon[Handshake],
+        0x00 -> ByteCodec.summonPair[Handshake],
       )),
       PacketIdBindings(Tuple())
     )
 
     val statusProtocol = Protocol(
       PacketIdBindings((
-        0x00 -> ByteCodec.summon[StatusRequest],
-        0x01 -> ByteCodec.summon[StatusPing],
+        0x00 -> ByteCodec.summonPair[StatusRequest],
+        0x01 -> ByteCodec.summonPair[StatusPing],
       )),
       PacketIdBindings((
-        0x00 -> ByteCodec.summon[StatusResponse],
-        0x01 -> ByteCodec.summon[StatusPong],
+        0x00 -> ByteCodec.summonPair[StatusResponse],
+        0x01 -> ByteCodec.summonPair[StatusPong],
       ))
     )
   }

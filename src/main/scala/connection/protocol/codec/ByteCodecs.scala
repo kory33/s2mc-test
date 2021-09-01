@@ -9,70 +9,74 @@ import java.util.UUID
 object ByteCodecs {
 
   object Common {
-    given ByteCodec[Unit] = ByteCodec.fromPair[Unit](???, ???)
 
-    given ByteCodec[Boolean] = ByteCodec.fromPair[Boolean](???, ???)
+    inline given codecToEncode[A: ByteCodec]: ByteEncode[A] = ByteCodec[A].encode
+    inline given codecToDecode[A: ByteCodec]: ByteDecode[A] = ByteCodec[A].decode
 
-    given ByteCodec[Byte] = ByteCodec.fromPair[Byte](???, ???)
+    given ByteCodec[Unit] = ByteCodec[Unit](???, ???)
 
-    given ByteCodec[Short] = ByteCodec.fromPair[Short](???, ???)
+    given ByteCodec[Boolean] = ByteCodec[Boolean](???, ???)
 
-    given ByteCodec[Int] = ByteCodec.fromPair[Int](???, ???)
+    given ByteCodec[Byte] = ByteCodec[Byte](???, ???)
 
-    given ByteCodec[Long] = ByteCodec.fromPair[Long](???, ???)
+    given ByteCodec[Short] = ByteCodec[Short](???, ???)
 
-    given ByteCodec[Float] = ByteCodec.fromPair[Float](???, ???)
+    given ByteCodec[Int] = ByteCodec[Int](???, ???)
 
-    given ByteCodec[Double] = ByteCodec.fromPair[Double](???, ???)
+    given ByteCodec[Long] = ByteCodec[Long](???, ???)
 
-    given ByteCodec[String] = ByteCodec.fromPair[String](???, ???)
+    given ByteCodec[Float] = ByteCodec[Float](???, ???)
 
-    given ByteCodec[UByte] = ByteCodec.fromPair[UByte](???, ???)
+    given ByteCodec[Double] = ByteCodec[Double](???, ???)
 
-    given ByteCodec[UShort] = ByteCodec.fromPair[UShort](???, ???)
+    given ByteCodec[String] = ByteCodec[String](???, ???)
 
-    given ByteCodec[VarShort] = ByteCodec.fromPair[VarShort](???, ???)
+    given ByteCodec[UByte] = ByteCodec[UByte](???, ???)
 
-    given ByteCodec[VarInt] = ByteCodec.fromPair[VarInt](???, ???)
+    given ByteCodec[UShort] = ByteCodec[UShort](???, ???)
 
-    given ByteCodec[VarLong] = ByteCodec.fromPair[VarLong](???, ???)
+    given ByteCodec[VarShort] = ByteCodec[VarShort](???, ???)
+
+    given ByteCodec[VarInt] = ByteCodec[VarInt](???, ???)
+
+    given ByteCodec[VarLong] = ByteCodec[VarLong](???, ???)
 
     // TODO this is not a common codec
-    given ByteCodec[Position] = ByteCodec.fromPair[Position](???, ???)
+    given ByteCodec[Position] = ByteCodec[Position](???, ???)
 
-    given fixedPoint5ForInt: ByteCodec[FixedPoint5[Int]] = ByteCodec.fromPair[FixedPoint5[Int]](???, ???)
+    given fixedPoint5ForInt: ByteCodec[FixedPoint5[Int]] = ByteCodec[FixedPoint5[Int]](???, ???)
 
-    given fixedPoint5ForByte: ByteCodec[FixedPoint5[Byte]] = ByteCodec.fromPair[FixedPoint5[Byte]](???, ???)
+    given fixedPoint5ForByte: ByteCodec[FixedPoint5[Byte]] = ByteCodec[FixedPoint5[Byte]](???, ???)
 
-    given lenPrefixed[L: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedArray[L, A]] = ByteCodec.fromPair[LenPrefixedArray[L, A]](???, ???)
+    given lenPrefixed[L: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedArray[L, A]] = ByteCodec[LenPrefixedArray[L, A]](???, ???)
 
-    given ByteCodec[Tag] = ByteCodec.fromPair[Tag](???, ???)
+    given ByteCodec[Tag] = ByteCodec[Tag](???, ???)
 
-    given ByteCodec[FixedPoint12[Short]] = ByteCodec.fromPair[FixedPoint12[Short]](???, ???)
+    given ByteCodec[FixedPoint12[Short]] = ByteCodec[FixedPoint12[Short]](???, ???)
 
-    given ByteCodec[UUID] = ByteCodec.fromPair[UUID](???, ???)
+    given ByteCodec[UUID] = ByteCodec[UUID](???, ???)
 
-    given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec.fromPair[UnspecifiedLengthByteArray](???, ???)
+    given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](???, ???)
 
-    given ByteCodec[ChatComponent] = ByteCodec.fromPair[ChatComponent](???, ???)
+    given ByteCodec[ChatComponent] = ByteCodec[ChatComponent](???, ???)
 
-    given ByteCodec[ChunkMeta] = ByteCodec.fromPair[ChunkMeta](???, ???)
-    given ByteCodec[NamedTag] = ByteCodec.fromPair[NamedTag](???, ???)
-    given ByteCodec[Slot] = ByteCodec.fromPair[Slot](???, ???)
-    given ByteCodec[Trade] = ByteCodec.fromPair[Trade](???, ???)
-    given ByteCodec[Recipe] = ByteCodec.fromPair[Recipe](???, ???)
-    given ByteCodec[EntityPropertyShort] = ByteCodec.fromPair[EntityPropertyShort](???, ???)
-    given ByteCodec[Metadata] = ByteCodec.fromPair[Metadata](???, ???)
-    given ByteCodec[SpawnProperty] = ByteCodec.fromPair[SpawnProperty](???, ???)
-    given ByteCodec[Statistic] = ByteCodec.fromPair[Statistic](???, ???)
-    given ByteCodec[Biomes3D] = ByteCodec.fromPair[Biomes3D](???, ???)
-    given ByteCodec[MapIcon] = ByteCodec.fromPair[MapIcon](???, ???)
-    given ByteCodec[EntityProperty] = ByteCodec.fromPair[EntityProperty](???, ???)
-    given ByteCodec[EntityEquipments] = ByteCodec.fromPair[EntityEquipments](???, ???)
-    given ByteCodec[PlayerInfoData] = ByteCodec.fromPair[PlayerInfoData](???, ???)
-    given ByteCodec[ExplosionRecord] = ByteCodec.fromPair[ExplosionRecord](???, ???)
-    given ByteCodec[CommandNode] = ByteCodec.fromPair[CommandNode](???, ???)
-    given ByteCodec[BlockChangeRecord] = ByteCodec.fromPair[BlockChangeRecord](???, ???)
+    given ByteCodec[ChunkMeta] = ByteCodec[ChunkMeta](???, ???)
+    given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
+    given ByteCodec[Slot] = ByteCodec[Slot](???, ???)
+    given ByteCodec[Trade] = ByteCodec[Trade](???, ???)
+    given ByteCodec[Recipe] = ByteCodec[Recipe](???, ???)
+    given ByteCodec[EntityPropertyShort] = ByteCodec[EntityPropertyShort](???, ???)
+    given ByteCodec[Metadata] = ByteCodec[Metadata](???, ???)
+    given ByteCodec[SpawnProperty] = ByteCodec[SpawnProperty](???, ???)
+    given ByteCodec[Statistic] = ByteCodec[Statistic](???, ???)
+    given ByteCodec[Biomes3D] = ByteCodec[Biomes3D](???, ???)
+    given ByteCodec[MapIcon] = ByteCodec[MapIcon](???, ???)
+    given ByteCodec[EntityProperty] = ByteCodec[EntityProperty](???, ???)
+    given ByteCodec[EntityEquipments] = ByteCodec[EntityEquipments](???, ???)
+    given ByteCodec[PlayerInfoData] = ByteCodec[PlayerInfoData](???, ???)
+    given ByteCodec[ExplosionRecord] = ByteCodec[ExplosionRecord](???, ???)
+    given ByteCodec[CommandNode] = ByteCodec[CommandNode](???, ???)
+    given ByteCodec[BlockChangeRecord] = ByteCodec[BlockChangeRecord](???, ???)
 
   }
 
