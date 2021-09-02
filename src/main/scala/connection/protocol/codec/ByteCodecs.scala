@@ -216,7 +216,7 @@ object ByteCodecs {
     given ByteCodec[Position] = ByteCodec[Position](???, ???)
 
     given fixedPoint5ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint5[A]] =
-      ByteCodec[A].imap(FixedPoint5.apply[A])(_.rawValue)
+      ByteCodec[A].imap(FixedPoint5.fromRaw[A])(_.rawValue)
 
     given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
       val decode: ByteDecode[LenPrefixedSeq[L, A]] = for {
@@ -232,7 +232,8 @@ object ByteCodecs {
       ByteCodec[LenPrefixedSeq[L, A]](decode, encode)
     }
 
-    given ByteCodec[Tag] = ByteCodec[Tag](???, ???)
+    given fixedPoint12ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint12[A]] =
+      ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValue)
 
     given ByteCodec[FixedPoint12[Short]] = ByteCodec[FixedPoint12[Short]](???, ???)
 

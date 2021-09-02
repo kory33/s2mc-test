@@ -95,25 +95,29 @@ object PacketDataTypes:
   }
 
   /** Fixed-point number where least 5 bits of [[rawValue]] is taken as the fractional part */
-  @NoGenByteDecode case class FixedPoint5[Num](rawValue: Num) {
-    /** Value represented by this object */
-    def representedValue(using integral: Integral[Num]): Double = integral.toDouble(rawValue) / 32.0
-  }
+  opaque type FixedPoint5[Num] = Num
+  extension [Num] (fp5: FixedPoint5[Num])
+    def rawValue: Num = fp5
+    def represetedValue(using integral: Integral[Num]): Double = integral.toDouble(fp5) / 32.0
 
   object FixedPoint5 {
     def apply[Num: Integral](valueToRepresent: Double): FixedPoint5[Num] =
-      FixedPoint5(Integral[Num].fromInt((valueToRepresent * 32.0).toInt))
+      Integral[Num].fromInt((valueToRepresent * 32.0).toInt)
+
+    def fromRaw[Num](rawValue: Num): FixedPoint5[Num] = rawValue
   }
 
   /** Fixed-point number where least 12 bits of [[rawValue]] is taken as the fractional part */
-  @NoGenByteDecode case class FixedPoint12[Num](rawValue: Num) {
-    /** Value represented by this object */
-    def representedValue(using integral: Integral[Num]): Double = integral.toDouble(rawValue) / 4096.0
-  }
+  opaque type FixedPoint12[Num] = Num
+  extension [Num] (fp12: FixedPoint12[Num])
+    def rawValue: Num = fp12
+    def represetedValue(using integral: Integral[Num]): Double = integral.toDouble(fp12) / 4096.0
 
   object FixedPoint12 {
     def apply[Num: Integral](valueToRepresent: Double): FixedPoint12[Num] =
-      FixedPoint12(Integral[Num].fromInt((valueToRepresent * 4096.0).toInt))
+      Integral[Num].fromInt((valueToRepresent * 4096.0).toInt)
+
+    def fromRaw[Num](rawValue: Num): FixedPoint12[Num] = rawValue
   }
 
   /** A sequence of [[Data]] together with length of the array in [[Len]]. [[Len]] is expected to be an integer type. */
