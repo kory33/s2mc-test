@@ -2,6 +2,8 @@ package com.github.kory33.s2mctest
 package connection.protocol.codec
 
 import connection.protocol.data.PacketDataTypes.*
+import connection.protocol.typeclass.IntLike
+import connection.protocol.macros.GenByteDecode
 
 import cats.Monad
 import fs2.Chunk
@@ -9,6 +11,7 @@ import fs2.Chunk
 import java.io.UnsupportedEncodingException
 import java.nio.charset.Charset
 import java.util.UUID
+import scala.reflect.ClassTag
 
 object ByteCodecs {
 
@@ -61,9 +64,9 @@ object ByteCodecs {
       (x: Double) => Chunk.array(java.nio.ByteBuffer.allocate(8).putDouble(x).array())
     )
 
-    given ByteCodec[UByte] = summon[ByteCodec[Byte]].imap(UByte.fromRawByte)(_.asRawByte)
+    given ByteCodec[UByte] = ByteCodec[Byte].imap(UByte.fromRawByte)(_.asRawByte)
 
-    given ByteCodec[UShort] = summon[ByteCodec[Short]].imap(UShort.fromRawShort)(_.asRawShort)
+    given ByteCodec[UShort] = ByteCodec[Short].imap(UShort.fromRawShort)(_.asRawShort)
 
     private object VarNumCodecs {
       /**
@@ -212,11 +215,22 @@ object ByteCodecs {
     // TODO this is not a common codec
     given ByteCodec[Position] = ByteCodec[Position](???, ???)
 
-    given fixedPoint5ForInt: ByteCodec[FixedPoint5[Int]] = ByteCodec[FixedPoint5[Int]](???, ???)
+    given fixedPoint5ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint5[A]] =
+      ByteCodec[A].imap(FixedPoint5.apply[A])(_.rawValue)
 
-    given fixedPoint5ForByte: ByteCodec[FixedPoint5[Byte]] = ByteCodec[FixedPoint5[Byte]](???, ???)
+    given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
+      val decode: ByteDecode[LenPrefixedSeq[L, A]] = for {
+        length <- ByteCodec[L].decode
+        intLength = IntLike[L].toInt(length)
+        aList <- ByteCodec[A].decode.replicateA(intLength)
+      } yield LenPrefixedSeq(aList.toVector)
 
-    given lenPrefixed[L: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedArray[L, A]] = ByteCodec[LenPrefixedArray[L, A]](???, ???)
+      val encode: ByteEncode[LenPrefixedSeq[L, A]] = { (lenSeq: LenPrefixedSeq[L, A]) =>
+        ByteCodec[L].encode.write(lenSeq.lLength) ++ Chunk.concat(lenSeq.asVector.map(ByteCodec[A].encode.write))
+      }
+
+      ByteCodec[LenPrefixedSeq[L, A]](decode, encode)
+    }
 
     given ByteCodec[Tag] = ByteCodec[Tag](???, ???)
 
@@ -230,7 +244,7 @@ object ByteCodecs {
 
     given ByteCodec[ChunkMeta] = ByteCodec[ChunkMeta](???, ???)
     given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
-    given ByteCodec[Slot] = ByteCodec[Slot](???, ???)
+    given ByteCodec[Slot] = ByteCodec[Slot](GenByteDecode.gen[Slot], ByteEncode.forADT[Slot])
     given ByteCodec[Trade] = ByteCodec[Trade](???, ???)
     given ByteCodec[Recipe] = ByteCodec[Recipe](???, ???)
     given ByteCodec[EntityPropertyShort] = ByteCodec[EntityPropertyShort](???, ???)

@@ -2,12 +2,17 @@ package com.github.kory33.s2mctest
 package connection.protocol.data
 
 import connection.protocol.codec.macros.NoGenByteDecode
+import connection.protocol.typeclass.IntLike
 
 object PacketDataTypes:
   opaque type UByte = Byte
 
   object UByte:
     def fromRawByte(byte: Byte): UByte = byte
+
+    given IntLike[UByte] with
+      override def fromInt(n: Int): UByte = apply(n.toShort)
+      override def toInt(a: UByte): Int = a.asShort.toInt
 
     def apply(short: Short): UByte =
       val maxAllowed = (Byte.MaxValue.toShort + 1) * 2 - 1
@@ -35,6 +40,10 @@ object PacketDataTypes:
   object UShort:
     def fromRawShort(short: Short): UShort = short
 
+    given IntLike[UShort] with
+      override def fromInt(n: Int): UShort = apply(n)
+      override def toInt(a: UShort): Int = a.asInt
+
     def apply(int: Int): UShort =
       val maxAllowed = (Short.MaxValue.toInt + 1) * 2 - 1
       if 0 <= int && int <= maxAllowed then
@@ -54,9 +63,29 @@ object PacketDataTypes:
       else
         uShort.toInt
 
-  @NoGenByteDecode case class VarInt(raw: Int)
+  opaque type VarInt = Int
 
-  @NoGenByteDecode case class VarLong(raw: Long)
+  object VarInt {
+    def apply(raw: Int): VarInt = raw
+
+    // runtime representation of VarInt and Int are the same, so the same instance of Integral can be used
+    given Integral[VarInt] = summon[Integral[Int]]
+  }
+
+  extension (varInt: VarInt)
+    def raw: Int = varInt
+
+  opaque type VarLong = Long
+
+  object VarLong {
+    def apply(raw: Long): VarLong = raw
+
+    // runtime representation of VarLong and Long are the same, so the same instance of Integral can be used
+    given Integral[VarLong] = summon[Integral[Long]]
+  }
+
+  extension (varLong: VarLong)
+    def raw: Long = varLong
 
   @NoGenByteDecode case class Position(x: Int, z: Int, y: Short) {
     // x, z are 26 bits and y is 12 bits
@@ -66,15 +95,39 @@ object PacketDataTypes:
   }
 
   /** Fixed-point number where least 5 bits of [[rawValue]] is taken as the fractional part */
-  @NoGenByteDecode case class FixedPoint5[Num](rawValue: Num)
+  @NoGenByteDecode case class FixedPoint5[Num](rawValue: Num) {
+    /** Value represented by this object */
+    def representedValue(using integral: Integral[Num]): Double = integral.toDouble(rawValue) / 32.0
+  }
+
+  object FixedPoint5 {
+    def apply[Num: Integral](valueToRepresent: Double): FixedPoint5[Num] =
+      FixedPoint5(Integral[Num].fromInt((valueToRepresent * 32.0).toInt))
+  }
 
   /** Fixed-point number where least 12 bits of [[rawValue]] is taken as the fractional part */
-  @NoGenByteDecode case class FixedPoint12[Num](rawValue: Num)
+  @NoGenByteDecode case class FixedPoint12[Num](rawValue: Num) {
+    /** Value represented by this object */
+    def representedValue(using integral: Integral[Num]): Double = integral.toDouble(rawValue) / 4096.0
+  }
 
-  /** An array of [[Data]] together with length of the array in [[L]]. [[L]] is expected to be an integer type. */
-  @NoGenByteDecode case class LenPrefixedArray[Len, Data](length: Len, array: Array[Data])
+  object FixedPoint12 {
+    def apply[Num: Integral](valueToRepresent: Double): FixedPoint12[Num] =
+      FixedPoint12(Integral[Num].fromInt((valueToRepresent * 4096.0).toInt))
+  }
 
-  type LenPrefixedByteArray[Len] = LenPrefixedArray[Len, Byte]
+  /** A sequence of [[Data]] together with length of the array in [[Len]]. [[Len]] is expected to be an integer type. */
+  opaque type LenPrefixedSeq[Len, Data] = Vector[Data]
+
+  extension [L, A](lenSeq: LenPrefixedSeq[L, A])
+    def lLength(using IntLike[L]): L = IntLike[L].fromInt(lenSeq.length)
+    def asVector: Vector[A] = lenSeq
+
+  object LenPrefixedSeq {
+    def apply[L, A](vector: Vector[A]): LenPrefixedSeq[L, A] = vector
+  }
+
+  type LenPrefixedByteSeq[Len] = LenPrefixedSeq[Len, Byte]
 
   /**
    * A byte array whose length is not specified by the packet data.
@@ -83,7 +136,7 @@ object PacketDataTypes:
    * while the decoder of this data should <strong>keep reading the input</strong> until
    * it meets the end of packet (which is known at runtime thanks to packet length specifier).
    *
-   * That being set, a packet definition <strong>should not</strong> contain [[UnspecifiedLengthByteArray]]
+   * That being said, a packet definition <strong>should not</strong> contain [[UnspecifiedLengthByteArray]]
    * before any other field of the packet, since a parser will be unable to know the end of array
    * unless it meets the end of packet.
    */
@@ -101,9 +154,9 @@ object PacketDataTypes:
 
   @NoGenByteDecode case class Stack(/*TODO put something in here*/)
 
-  case class Tag(identifier: String, ids: LenPrefixedArray[VarInt, VarInt])
+  case class Tag(identifier: String, ids: LenPrefixedSeq[VarInt, VarInt])
 
-  type TagArray = LenPrefixedArray[VarInt, Tag]
+  type TagArray = LenPrefixedSeq[VarInt, Tag]
 
   @NoGenByteDecode case class ChunkMeta(/*TODO put something in here*/)
   @NoGenByteDecode case class Trade(/*TODO put something in here*/)
