@@ -144,17 +144,24 @@ object PacketDataTypes:
    * before any other field of the packet, since a parser will be unable to know the end of array
    * unless it meets the end of packet.
    */
-  @NoGenByteDecode case class UnspecifiedLengthByteArray(array: Array[Byte])
+  opaque type UnspecifiedLengthByteArray = Array[Byte]
 
-  @NoGenByteDecode case class ChatComponent(/*TODO put something in here*/)
+  extension (ulArray: UnspecifiedLengthByteArray)
+    def asArray: Array[Byte] = ulArray
 
-  @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
+  object UnspecifiedLengthByteArray {
+    def apply(array: Array[Byte]): UnspecifiedLengthByteArray = array
+  }
+
+  case class ChatComponent(json: String)
 
   case class Slot(present: Boolean, itemId: Option[VarInt], itemCount: Option[Byte], nbt: Option[NamedTag]) {
     require(itemId.nonEmpty == (present))
     require(itemCount.nonEmpty == (present))
     require(nbt.nonEmpty == (present))
   }
+
+  @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
 
   @NoGenByteDecode case class Stack(/*TODO put something in here*/)
 

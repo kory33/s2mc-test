@@ -76,6 +76,8 @@ object ByteDecode:
       case (head, tail) if head.nonEmpty => DecodeResult.Decoded(head.head.get, tail)
       case _ => DecodeResult.InsufficientInput
 
+  def readUntilPacketEnd: ByteDecode[Chunk[Byte]] = ???
+
   def raiseParseError(reason: String): ByteDecode[Nothing] =
     _ => DecodeResult.InvalidInput(Some(reason))
 

@@ -235,13 +235,22 @@ object ByteCodecs {
     given fixedPoint12ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint12[A]] =
       ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValue)
 
-    given ByteCodec[FixedPoint12[Short]] = ByteCodec[FixedPoint12[Short]](???, ???)
+    given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](
+      ByteDecode.readUntilPacketEnd.map(c => UnspecifiedLengthByteArray(c.toArray)),
+      ulArray => Chunk.array(ulArray.asArray)
+    )
 
-    given ByteCodec[UUID] = ByteCodec[UUID](???, ???)
+    given ByteCodec[ChatComponent] = ByteCodec[String].imap(ChatComponent.apply)(_.json)
 
-    given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](???, ???)
-
-    given ByteCodec[ChatComponent] = ByteCodec[ChatComponent](???, ???)
+    given ByteCodec[UUID] = {
+      val longCodec = ByteCodec[Long]
+      ByteCodec[UUID](
+        (longCodec.decode, longCodec.decode).mapN(UUID(_, _)),
+        (uuid) =>
+          longCodec.encode.write(uuid.getMostSignificantBits) ++
+          longCodec.encode.write(uuid.getLeastSignificantBits)
+      )
+    }
 
     given ByteCodec[ChunkMeta] = ByteCodec[ChunkMeta](???, ???)
     given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
