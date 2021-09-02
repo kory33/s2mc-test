@@ -2,6 +2,7 @@ package com.github.kory33.s2mctest
 package connection.protocol.codec
 
 import connection.protocol.data.PacketDataTypes.*
+import connection.protocol.data.PacketDataPrimitives.*
 import connection.protocol.typeclass.IntLike
 import connection.protocol.macros.GenByteDecode
 
@@ -215,9 +216,6 @@ object ByteCodecs {
     // TODO this is not a common codec
     given ByteCodec[Position] = ByteCodec[Position](???, ???)
 
-    given fixedPoint5ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint5[A]] =
-      ByteCodec[A].imap(FixedPoint5.fromRaw[A])(_.rawValue)
-
     given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
       val decode: ByteDecode[LenPrefixedSeq[L, A]] = for {
         length <- ByteCodec[L].decode
@@ -232,8 +230,11 @@ object ByteCodecs {
       ByteCodec[LenPrefixedSeq[L, A]](decode, encode)
     }
 
+    given fixedPoint5ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint5[A]] =
+      ByteCodec[A].imap(FixedPoint5.fromRaw[A])(_.rawValueFP5)
+
     given fixedPoint12ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint12[A]] =
-      ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValue)
+      ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValueFP12)
 
     given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](
       ByteDecode.readUntilPacketEnd.map(c => UnspecifiedLengthByteArray(c.toArray)),
@@ -252,9 +253,11 @@ object ByteCodecs {
       )
     }
 
+    given ByteCodec[Tag] = ByteCodec(GenByteDecode.gen[Tag], ByteEncode.forADT[Tag])
+
     given ByteCodec[ChunkMeta] = ByteCodec[ChunkMeta](???, ???)
     given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
-    given ByteCodec[Slot] = ByteCodec[Slot](GenByteDecode.gen[Slot], ByteEncode.forADT[Slot])
+    given ByteCodec[Slot] = ByteCodec(GenByteDecode.gen[Slot], ByteEncode.forADT[Slot])
     given ByteCodec[Trade] = ByteCodec[Trade](???, ???)
     given ByteCodec[Recipe] = ByteCodec[Recipe](???, ???)
     given ByteCodec[EntityPropertyShort] = ByteCodec[EntityPropertyShort](???, ???)

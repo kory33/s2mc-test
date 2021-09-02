@@ -1,10 +1,10 @@
 package com.github.kory33.s2mctest
 package connection.protocol.data
 
-import connection.protocol.codec.macros.NoGenByteDecode
+import connection.protocol.macros.NoGenByteDecode
 import connection.protocol.typeclass.IntLike
 
-object PacketDataTypes:
+object PacketDataPrimitives:
   opaque type UByte = Byte
 
   object UByte:
@@ -94,11 +94,11 @@ object PacketDataTypes:
     require((y & 0xfffff000) == 0)
   }
 
-  /** Fixed-point number where least 5 bits of [[rawValue]] is taken as the fractional part */
+  /** Fixed-point number where least 5 bits of [[rawValueFP5]] is taken as the fractional part */
   opaque type FixedPoint5[Num] = Num
   extension [Num] (fp5: FixedPoint5[Num])
-    def rawValue: Num = fp5
-    def represetedValue(using integral: Integral[Num]): Double = integral.toDouble(fp5) / 32.0
+    def rawValueFP5: Num = fp5
+    def representedValueFP5(using integral: Integral[Num]): Double = integral.toDouble(fp5) / 32.0
 
   object FixedPoint5 {
     def apply[Num: Integral](valueToRepresent: Double): FixedPoint5[Num] =
@@ -107,11 +107,11 @@ object PacketDataTypes:
     def fromRaw[Num](rawValue: Num): FixedPoint5[Num] = rawValue
   }
 
-  /** Fixed-point number where least 12 bits of [[rawValue]] is taken as the fractional part */
+  /** Fixed-point number where least 12 bits of [[rawValueFP5]] is taken as the fractional part */
   opaque type FixedPoint12[Num] = Num
   extension [Num] (fp12: FixedPoint12[Num])
-    def rawValue: Num = fp12
-    def represetedValue(using integral: Integral[Num]): Double = integral.toDouble(fp12) / 4096.0
+    def rawValueFP12: Num = fp12
+    def represetedValueFP12(using integral: Integral[Num]): Double = integral.toDouble(fp12) / 4096.0
 
   object FixedPoint12 {
     def apply[Num: Integral](valueToRepresent: Double): FixedPoint12[Num] =
@@ -153,6 +153,9 @@ object PacketDataTypes:
     def apply(array: Array[Byte]): UnspecifiedLengthByteArray = array
   }
 
+object PacketDataTypes:
+  import PacketDataPrimitives.*
+
   case class ChatComponent(json: String)
 
   case class Slot(present: Boolean, itemId: Option[VarInt], itemCount: Option[Byte], nbt: Option[NamedTag]) {
@@ -161,14 +164,12 @@ object PacketDataTypes:
     require(nbt.nonEmpty == (present))
   }
 
-  @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
-
-  @NoGenByteDecode case class Stack(/*TODO put something in here*/)
-
   case class Tag(identifier: String, ids: LenPrefixedSeq[VarInt, VarInt])
 
   type TagArray = LenPrefixedSeq[VarInt, Tag]
 
+  @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
+  @NoGenByteDecode case class Stack(/*TODO put something in here*/)
   @NoGenByteDecode case class ChunkMeta(/*TODO put something in here*/)
   @NoGenByteDecode case class Trade(/*TODO put something in here*/)
   @NoGenByteDecode case class Recipe(/*TODO put something in here*/)

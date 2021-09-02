@@ -1,5 +1,5 @@
 package com.github.kory33.s2mctest
-package connection.protocol.codec.macros
+package connection.protocol.macros
 
 import connection.protocol.codec.ByteDecode
 

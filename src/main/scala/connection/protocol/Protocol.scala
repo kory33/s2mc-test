@@ -10,7 +10,7 @@ case class Protocol[
 
 object Protocol {
   import connection.protocol.codec.ByteCodecs.Common.given
-  import connection.protocol.codec.macros.GenByteDecode.given
+  import connection.protocol.macros.GenByteDecode.given
   import connection.protocol.packets.PacketIntent
 
   import PacketIntent.Handshaking.ServerBound.*

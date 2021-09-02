@@ -2,6 +2,7 @@ package com.github.kory33.s2mctest
 package connection.protocol.packets
 
 import connection.protocol.data.SupportedProtocolVersions
+import connection.protocol.data.PacketDataPrimitives.*
 import connection.protocol.data.PacketDataTypes.*
 
 import cats.Monad

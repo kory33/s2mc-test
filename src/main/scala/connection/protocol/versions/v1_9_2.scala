@@ -4,7 +4,7 @@ package com.github.kory33.s2mctest.connection.protocol.versions
 import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
 import connection.protocol.codec.ByteCodecs.Common.given
-import connection.protocol.codec.macros.GenByteDecode.given
+import connection.protocol.macros.GenByteDecode.given
 import connection.protocol.packets.PacketIntent
 
 import PacketIntent.Handshaking.ServerBound.*
