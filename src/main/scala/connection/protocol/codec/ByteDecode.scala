@@ -71,8 +71,33 @@ object ByteDecode:
       else
         DecodeResult.InsufficientInput
 
+  def readByte: ByteDecode[Byte] =
+    input => input.splitAt(1) match
+      case (head, tail) if head.nonEmpty => DecodeResult.Decoded(head.head.get, tail)
+      case _ => DecodeResult.InsufficientInput
+
   def raiseParseError(reason: String): ByteDecode[Nothing] =
     _ => DecodeResult.InvalidInput(Some(reason))
+
+  /**
+   * Partially apply input to the decoder and produce another decoder that never consumes additional input.
+   *
+   * The resulting decoder fails if either of the following happens:
+   *  - [[decode]] decides that [[chunk]] is an insufficient or invalid input
+   *  - [[decode]] parses a value out, but spits out unparsed tail of [[chunk]] as redundant data
+   */
+  def readPrecise[A](chunk: Chunk[Byte], decode: ByteDecode[A]): ByteDecode[A] =
+    decode.readOne(chunk) match {
+      case DecodeResult.Decoded(value, rest) =>
+        if rest.isEmpty then
+          Monad[ByteDecode].pure(value)
+        else
+          raiseParseError(s"expected an exact input without additional data for readPrecise, got $chunk")
+      case DecodeResult.InsufficientInput => raiseParseError(s"expected an exact input, $chunk was insufficient")
+      case DecodeResult.InvalidInput(err) => raiseParseError {
+        "readPrecise failed, the underlying decoder returned an error" + err.fold("")(": " + _)
+      }
+    }
 
   /**
    * The [[Monad]] instance for [[ByteDecode]].
