@@ -4,6 +4,8 @@ package connection.protocol.data
 import connection.protocol.macros.NoGenByteDecode
 import connection.protocol.typeclass.IntLike
 
+import java.util.UUID
+
 object PacketDataPrimitives:
   opaque type UByte = Byte
 
@@ -87,13 +89,6 @@ object PacketDataPrimitives:
   extension (varLong: VarLong)
     def raw: Long = varLong
 
-  @NoGenByteDecode case class Position(x: Int, z: Int, y: Short) {
-    // x, z are 26 bits and y is 12 bits
-    require((x & 0xfc000000) == 0)
-    require((z & 0xfc000000) == 0)
-    require((y & 0xfffff000) == 0)
-  }
-
   /** Fixed-point number where least 5 bits of [[rawValueFP5]] is taken as the fractional part */
   opaque type FixedPoint5[Num] = Num
   extension [Num] (fp5: FixedPoint5[Num])
@@ -156,6 +151,13 @@ object PacketDataPrimitives:
 object PacketDataTypes:
   import PacketDataPrimitives.*
 
+  @NoGenByteDecode case class Position(x: Int, z: Int, y: Short) {
+    // x, z are 26 bits and y is 12 bits
+    require((x & 0xfc000000) == 0)
+    require((z & 0xfc000000) == 0)
+    require((y & 0xfffff000) == 0)
+  }
+
   case class ChatComponent(json: String)
 
   case class Slot(present: Boolean, itemId: Option[VarInt], itemCount: Option[Byte], nbt: Option[NamedTag]) {
@@ -169,20 +171,91 @@ object PacketDataTypes:
   type TagArray = LenPrefixedSeq[VarInt, Tag]
 
   @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
-  @NoGenByteDecode case class Stack(/*TODO put something in here*/)
-  @NoGenByteDecode case class ChunkMeta(/*TODO put something in here*/)
-  @NoGenByteDecode case class Trade(/*TODO put something in here*/)
-  @NoGenByteDecode case class Recipe(/*TODO put something in here*/)
-  @NoGenByteDecode case class EntityPropertyShort(/*TODO put something in here*/)
-  @NoGenByteDecode case class Metadata(/*TODO put something in here*/)
-  @NoGenByteDecode case class SpawnProperty(/*TODO put something in here*/)
-  @NoGenByteDecode case class Statistic(/*TODO put something in here*/)
-  @NoGenByteDecode case class Biomes3D(/*TODO put something in here*/)
-  @NoGenByteDecode case class MapIcon(/*TODO put something in here*/)
-  @NoGenByteDecode case class EntityProperty(/*TODO put something in here*/)
-  @NoGenByteDecode case class EntityEquipments(/*TODO put something in here*/)
-  @NoGenByteDecode case class PlayerInfoData(/*TODO put something in here*/)
-  @NoGenByteDecode case class ExplosionRecord(/*TODO put something in here*/)
-  @NoGenByteDecode case class CommandNode(/*TODO put something in here*/)
-  @NoGenByteDecode case class BlockChangeRecord(/*TODO put something in here*/)
+
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=7077#Map_Chunk_Bulk for details */
+  case class ChunkMeta(chunkX: Int, chunkZ: Int, bitMask: UShort)
+
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=14929#Trade_List for details */
+  case class Trade(
+                    inputItem1: Slot,
+                    outputItem: Slot,
+                    hasSecondItem: Boolean,
+                    inputItem2: Option[Slot],
+                    disabled: Boolean,
+                    usedCount: Int,
+                    maxUsageCount: Int,
+                    xp: Int,
+                    specialPrice: Int,
+                    priceMultiplier: Float,
+                    demand: Int
+                  ) {
+    require(inputItem2.nonEmpty == (hasSecondItem))
+  }
+
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Declare_Recipes for details */
+  case class Recipe(recipeType: String, id: String, data: fs2.Chunk[Byte] /* TODO this must be parsed */)
+
+  case class EntityPropertyModifier(
+                                   uuid: UUID,
+                                   amount: Double,
+                                   operation: Byte
+                                   )
+
+  case class EntityProperty(
+                             key: String,
+                             value: Double,
+                             modifiers: LenPrefixedSeq[VarInt, EntityPropertyModifier]
+                           )
+
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=6003#Entity_Properties for details */
+  case class EntityPropertyShort(
+                                  key: String,
+                                  value: Double,
+                                  modifiers: LenPrefixedSeq[Short, EntityPropertyModifier]
+                                )
+
+  // TODO: Parse Metadata properly
+  type Metadata = UnspecifiedLengthByteArray
+
+  case class SpawnProperty(name: String, value: String, signature: String)
+
+  case class Statistic(categoryId: VarInt, statisticId: VarInt, value: VarInt)
+
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=15933#Chunk_Data for details */
+  @NoGenByteDecode case class Biomes3D(arrayData: Array[Int]) {
+    require(arrayData.length == 1024)
+  }
+
+  case class MapIcon(iconType: VarInt, x: Byte, z: Byte, direction: Byte,
+                     hasDisplayName: Boolean, displayName: Option[String]) {
+    require((0 <= direction) && (direction <= 15))
+    require(displayName.nonEmpty == hasDisplayName)
+  }
+
+  @NoGenByteDecode case class EntityEquipment(slot: Byte, item: Slot)
+  type EntityEquipments = Array[EntityEquipment]
+
+  @NoGenByteDecode case class PlayerInfoData(/*FIXME put something in here*/)
+
+  case class ExplosionRecord(xOffset: Byte, yOffset: Byte, zOffset: Byte)
+
+  /** see https://wiki.vg/Command_Data for details */
+  case class CommandNode(
+                        flags: Byte,
+                        childrenIndices: LenPrefixedSeq[VarInt, VarInt],
+                        redirectNode: Option[VarInt],
+                        name: Option[String],
+                        parser: Option[String],
+                        properties: Option[fs2.Chunk[Byte]] /* FIXME must parse this */,
+                        suggestions: Option[String]
+                        ) {
+    require(redirectNode.nonEmpty == ((flags & 0x08) != 0.toByte))
+    require(name.nonEmpty == ((flags & 0x03) != 0x00.toByte))
+    require(parser.nonEmpty == ((flags & 0x03) == 0x02.toByte))
+    require(properties.nonEmpty == ((flags & 0x03) == 0x02.toByte))
+    require(suggestions.nonEmpty == ((flags & 0x10) != 0x00.toByte))
+  }
+
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=15933#Multi_Block_Change for details */
+  case class BlockChangeRecord(horizontalPosition: UByte, yCoordinate: UByte, blockId: VarInt)
   

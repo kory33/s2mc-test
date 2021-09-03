@@ -8,6 +8,7 @@ import connection.protocol.macros.GenByteDecode
 
 import cats.Monad
 import fs2.Chunk
+import shapeless3.deriving.K0
 
 import java.io.UnsupportedEncodingException
 import java.nio.charset.Charset
@@ -18,6 +19,9 @@ object ByteCodecs {
 
   import ByteDecode.*
   import cats.implicits.given
+
+  inline def autogenerateFor[T](using gen: K0.Generic[T]): ByteCodec[T] =
+    ByteCodec(GenByteDecode.gen[T], ByteEncode.forADT[T])
 
   object Common {
 
@@ -253,25 +257,28 @@ object ByteCodecs {
       )
     }
 
-    given ByteCodec[Tag] = ByteCodec(GenByteDecode.gen[Tag], ByteEncode.forADT[Tag])
+    given ByteCodec[Statistic] = autogenerateFor[Statistic]
+    given ByteCodec[ChunkMeta] = autogenerateFor[ChunkMeta]
+    given ByteCodec[MapIcon] = autogenerateFor[MapIcon]
+    given ByteCodec[SpawnProperty] = autogenerateFor[SpawnProperty]
+    given ByteCodec[ExplosionRecord] = autogenerateFor[ExplosionRecord]
 
-    given ByteCodec[ChunkMeta] = ByteCodec[ChunkMeta](???, ???)
-    given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
-    given ByteCodec[Slot] = ByteCodec(GenByteDecode.gen[Slot], ByteEncode.forADT[Slot])
-    given ByteCodec[Trade] = ByteCodec[Trade](???, ???)
+    given ByteCodec[BlockChangeRecord] = autogenerateFor[BlockChangeRecord]
+
+    given ByteCodec[Tag] = autogenerateFor[Tag]
+    given ByteCodec[Slot] = autogenerateFor[Slot]
+
+    given ByteCodec[Trade] = autogenerateFor[Trade]
+    given ByteCodec[EntityPropertyModifier] = autogenerateFor[EntityPropertyModifier]
+    given ByteCodec[EntityPropertyShort] = autogenerateFor[EntityPropertyShort]
+    given ByteCodec[EntityProperty] = autogenerateFor[EntityProperty]
+
     given ByteCodec[Recipe] = ByteCodec[Recipe](???, ???)
-    given ByteCodec[EntityPropertyShort] = ByteCodec[EntityPropertyShort](???, ???)
-    given ByteCodec[Metadata] = ByteCodec[Metadata](???, ???)
-    given ByteCodec[SpawnProperty] = ByteCodec[SpawnProperty](???, ???)
-    given ByteCodec[Statistic] = ByteCodec[Statistic](???, ???)
+    given ByteCodec[CommandNode] = ByteCodec[CommandNode](???, ???)
+    given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
     given ByteCodec[Biomes3D] = ByteCodec[Biomes3D](???, ???)
-    given ByteCodec[MapIcon] = ByteCodec[MapIcon](???, ???)
-    given ByteCodec[EntityProperty] = ByteCodec[EntityProperty](???, ???)
     given ByteCodec[EntityEquipments] = ByteCodec[EntityEquipments](???, ???)
     given ByteCodec[PlayerInfoData] = ByteCodec[PlayerInfoData](???, ???)
-    given ByteCodec[ExplosionRecord] = ByteCodec[ExplosionRecord](???, ???)
-    given ByteCodec[CommandNode] = ByteCodec[CommandNode](???, ???)
-    given ByteCodec[BlockChangeRecord] = ByteCodec[BlockChangeRecord](???, ???)
 
   }
 
