@@ -148,7 +148,7 @@ object PacketDataPrimitives:
     def apply(array: Array[Byte]): UnspecifiedLengthByteArray = array
   }
 
-object PacketDataTypes:
+object PacketDataCompoundTypes:
   import PacketDataPrimitives.*
 
   @NoGenByteDecode case class Position(x: Int, z: Int, y: Short) {

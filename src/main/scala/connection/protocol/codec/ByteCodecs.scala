@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest
 package connection.protocol.codec
 
-import connection.protocol.data.PacketDataTypes.*
+import connection.protocol.data.PacketDataCompoundTypes.*
 import connection.protocol.data.PacketDataPrimitives.*
 import connection.protocol.typeclass.IntLike
 import connection.protocol.macros.GenByteDecode
