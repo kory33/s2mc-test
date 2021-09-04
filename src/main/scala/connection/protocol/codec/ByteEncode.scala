@@ -5,6 +5,8 @@ import cats.Contravariant
 import fs2.Chunk
 import shapeless3.deriving.K0
 
+import scala.reflect.ClassTag
+
 /**
  * An object responsible for encoding the object of type [[T]] into [[Chunk]]s of [[Byte]].
  */
@@ -13,6 +15,12 @@ trait ByteEncode[T]:
    * Converts the given object into binary representation.
    */
   def write(obj: T): Chunk[Byte]
+
+  /**
+   * Converts a sequence of objects into concatenated binary representation.
+   */
+  final def writeSeq(sequence: Seq[T]): Chunk[Byte] =
+    Chunk.concat(sequence.map(write))
 
 object ByteEncode:
 

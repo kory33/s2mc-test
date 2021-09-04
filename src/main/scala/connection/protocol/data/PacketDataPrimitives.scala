@@ -232,8 +232,9 @@ object PacketDataTypes:
     require(displayName.nonEmpty == hasDisplayName)
   }
 
-  @NoGenByteDecode case class EntityEquipment(slot: Byte, item: Slot)
-  type EntityEquipments = Array[EntityEquipment]
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Entity_Equipment for details */
+  case class EntityEquipment(slot: Byte, item: Slot)
+  type EntityEquipments = Vector[EntityEquipment]
 
   @NoGenByteDecode case class PlayerInfoData(/*FIXME put something in here*/)
 

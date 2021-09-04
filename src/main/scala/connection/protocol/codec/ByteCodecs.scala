@@ -13,6 +13,7 @@ import shapeless3.deriving.K0
 import java.io.UnsupportedEncodingException
 import java.nio.charset.Charset
 import java.util.UUID
+import scala.collection.immutable.Queue
 import scala.reflect.ClassTag
 
 object ByteCodecs {
@@ -228,7 +229,7 @@ object ByteCodecs {
       } yield LenPrefixedSeq(aList.toVector)
 
       val encode: ByteEncode[LenPrefixedSeq[L, A]] = { (lenSeq: LenPrefixedSeq[L, A]) =>
-        ByteCodec[L].encode.write(lenSeq.lLength) ++ Chunk.concat(lenSeq.asVector.map(ByteCodec[A].encode.write))
+        ByteCodec[L].encode.write(lenSeq.lLength) ++ ByteCodec[A].encode.writeSeq(lenSeq.asVector)
       }
 
       ByteCodec[LenPrefixedSeq[L, A]](decode, encode)
@@ -273,11 +274,24 @@ object ByteCodecs {
     given ByteCodec[EntityPropertyShort] = autogenerateFor[EntityPropertyShort]
     given ByteCodec[EntityProperty] = autogenerateFor[EntityProperty]
 
+    given ByteCodec[EntityEquipment] = autogenerateFor[EntityEquipment]
+
+    /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Entity_Equipment for details */
+    given ByteCodec[EntityEquipments] = {
+      import extensions.MonadValueExt.repeatWhileM
+
+      ByteCodec[EntityEquipments](
+        ByteCodec[EntityEquipment].decode.repeatWhileM { case EntityEquipment(slot, _) =>
+          (slot & 0x80) != 0
+        },
+        ByteCodec[EntityEquipment].encode.writeSeq(_)
+      )
+    }
+
     given ByteCodec[Recipe] = ByteCodec[Recipe](???, ???)
     given ByteCodec[CommandNode] = ByteCodec[CommandNode](???, ???)
     given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
     given ByteCodec[Biomes3D] = ByteCodec[Biomes3D](???, ???)
-    given ByteCodec[EntityEquipments] = ByteCodec[EntityEquipments](???, ???)
     given ByteCodec[PlayerInfoData] = ByteCodec[PlayerInfoData](???, ???)
 
   }
