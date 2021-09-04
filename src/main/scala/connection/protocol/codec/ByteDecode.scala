@@ -81,6 +81,10 @@ object ByteDecode:
   def raiseParseError(reason: String): ByteDecode[Nothing] =
     _ => DecodeResult.InvalidInput(Some(reason))
 
+  def giveUpParsing(reason: String): ByteDecode[Nothing] =
+    // TODO distinguish between giving up and throwing an error
+    _ => DecodeResult.InvalidInput(Some(reason))
+
   /**
    * Partially apply input to the decoder and produce another decoder that never consumes additional input.
    *

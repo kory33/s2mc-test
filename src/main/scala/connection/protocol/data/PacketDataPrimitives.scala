@@ -160,6 +160,9 @@ object PacketDataTypes:
 
   case class ChatComponent(json: String)
 
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=15933#Multi_Block_Change for details */
+  case class BlockChangeRecord(horizontalPosition: UByte, yCoordinate: UByte, blockId: VarInt)
+
   case class Slot(present: Boolean, itemId: Option[VarInt], itemCount: Option[Byte], nbt: Option[NamedTag]) {
     require(itemId.nonEmpty == (present))
     require(itemCount.nonEmpty == (present))
@@ -169,8 +172,6 @@ object PacketDataTypes:
   case class Tag(identifier: String, ids: LenPrefixedSeq[VarInt, VarInt])
 
   type TagArray = LenPrefixedSeq[VarInt, Tag]
-
-  @NoGenByteDecode case class NamedTag(/*FIXME put something in here*/)
 
   /** see https://wiki.vg/index.php?title=Protocol&oldid=7077#Map_Chunk_Bulk for details */
   case class ChunkMeta(chunkX: Int, chunkZ: Int, bitMask: UShort)
@@ -191,9 +192,6 @@ object PacketDataTypes:
                   ) {
     require(inputItem2.nonEmpty == (hasSecondItem))
   }
-
-  /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Declare_Recipes for details */
-  case class Recipe(recipeType: String, id: String, data: fs2.Chunk[Byte] /* FIXME this must be parsed */)
 
   case class EntityPropertyModifier(
                                    uuid: UUID,
@@ -271,6 +269,8 @@ object PacketDataTypes:
 
   case class ExplosionRecord(xOffset: Byte, yOffset: Byte, zOffset: Byte)
 
+  @NoGenByteDecode case class NamedTag(/*FIXME put something in here*/)
+
   /** see https://wiki.vg/Command_Data for details */
   case class CommandNode(
                         flags: Byte,
@@ -288,6 +288,25 @@ object PacketDataTypes:
     require(suggestions.nonEmpty == ((flags & 0x10) != 0x00.toByte))
   }
 
-  /** see https://wiki.vg/index.php?title=Protocol&oldid=15933#Multi_Block_Change for details */
-  case class BlockChangeRecord(horizontalPosition: UByte, yCoordinate: UByte, blockId: VarInt)
-  
+  type RecipeIngredient = LenPrefixedSeq[VarInt, Slot]
+
+  enum CookingDataType:
+    case Smelting
+    case Blasting
+    case Smoking
+    case CampfireCooking
+
+  case class CookingRecipeData(group: String, ingredient: RecipeIngredient, result: Slot, experience: Float, cookingTime: VarInt)
+
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Declare_Recipes for details */
+  enum RecipeData:
+    case Shapeless(group: String, ingredients: LenPrefixedSeq[VarInt, RecipeIngredient], result: Slot)
+    case Shaped(width: VarInt, height: VarInt, group: String, ingredients: LenPrefixedSeq[VarInt, RecipeIngredient], result: Slot)
+    case Stonecutting(group: String, ingredient: RecipeIngredient, result: Slot)
+    case Smithing(base: RecipeIngredient, addition: RecipeIngredient, result: Slot)
+
+    /** smelting / blasting / smoking / campfire cooking recipes */
+    @NoGenByteDecode case Cooking(dataType: CookingDataType, data: CookingRecipeData)
+    @NoGenByteDecode case NoAdditionalData(recipeType: String)
+
+  @NoGenByteDecode case class Recipe(identifier: String, data: RecipeData)

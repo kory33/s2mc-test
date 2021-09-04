@@ -334,7 +334,83 @@ object ByteCodecs {
       }
     )
 
-    given ByteCodec[Recipe] = ByteCodec[Recipe](???, ???)
+    def recipeDataTypeString(recipeData: RecipeData): String = recipeData match {
+      case RecipeData.Shapeless(_, _, _) => "crafting_shapeless"
+      case RecipeData.Shaped(_, _, _, _, _) => "crafting_shaped"
+      case RecipeData.Cooking(tpe, _) => tpe match {
+        case CookingDataType.Smelting => "smelting"
+        case CookingDataType.Blasting => "blasting"
+        case CookingDataType.Smoking => "smoking"
+        case CookingDataType.CampfireCooking => "campfire_cooking"
+      }
+      case RecipeData.Stonecutting(_, _, _) => "stonecutting"
+      case RecipeData.Smithing(_, _, _) => "smithing"
+      case RecipeData.NoAdditionalData(recipeType) => recipeType
+    }
+
+    given ByteCodec[CookingRecipeData] = autogenerateFor[CookingRecipeData]
+    given ByteCodec[RecipeData.Shapeless] = autogenerateFor[RecipeData.Shapeless]
+    given ByteCodec[RecipeData.Shaped] = autogenerateFor[RecipeData.Shaped]
+    given ByteCodec[RecipeData.Stonecutting] = autogenerateFor[RecipeData.Stonecutting]
+    given ByteCodec[RecipeData.Smithing] = autogenerateFor[RecipeData.Smithing]
+
+    def decodeRecipeData(recipeType: String): ByteDecode[RecipeData] = {
+      def decodeCookingRecipeDataWith(recipeType: CookingDataType) =
+        ByteCodec[CookingRecipeData].decode.map(RecipeData.Cooking(recipeType, _))
+
+      recipeType match {
+        case "crafting_shapeless" => ByteCodec[RecipeData.Shapeless].decode
+        case "crafting_shaped" => ByteCodec[RecipeData.Shaped].decode
+        case "stonecutting" => ByteCodec[RecipeData.Stonecutting].decode
+        case "smithing" => ByteCodec[RecipeData.Smithing].decode
+        case "smelting" => decodeCookingRecipeDataWith(CookingDataType.Smelting)
+        case "blasting" => decodeCookingRecipeDataWith(CookingDataType.Blasting)
+        case "smoking" => decodeCookingRecipeDataWith(CookingDataType.Smoking)
+        case "campfire_cooking" => decodeCookingRecipeDataWith(CookingDataType.CampfireCooking)
+        case "crafting_special_armordye" |
+             "crafting_special_bookcloning" |
+             "crafting_special_mapcloning" |
+             "crafting_special_mapextending" |
+             "crafting_special_firework_rocket" |
+             "crafting_special_firework_star" |
+             "crafting_special_firework_star_fade" |
+             "crafting_special_repairitem" |
+             "crafting_special_tippedarrow" |
+             "crafting_special_bannerduplicate" |
+             "crafting_special_banneraddpattern" |
+             "crafting_special_shielddecoration" |
+             "crafting_special_shulkerboxcoloring" |
+             "crafting_special_suspiciousstew" =>
+          Monad[ByteDecode].pure(RecipeData.NoAdditionalData(recipeType))
+        case _ =>
+          giveUpParsing(s"The recipe type ${recipeType} is unknown to the parser.")
+      }
+    }
+
+    // encoder for RecipeData. This encoder does not write out the type of the recipe.
+    // for details, see https://wiki.vg/index.php?title=Protocol&oldid=16953#Declare_Recipes
+    lazy val encodeRecipeData: ByteEncode[RecipeData] = (recipeData: RecipeData) => recipeData match {
+      case recipeData: RecipeData.Shapeless => ByteCodec[RecipeData.Shapeless].encode.write(recipeData)
+      case recipeData: RecipeData.Shaped => ByteCodec[RecipeData.Shaped].encode.write(recipeData)
+      case recipeData: RecipeData.Stonecutting => ByteCodec[RecipeData.Stonecutting].encode.write(recipeData)
+      case recipeData: RecipeData.Smithing => ByteCodec[RecipeData.Smithing].encode.write(recipeData)
+      case RecipeData.Cooking(_, data) => ByteCodec[CookingRecipeData].encode.write(data)
+      case RecipeData.NoAdditionalData(_) => Chunk.empty[Byte]
+    }
+
+    given ByteCodec[Recipe] = ByteCodec[Recipe](
+      for {
+        recipeType <- ByteCodec[String].decode
+        recipeId <- ByteCodec[String].decode
+        recipeData <- decodeRecipeData(recipeType)
+      } yield Recipe(recipeId, recipeData),
+      { case Recipe(identifier, data) =>
+        ByteCodec[String].encode.write(recipeDataTypeString(data)) ++
+        ByteCodec[String].encode.write(identifier)
+        encodeRecipeData.write(data)
+      }
+    )
+
     given ByteCodec[CommandNode] = ByteCodec[CommandNode](???, ???)
     given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
 
