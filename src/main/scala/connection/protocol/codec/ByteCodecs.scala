@@ -13,6 +13,7 @@ import shapeless3.deriving.K0
 import java.io.UnsupportedEncodingException
 import java.nio.charset.Charset
 import java.util.UUID
+import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 import scala.reflect.ClassTag
 
@@ -383,7 +384,7 @@ object ByteCodecs {
              "crafting_special_suspiciousstew" =>
           Monad[ByteDecode].pure(RecipeData.NoAdditionalData(recipeType))
         case _ =>
-          giveUpParsing(s"The recipe type ${recipeType} is unknown to the parser.")
+          giveUpParsingPacket(s"The recipe type ${recipeType} is unknown to the parser.")
       }
     }
 
@@ -411,7 +412,108 @@ object ByteCodecs {
       }
     )
 
-    given ByteCodec[CommandNode] = ByteCodec[CommandNode](???, ???)
+    given ByteCodec[CommandArgument.DoubleA] = autogenerateFor[CommandArgument.DoubleA]
+    given ByteCodec[CommandArgument.FloatA] = autogenerateFor[CommandArgument.FloatA]
+    given ByteCodec[CommandArgument.IntegerA] = autogenerateFor[CommandArgument.IntegerA]
+    given ByteCodec[CommandArgument.LongA] = autogenerateFor[CommandArgument.LongA]
+    given ByteCodec[CommandArgument.StringA] = autogenerateFor[CommandArgument.StringA]
+    given ByteCodec[CommandArgument.EntityA] = autogenerateFor[CommandArgument.EntityA]
+    given ByteCodec[CommandArgument.ScoreHolderA] = autogenerateFor[CommandArgument.ScoreHolderA]
+    given ByteCodec[CommandArgument.RangeA] = autogenerateFor[CommandArgument.RangeA]
+
+    def decodeCommandArgumentFor(typeIdentifier: String): ByteDecode[CommandArgument] = typeIdentifier match {
+      case "brigadier:double" => ByteCodec[CommandArgument.DoubleA].decode
+      case "brigadier:float" => ByteCodec[CommandArgument.FloatA].decode
+      case "brigadier:integer" => ByteCodec[CommandArgument.IntegerA].decode
+      case "brigadier:long" => ByteCodec[CommandArgument.LongA].decode
+      case "brigadier:string" => ByteCodec[CommandArgument.StringA].decode
+      case "brigadier:entity" => ByteCodec[CommandArgument.EntityA].decode
+      case "brigadier:score_holder" => ByteCodec[CommandArgument.ScoreHolderA].decode
+      case "brigadier:range" => ByteCodec[CommandArgument.RangeA].decode
+      case "brigadier:bool" |
+           "minecraft:game_profile" |
+           "minecraft:block_pos" |
+           "minecraft:column_pos" |
+           "minecraft:vec3" |
+           "minecraft:vec2" |
+           "minecraft:block_state" |
+           "minecraft:block_predicate" |
+           "minecraft:item_stack" |
+           "minecraft:item_predicate" |
+           "minecraft:color" |
+           "minecraft:component" |
+           "minecraft:message" |
+           "minecraft:nbt" |
+           "minecraft:nbt_path" |
+           "minecraft:objective" |
+           "minecraft:objective_criteria" |
+           "minecraft:operation" |
+           "minecraft:particle" |
+           "minecraft:rotation" |
+           "minecraft:angle" |
+           "minecraft:scoreboard_slot" |
+           "minecraft:swizzle" |
+           "minecraft:team" |
+           "minecraft:item_slot" |
+           "minecraft:resource_location" |
+           "minecraft:mob_effect" |
+           "minecraft:function" |
+           "minecraft:entity_anchor" |
+           "minecraft:int_range" |
+           "minecraft:float_range" |
+           "minecraft:item_enchantment" |
+           "minecraft:entity_summon" |
+           "minecraft:dimension" |
+           "minecraft:uuid" |
+           "minecraft:nbt_tag" |
+           "minecraft:nbt_compound_tag" |
+           "minecraft:time" |
+           "forge:modid" |
+           "forge:enum" => Monad[ByteDecode].pure(CommandArgument.ArgumentWithoutProperties(typeIdentifier))
+      case _ => giveUpParsingPacket(s"command argument type $typeIdentifier is unknown")
+    }
+
+    /**
+     * a CommandArgument is encoded as a pair of parser specifier (String) and parser property (varying type).
+     * see https://wiki.vg/Command_Data for details */
+    given ByteCodec[CommandArgument] = ByteCodec[CommandArgument](
+      ByteCodec[String].decode.flatMap(decodeCommandArgumentFor),
+      (argInfo: CommandArgument) => argInfo match {
+        case argInfo: CommandArgument.DoubleA =>
+          ByteCodec[String].encode.write("brigadier:double") ++
+          ByteCodec[CommandArgument.DoubleA].encode.write(argInfo)
+        case argInfo: CommandArgument.FloatA =>
+          ByteCodec[String].encode.write("brigadier:float") ++
+          ByteCodec[CommandArgument.FloatA].encode.write(argInfo)
+        case argInfo: CommandArgument.IntegerA =>
+          ByteCodec[String].encode.write("brigadier:integer") ++
+          ByteCodec[CommandArgument.IntegerA].encode.write(argInfo)
+        case argInfo: CommandArgument.LongA =>
+          ByteCodec[String].encode.write("brigadier:long") ++
+          ByteCodec[CommandArgument.LongA].encode.write(argInfo)
+        case argInfo: CommandArgument.StringA =>
+          ByteCodec[String].encode.write("brigadier:string") ++
+          ByteCodec[CommandArgument.StringA].encode.write(argInfo)
+        case argInfo: CommandArgument.EntityA =>
+          ByteCodec[String].encode.write("brigadier:entity") ++
+          ByteCodec[CommandArgument.EntityA].encode.write(argInfo)
+        case argInfo: CommandArgument.ScoreHolderA =>
+          ByteCodec[String].encode.write("brigadier:score_holder") ++
+          ByteCodec[CommandArgument.ScoreHolderA].encode.write(argInfo)
+        case argInfo: CommandArgument.RangeA =>
+          ByteCodec[String].encode.write("brigadier:range") ++
+          ByteCodec[CommandArgument.RangeA].encode.write(argInfo)
+        case argInfo: CommandArgument.ArgumentWithoutProperties =>
+          ByteCodec[String].encode.write(argInfo.typeIdentifier)
+      }
+    )
+
+    given ByteCodec[CommandNode] = {
+      given ByteDecode[CommandArgument] = codecToDecode[CommandArgument]
+
+      autogenerateFor[CommandNode]
+    }
+
     given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
 
   }

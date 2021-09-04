@@ -271,20 +271,48 @@ object PacketDataTypes:
 
   @NoGenByteDecode case class NamedTag(/*FIXME put something in here*/)
 
+  /** A specification for a command argument. See https://wiki.vg/Command_Data for details */
+  sealed trait CommandArgument
+  object CommandArgument {
+    case class DoubleA(flags: Byte, min: Option[Double], max: Option[Double]) extends CommandArgument {
+      require(min.nonEmpty == ((flags & 0x01) != 0x00))
+      require(max.nonEmpty == ((flags & 0x02) != 0x00))
+    }
+
+    case class FloatA(flags: Byte, min: Option[Float], max: Option[Float]) extends CommandArgument {
+      require(min.nonEmpty == ((flags & 0x01) != 0x00))
+      require(max.nonEmpty == ((flags & 0x02) != 0x00))
+    }
+    case class IntegerA(flags: Byte, min: Option[Int], max: Option[Int]) extends CommandArgument {
+      require(min.nonEmpty == ((flags & 0x01) != 0x00))
+      require(max.nonEmpty == ((flags & 0x02) != 0x00))
+    }
+    case class LongA(flags: Byte, min: Option[Long], max: Option[Long]) extends CommandArgument {
+      require(min.nonEmpty == ((flags & 0x01) != 0x00))
+      require(max.nonEmpty == ((flags & 0x02) != 0x00))
+    }
+
+    /** see https://wiki.vg/Command_Data for details */
+    case class StringA(varIntEnum: VarInt) extends CommandArgument
+    case class EntityA(flags: Byte) extends CommandArgument
+    case class ScoreHolderA(flags: Byte) extends CommandArgument
+    case class RangeA(decimalsAllowed: Boolean) extends CommandArgument
+
+    case class ArgumentWithoutProperties(typeIdentifier: String) extends CommandArgument
+  }
+
   /** see https://wiki.vg/Command_Data for details */
   case class CommandNode(
-                        flags: Byte,
-                        childrenIndices: LenPrefixedSeq[VarInt, VarInt],
-                        redirectNode: Option[VarInt],
-                        name: Option[String],
-                        parser: Option[String],
-                        properties: Option[fs2.Chunk[Byte]] /* FIXME must parse this */,
-                        suggestions: Option[String]
+                          flags: Byte,
+                          childrenIndices: LenPrefixedSeq[VarInt, VarInt],
+                          redirectNode: Option[VarInt],
+                          name: Option[String],
+                          argumentInfo: Option[CommandArgument],
+                          suggestions: Option[String]
                         ) {
     require(redirectNode.nonEmpty == ((flags & 0x08) != 0.toByte))
     require(name.nonEmpty == ((flags & 0x03) != 0x00.toByte))
-    require(parser.nonEmpty == ((flags & 0x03) == 0x02.toByte))
-    require(properties.nonEmpty == ((flags & 0x03) == 0x02.toByte))
+    require(argumentInfo.nonEmpty == ((flags & 0x03) == 0x02.toByte))
     require(suggestions.nonEmpty == ((flags & 0x10) != 0x00.toByte))
   }
 
