@@ -400,18 +400,22 @@ object ByteCodecs {
       case RecipeData.NoAdditionalData(_) => Chunk.empty[Byte]
     }
 
-    given ByteCodec[Recipe] = ByteCodec[Recipe](
-      for {
-        recipeType <- ByteCodec[String].decode
-        recipeId <- ByteCodec[String].decode
-        recipeData <- decodeRecipeData(recipeType)
-      } yield Recipe(recipeId, recipeData),
-      { case Recipe(identifier, data) =>
+    given ByteCodec[Recipe] = {
+      val encode: ByteEncode[Recipe] =
+        for {
+          recipeType <- ByteCodec[String].decode
+          recipeId <- ByteCodec[String].decode
+          recipeData <- decodeRecipeData(recipeType)
+        } yield Recipe(recipeId, recipeData)
+
+      val decode: ByteDecode[Recipe] = { case Recipe(identifier, data) =>
         ByteCodec[String].encode.write(recipeDataTypeString(data)) ++
-        ByteCodec[String].encode.write(identifier)
+        ByteCodec[String].encode.write(identifier) ++
         encodeRecipeData.write(data)
       }
-    )
+
+      ByteCodec[Recipe](encode, decode)
+    }
 
     given ByteCodec[CommandArgument.DoubleA] = autogenerateFor[CommandArgument.DoubleA]
     given ByteCodec[CommandArgument.FloatA] = autogenerateFor[CommandArgument.FloatA]
