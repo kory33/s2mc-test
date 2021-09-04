@@ -401,20 +401,20 @@ object ByteCodecs {
     }
 
     given ByteCodec[Recipe] = {
-      val encode: ByteEncode[Recipe] =
+      val decode: ByteDecode[Recipe] =
         for {
           recipeType <- ByteCodec[String].decode
           recipeId <- ByteCodec[String].decode
           recipeData <- decodeRecipeData(recipeType)
         } yield Recipe(recipeId, recipeData)
 
-      val decode: ByteDecode[Recipe] = { case Recipe(identifier, data) =>
+      val encode: ByteEncode[Recipe] = { case Recipe(identifier, data) =>
         ByteCodec[String].encode.write(recipeDataTypeString(data)) ++
         ByteCodec[String].encode.write(identifier) ++
         encodeRecipeData.write(data)
       }
 
-      ByteCodec[Recipe](encode, decode)
+      ByteCodec[Recipe](decode, encode)
     }
 
     given ByteCodec[CommandArgument.DoubleA] = autogenerateFor[CommandArgument.DoubleA]
