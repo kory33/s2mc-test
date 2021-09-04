@@ -8,6 +8,7 @@ import connection.protocol.data.PacketDataCompoundTypes.*
 import cats.Monad
 import cats.instances.map
 import fs2.Chunk
+import net.katsstuff.typenbt.NBTCompound
 
 import java.util.UUID
 
@@ -1011,7 +1012,7 @@ object PacketIntent {
       case class UpdateBlockEntity(
                                     location: Position,
                                     action: UByte,
-                                    nbt: NamedTag,
+                                    nbt: NBTCompound,
                                   )
 
       case class UpdateBlockEntity_Data(
@@ -1353,10 +1354,10 @@ object PacketIntent {
                                             chunkZ: Int,
                                             isNew: Boolean,
                                             bitmask: VarInt,
-                                            heightmaps: NamedTag,
+                                            heightmaps: NBTCompound,
                                             biomes: Option[LenPrefixedSeq[VarInt, VarInt]],
                                             data: LenPrefixedByteSeq[VarInt],
-                                            blockEntities: LenPrefixedSeq[VarInt, NamedTag],
+                                            blockEntities: LenPrefixedSeq[VarInt, NBTCompound],
                                           ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1367,10 +1368,10 @@ object PacketIntent {
                                           isNew: Boolean,
                                           ignoreOldData: Boolean,
                                           bitmask: VarInt,
-                                          heightmaps: NamedTag,
+                                          heightmaps: NBTCompound,
                                           biomes: Option[Biomes3D],
                                           data: LenPrefixedByteSeq[VarInt],
-                                          blockEntities: LenPrefixedSeq[VarInt, NamedTag],
+                                          blockEntities: LenPrefixedSeq[VarInt, NBTCompound],
                                         ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1380,10 +1381,10 @@ object PacketIntent {
                                      chunkZ: Int,
                                      isNew: Boolean,
                                      bitmask: VarInt,
-                                     heightmaps: NamedTag,
+                                     heightmaps: NBTCompound,
                                      biomes: Option[Biomes3D],
                                      data: LenPrefixedByteSeq[VarInt],
-                                     blockEntities: LenPrefixedSeq[VarInt, NamedTag],
+                                     blockEntities: LenPrefixedSeq[VarInt, NBTCompound],
                                    ) {
         require(biomes.nonEmpty == (isNew))
       }
@@ -1393,9 +1394,9 @@ object PacketIntent {
                                       chunkZ: Int,
                                       isNew: Boolean,
                                       bitmask: VarInt,
-                                      heightmaps: NamedTag,
+                                      heightmaps: NBTCompound,
                                       data: LenPrefixedByteSeq[VarInt],
-                                      blockEntities: LenPrefixedSeq[VarInt, NamedTag],
+                                      blockEntities: LenPrefixedSeq[VarInt, NBTCompound],
                                     )
 
       case class ChunkData(
@@ -1404,7 +1405,7 @@ object PacketIntent {
                             isNew: Boolean,
                             bitmask: VarInt,
                             data: LenPrefixedByteSeq[VarInt],
-                            blockEntities: LenPrefixedSeq[VarInt, NamedTag],
+                            blockEntities: LenPrefixedSeq[VarInt, NBTCompound],
                           )
 
       case class ChunkData_NoEntities(
@@ -1486,7 +1487,7 @@ object PacketIntent {
                                green: Option[Float],
                                blue: Option[Float],
                                scale: Option[Float],
-                               item: Option[NamedTag],
+                               item: Option[NBTCompound],
                              ) {
         require(blockState.nonEmpty == (particleId == 3 || particleId == 23))
         require(red.nonEmpty == (particleId == 14))
@@ -1512,7 +1513,7 @@ object PacketIntent {
                                 green: Option[Float],
                                 blue: Option[Float],
                                 scale: Option[Float],
-                                item: Option[NamedTag],
+                                item: Option[NBTCompound],
                               ) {
         require(blockState.nonEmpty == (particleId == 3 || particleId == 23))
         require(red.nonEmpty == (particleId == 14))
@@ -1538,7 +1539,7 @@ object PacketIntent {
                                   green: Option[Float],
                                   blue: Option[Float],
                                   scale: Option[Float],
-                                  item: Option[NamedTag],
+                                  item: Option[NBTCompound],
                                 ) {
         require(blockState.nonEmpty == (particleId == 3 || particleId == 20))
         require(red.nonEmpty == (particleId == 11))
@@ -1594,9 +1595,9 @@ object PacketIntent {
                                              /** Identifiers for all worlds on the server */
                                              worldNames: LenPrefixedSeq[VarInt, String],
                                              /** Represents a dimension registry */
-                                             dimensionCodec: NamedTag,
+                                             dimensionCodec: NBTCompound,
                                              /** The dimension the client is starting in */
-                                             dimension: NamedTag,
+                                             dimension: NBTCompound,
                                              /** The world being spawned into */
                                              worldName: String,
                                              /** Truncated SHA-256 hash of world's seed */
@@ -1628,7 +1629,7 @@ object PacketIntent {
                                       /** Identifiers for all worlds on the server */
                                       worldNames: LenPrefixedSeq[VarInt, String],
                                       /** Represents a dimension registry */
-                                      dimensionCodec: NamedTag,
+                                      dimensionCodec: NBTCompound,
                                       /** The dimension the client is starting in */
                                       dimension: String,
                                       /** The world being spawned into */
@@ -1882,7 +1883,7 @@ object PacketIntent {
       /** EntityUpdateNBT updates the entity named binary tag. */
       case class EntityUpdateNBT(
                                   entityId: VarInt,
-                                  nbt: NamedTag,
+                                  nbt: NBTCompound,
                                 )
 
       /** Teleports the player's vehicle */
@@ -2104,7 +2105,7 @@ object PacketIntent {
                                    )
 
       case class Respawn_NBT(
-                              dimension: NamedTag,
+                              dimension: NBTCompound,
                               worldName: String,
                               hashedSeed: Long,
                               gamemode: UByte,
@@ -2143,7 +2144,7 @@ object PacketIntent {
 
       case class NBTQueryResponse(
                                    transactionId: VarInt,
-                                   nbt: NamedTag,
+                                   nbt: NBTCompound,
                                  )
 
       /** SelectAdvancementTab indicates the client should switch the advancement tab. */

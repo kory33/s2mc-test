@@ -8,6 +8,7 @@ import connection.protocol.macros.GenByteDecode
 
 import cats.Monad
 import fs2.Chunk
+import net.katsstuff.typenbt.NBTCompound
 import shapeless3.deriving.K0
 
 import java.io.UnsupportedEncodingException
@@ -514,7 +515,7 @@ object ByteCodecs {
       autogenerateFor[CommandNode]
     }
 
-    given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
+    given ByteCodec[NBTCompound] = ByteCodec[NBTCompound](???, ???)
 
   }
 

@@ -4,6 +4,8 @@ package connection.protocol.data
 import connection.protocol.macros.NoGenByteDecode
 import connection.protocol.typeclass.IntLike
 
+import net.katsstuff.typenbt.NBTCompound
+
 import java.util.UUID
 
 object PacketDataPrimitives:
@@ -163,7 +165,7 @@ object PacketDataCompoundTypes:
   /** see https://wiki.vg/index.php?title=Protocol&oldid=15933#Multi_Block_Change for details */
   case class BlockChangeRecord(horizontalPosition: UByte, yCoordinate: UByte, blockId: VarInt)
 
-  case class Slot(present: Boolean, itemId: Option[VarInt], itemCount: Option[Byte], nbt: Option[NamedTag]) {
+  case class Slot(present: Boolean, itemId: Option[VarInt], itemCount: Option[Byte], nbt: Option[NBTCompound]) {
     require(itemId.nonEmpty == (present))
     require(itemCount.nonEmpty == (present))
     require(nbt.nonEmpty == (present))
@@ -268,8 +270,6 @@ object PacketDataCompoundTypes:
     case RemovePlayer(players: LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer])
 
   case class ExplosionRecord(xOffset: Byte, yOffset: Byte, zOffset: Byte)
-
-  @NoGenByteDecode case class NamedTag(/*FIXME put something in here*/)
 
   /** A specification for a command argument. See https://wiki.vg/Command_Data for details */
   sealed trait CommandArgument
