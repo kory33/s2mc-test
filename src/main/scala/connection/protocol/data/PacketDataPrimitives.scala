@@ -170,7 +170,7 @@ object PacketDataTypes:
 
   type TagArray = LenPrefixedSeq[VarInt, Tag]
 
-  @NoGenByteDecode case class NamedTag(/*TODO put something in here*/)
+  @NoGenByteDecode case class NamedTag(/*FIXME put something in here*/)
 
   /** see https://wiki.vg/index.php?title=Protocol&oldid=7077#Map_Chunk_Bulk for details */
   case class ChunkMeta(chunkX: Int, chunkZ: Int, bitMask: UShort)
@@ -193,7 +193,7 @@ object PacketDataTypes:
   }
 
   /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Declare_Recipes for details */
-  case class Recipe(recipeType: String, id: String, data: fs2.Chunk[Byte] /* TODO this must be parsed */)
+  case class Recipe(recipeType: String, id: String, data: fs2.Chunk[Byte] /* FIXME this must be parsed */)
 
   case class EntityPropertyModifier(
                                    uuid: UUID,
@@ -236,7 +236,38 @@ object PacketDataTypes:
   case class EntityEquipment(slot: Byte, item: Slot)
   type EntityEquipments = Vector[EntityEquipment]
 
-  @NoGenByteDecode case class PlayerInfoData(/*FIXME put something in here*/)
+  /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Player_Info for details */
+  case class PlayerProperty(name: String, value: String, isSigned: Boolean, signature: Option[String]) {
+    require(signature.nonEmpty == isSigned)
+  }
+
+  object PlayerInfoDataRecord {
+    case class AddPlayer(
+                          uuid: UUID,
+                          name: String,
+                          property: LenPrefixedSeq[VarInt, PlayerProperty],
+                          gameMode: VarInt,
+                          ping: VarInt,
+                          hasDisplayName: Boolean,
+                          displayName: Option[String]
+                        ) {
+      require(displayName.nonEmpty == hasDisplayName)
+    }
+
+    case class UpdateGamemode(uuid: UUID, gamemode: VarInt)
+    case class UpdateLatency(uuid: UUID, ping: VarInt)
+    case class UpdateDisplayName(uuid: UUID, hasDisplayName: Boolean, displayName: Option[String]) {
+      require(displayName.nonEmpty == hasDisplayName)
+    }
+    case class RemovePlayer(uuid: UUID)
+  }
+
+  enum PlayerInfoData:
+    case AddPlayer(players: LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer])
+    case UpdateGamemode(players: LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode])
+    case UpdateLatency(players: LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency])
+    case UpdateDisplayName(players: LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName])
+    case RemovePlayer(players: LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer])
 
   case class ExplosionRecord(xOffset: Byte, yOffset: Byte, zOffset: Byte)
 

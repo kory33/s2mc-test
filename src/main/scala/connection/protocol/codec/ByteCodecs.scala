@@ -288,11 +288,55 @@ object ByteCodecs {
       )
     }
 
+    given ByteCodec[Biomes3D] =
+      ByteCodec[Biomes3D](
+        ByteCodec[Int].decode.replicateA(1024).map { intList => Biomes3D(intList.toArray) },
+        biome => ByteCodec[Int].encode.writeSeq(biome.arrayData.toSeq)
+      )
+
+    given ByteCodec[PlayerProperty] = autogenerateFor[PlayerProperty]
+    given ByteCodec[PlayerInfoDataRecord.AddPlayer] = autogenerateFor[PlayerInfoDataRecord.AddPlayer]
+    given ByteCodec[PlayerInfoDataRecord.UpdateGamemode] = autogenerateFor[PlayerInfoDataRecord.UpdateGamemode]
+    given ByteCodec[PlayerInfoDataRecord.UpdateLatency] = autogenerateFor[PlayerInfoDataRecord.UpdateLatency]
+    given ByteCodec[PlayerInfoDataRecord.UpdateDisplayName] = autogenerateFor[PlayerInfoDataRecord.UpdateDisplayName]
+    given ByteCodec[PlayerInfoDataRecord.RemovePlayer] = autogenerateFor[PlayerInfoDataRecord.RemovePlayer]
+    given ByteCodec[PlayerInfoData] = ByteCodec[PlayerInfoData](
+      ByteCodec[VarInt].decode.flatMap { actionVarInt =>
+        actionVarInt.raw match {
+          case 0 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer]].decode
+            .map(PlayerInfoData.AddPlayer.apply)
+          case 1 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode]].decode
+            .map(PlayerInfoData.UpdateGamemode.apply)
+          case 2 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency]].decode
+            .map(PlayerInfoData.UpdateLatency.apply)
+          case 3 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName]].decode
+            .map(PlayerInfoData.UpdateDisplayName.apply)
+          case 4 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer]].decode
+            .map(PlayerInfoData.RemovePlayer.apply)
+        }
+      },
+      (playerInfoData: PlayerInfoData) => playerInfoData match {
+        case PlayerInfoData.AddPlayer(players) =>
+          ByteCodec[VarInt].encode.write(VarInt(0)) ++
+          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer]].encode.write(players)
+        case PlayerInfoData.UpdateGamemode(players) =>
+          ByteCodec[VarInt].encode.write(VarInt(1)) ++
+          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode]].encode.write(players)
+        case PlayerInfoData.UpdateLatency(players) =>
+          ByteCodec[VarInt].encode.write(VarInt(2)) ++
+          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency]].encode.write(players)
+        case PlayerInfoData.UpdateDisplayName(players) =>
+          ByteCodec[VarInt].encode.write(VarInt(3)) ++
+          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName]].encode.write(players)
+        case PlayerInfoData.RemovePlayer(players) =>
+          ByteCodec[VarInt].encode.write(VarInt(4)) ++
+          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer]].encode.write(players)
+      }
+    )
+
     given ByteCodec[Recipe] = ByteCodec[Recipe](???, ???)
     given ByteCodec[CommandNode] = ByteCodec[CommandNode](???, ???)
     given ByteCodec[NamedTag] = ByteCodec[NamedTag](???, ???)
-    given ByteCodec[Biomes3D] = ByteCodec[Biomes3D](???, ???)
-    given ByteCodec[PlayerInfoData] = ByteCodec[PlayerInfoData](???, ???)
 
   }
 
