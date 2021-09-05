@@ -5,6 +5,7 @@ import connection.protocol.data.PacketDataCompoundTypes.*
 import connection.protocol.data.PacketDataPrimitives.*
 import connection.protocol.typeclass.IntLike
 import connection.protocol.macros.GenByteDecode
+import typenbtio.{ReadNBT, WriteNBT}
 
 import cats.Monad
 import fs2.Chunk
@@ -519,7 +520,10 @@ object ByteCodecs {
       autogenerateFor[CommandNode]
     }
 
-    given ByteCodec[NBTCompound] = ByteCodec[NBTCompound](???, ???)
+    given ByteCodec[NBTCompound] = ByteCodec[NBTCompound](
+      ReadNBT.read[ByteDecode].map(_._2),
+      (compound: NBTCompound) => WriteNBT.toChunk(compound, rootName = "", gzip = false)
+    )
 
   }
 

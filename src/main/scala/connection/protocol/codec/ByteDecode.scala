@@ -1,7 +1,9 @@
 package com.github.kory33.s2mctest
 package connection.protocol.codec
 
-import cats.{FlatMap, Functor, Monad}
+import algebra.ReadBytes
+
+import cats.{FlatMap, Functor, Monad, MonadThrow}
 import fs2.Chunk
 
 import scala.annotation.tailrec
@@ -60,6 +62,8 @@ object ByteDecode:
     case InsufficientInput extends DecodeResult[Nothing]
     case InvalidInput(reason: Option[String]) extends DecodeResult[Nothing]
 
+  given ReadBytes[ByteDecode] = ???
+
   /**
    * A decoder that consumes precisely [[n]] bytes from the input.
    */
@@ -108,7 +112,7 @@ object ByteDecode:
   /**
    * The [[Monad]] instance for [[ByteDecode]].
    */
-  given Monad[ByteDecode] with
+  given MonadThrow[ByteDecode] with
     override def flatMap[A, B](fa: ByteDecode[A])(f: A => ByteDecode[B]): ByteDecode[B] =
       input => fa.readOne(input) match
         case DecodeResult.Decoded(v, remaining) => f(v).readOne(remaining)
@@ -131,3 +135,6 @@ object ByteDecode:
     override def pure[A](x: A): ByteDecode[A] =
       DecodeResult.Decoded(x, _)
 
+    override def raiseError[A](e: Throwable): ByteDecode[A] = ???
+
+    override def handleErrorWith[A](fa: ByteDecode[A])(f: Throwable => ByteDecode[A]): ByteDecode[A] = ???
