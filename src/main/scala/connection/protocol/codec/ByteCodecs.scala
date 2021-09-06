@@ -207,9 +207,6 @@ object ByteCodecs {
       )
     }
 
-    // TODO this is not a common codec
-    given ByteCodec[Position] = ByteCodec[Position](???, ???)
-
     given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
       val decode: ByteDecode[LenPrefixedSeq[L, A]] = for {
         length <- ByteCodec[L].decode
@@ -511,6 +508,34 @@ object ByteCodecs {
       (compound: NBTCompound) => WriteNBT.toChunk(compound, rootName = "", gzip = false)
     )
 
+  }
+
+  object PositionCodec {
+    import Common.given
+
+    // current codec of Position type.
+    // see https://wiki.vg/Protocol#Position for details.
+
+    given ByteCodec[Position] =
+      ByteCodec[Long].imap { long =>
+        Position((long >> 38).toInt, (long & 0xFFF).toShort, ((long << 26) >> 38).toInt)
+      } { case Position(x, y, z) =>
+        ((x & 0x3FFFFFF).toLong << 38) | ((z & 0x3FFFFFF).toLong << 12) | (y & 0xFFF).toLong
+      }
+  }
+
+  object PositionCodecBefore1_14 {
+    import Common.given
+
+    // codec of Position type before 1.14.
+    // see https://wiki.vg/index.php?title=Data_types&oldid=14345#Position for details
+
+    given ByteCodec[Position] =
+      ByteCodec[Long].imap { long =>
+        Position((long >> 38).toInt, ((long >> 26) & 0xFFF).toShort, ((long << 38) >> 38).toInt)
+      } { case Position(x, y, z) =>
+        ((x & 0x03FFFFFF).toLong << 38) | ((y & 0x00000FFF).toLong << 26) | (z & 0x03FFFFFF).toLong
+      }
   }
 
 }

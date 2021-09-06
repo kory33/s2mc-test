@@ -3,8 +3,6 @@ package com.github.kory33.s2mctest.connection.protocol.versions
 
 import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
-import connection.protocol.codec.ByteCodecs.Common.given
-import connection.protocol.macros.GenByteDecode.given
 import connection.protocol.packets.PacketIntent
 
 import PacketIntent.Handshaking.ServerBound.*
@@ -16,6 +14,10 @@ import PacketIntent.Status.ClientBound.*
 import PacketIntent.Status.ServerBound.*
 
 object v1_9 {
+  import connection.protocol.codec.ByteCodecs.Common.given
+  import connection.protocol.codec.ByteCodecs.PositionCodecBefore1_14.given
+  import connection.protocol.macros.GenByteDecode.given
+
   val playProtocol = Protocol(
     PacketIdBindings((
       0x00 -> ByteCodec.summonPair[TeleportConfirm],

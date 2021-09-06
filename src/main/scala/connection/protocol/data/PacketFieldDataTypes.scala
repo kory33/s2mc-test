@@ -153,11 +153,13 @@ object PacketDataPrimitives:
 object PacketDataCompoundTypes:
   import PacketDataPrimitives.*
 
-  @NoGenByteDecode case class Position(x: Int, z: Int, y: Short) {
-    // x, z are 26 bits and y is 12 bits
-    require((x & 0xfc000000) == 0)
-    require((z & 0xfc000000) == 0)
+  @NoGenByteDecode case class Position(x: Int, y: Short, z: Int) {
+    // y is 12 bits and positive
     require((y & 0xfffff000) == 0)
+
+    // x, z are 26 bits (so upper bits are all zero or all one, depending on sign of coordinates)
+    require((x & 0xfc000000) == 0 || (x & 0xfc000000) == 0xfc000000)
+    require((z & 0xfc000000) == 0 || (z & 0xfc000000) == 0xfc000000)
   }
 
   case class ChatComponent(json: String)
