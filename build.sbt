@@ -11,6 +11,8 @@ resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/publi
 libraryDependencies ++= Seq(
   "org.scala-lang" %% "scala3-tasty-inspector" % scalaVersion.value,
 
+  "org.typelevel" %% "cats-mtl" % "1.2.1",
+
   // effect libraries
   "org.typelevel" %% "cats-effect" % "3.2.2",
   "co.fs2" %% "fs2-core" % "3.1.0",

@@ -1,140 +1,79 @@
 package com.github.kory33.s2mctest
 package connection.protocol.codec
-
-import algebra.ReadBytes
-
-import cats.{FlatMap, Functor, Monad, MonadThrow}
+import cats.{Functor, Monad, StackSafeMonad}
 import fs2.Chunk
 
-import scala.annotation.tailrec
-
 /**
- * An object responsible for decoding the object of type [[T]] from [[Chunk]]s of [[Byte]].
+ * DSL definition to parse data from binary stream of packet data.
  */
-trait ByteDecode[+T]:
-  import ByteDecode.DecodeResult
+enum ByteDecode[+T]:
+  /** An intention to read a byte chunk of size `size` not crossing the boundary between packets. */
+  case ReadUninterrupted(size: Int) extends ByteDecode[fs2.Chunk[Byte]]
+
+  /** An intention to read all the way to the end of packet. */
+  case ReadUntilEnd extends ByteDecode[fs2.Chunk[Byte]]
 
   /**
-   * Read a chunk of [[Byte]]s, attempts to recover a single object of type [[T]]
-   * and return the unused part of the input chunk.
+   * An expression that obtains a value `a` of [[A]] using `expr1`, and then
+   * obtains the result of type [[B]] using `f(a)`.
+   */
+  case Bind[A, +B](expr1: ByteDecode[A], f: A => ByteDecode[B]) extends ByteDecode[B]
+
+  /** A decode expression that immediately returns `value` without reading any input. */
+  case Success[+A](value: A) extends ByteDecode[A]
+
+  /**
+   * A control expression that reads [[A]] using `expr` precisely from `chunk`.
+   * This expression does not read any input.
    *
-   * The expected behaviour can be summarised into the following three points:
-   *  - When the input can be split into two chunks `(c1, c2)`
-   *    and `c1` corresponds to a single object of type [[T]],
-   *    return `DecodeResult.Decoded(v, c2)`.
-   *  - When, for some chunk `c`, `input ++ c` can be used to recover an object of type [[T]],
-   *    we consider the input to be *not sufficient* so return `DecodeResult.InputInsufficient`.
-   *  - Otherwise, we consider the input to be *invalid* so
-   *    return `DecodeResult.InputInvalid` with an optional error message.
-   *    This occurs, for example, when we are expecting one of 0x00 or 0x01 at the beginning of chunk,
-   *    and the given input's head is 0x02.
+   * The word `precise` here means that a value of [[A]] should be recoverable solely from [[Byte]],
+   * and that no [[Byte]] in `chunk` will be left unused.
    *
-   * It is expected that this function never `throw`s.
-   * Once again, if the input is invalid, return `DecodeResult.InputInvalid`.
+   * If `expr` yields [[ReadUntilEnd]] upon evaluation, [[ReadUntilEnd]] will only read until the end of `chunk`.
    */
-  def readOne(input: Chunk[Byte]): DecodeResult[T]
+  case ReadPreciselyFrom[+A](chunk: fs2.Chunk[Byte], expr: ByteDecode[A]) extends ByteDecode[A]
+
+  /** A control expression that signals an encounter with invalid input data. This expression does not read any input. */
+  case SignalInvalidData(error: Throwable) extends ByteDecode[Nothing]
 
   /**
-   * Repeatedly invoke [[readOne]] until no more object of type [[T]] can be recovered from the input.
+   * A control expression to give up reading a packet for not knowning how to parse additional data.
+   * This expression does not read any input.
    *
-   * This results in one of [[DecodeResult.Decoded]] or [[DecodeResult.InvalidInput]], returning an empty vector
-   * when the input is not sufficient.
+   * This is semantically different from [[SignalInvalidData]], because
+   * [[SignalInvalidData]] says that input data is known to be invalid
+   * while [[Giveup]] says that the data is in an unknown format.
    */
-  final def readEagerly(input: Chunk[Byte]): DecodeResult[Vector[T]] =
-    @tailrec def go(accumulator: Vector[T], remaining: Chunk[Byte]): DecodeResult[Vector[T]] =
-      readOne(input) match {
-        case DecodeResult.Decoded(value, newRemaining) => go(accumulator.appended(value), newRemaining)
-        case DecodeResult.InsufficientInput => DecodeResult.Decoded(accumulator, remaining)
-        case r @ DecodeResult.InvalidInput(_) => r
-      }
+  case Giveup(reason: String) extends ByteDecode[Nothing]
 
-    go(Vector.empty, input)
+object ByteDecode {
+  import algebra.ReadBytes
+  import ByteDecode.*
 
-object ByteDecode:
-  import cats.implicits.given
-  import generic.FunctorDerives.{given, *}
+  given ReadBytes[ByteDecode] with
+    override def ofSize(n: Int): ByteDecode[Chunk[Byte]] = ByteDecode.ReadUninterrupted(n)
 
-  /**
-   * Represents the result of decoding some initial segment of a [[Chunk]] of [[Byte]]s.
-   */
-  enum DecodeResult[+A] derives Functor:
-    case Decoded(value: A, remainingChunk: Chunk[Byte]) extends DecodeResult[A]
-    case InsufficientInput extends DecodeResult[Nothing]
-    case InvalidInput(reason: Option[String]) extends DecodeResult[Nothing]
+  // Bind will not actually evaluate flatmapping function so this monad is stack-safe
+  given Monad[ByteDecode] = new Monad[ByteDecode] with StackSafeMonad[ByteDecode] {
+    override def pure[A](x: A): ByteDecode[A] = Success(x)
+    override def flatMap[A, B](fa: ByteDecode[A])(f: A => ByteDecode[B]) = Bind(fa, f)
+  }
 
-  given ReadBytes[ByteDecode] = ???
+  given cats.mtl.Raise[ByteDecode, Throwable] with
+    override def functor: Functor[ByteDecode] = summon[Monad[ByteDecode]]
+    override def raise[E2 <: Throwable, A](e: E2): ByteDecode[A] = SignalInvalidData(e)
 
-  /**
-   * A decoder that consumes precisely [[n]] bytes from the input.
-   */
-  def readByteBlock(n: Int): ByteDecode[Chunk[Byte]] =
-    input =>
-      if input.size >= n then
-        val (result, rest) = input.splitAt(n)
-        DecodeResult.Decoded(result, rest)
-      else
-        DecodeResult.InsufficientInput
+  def readByteBlock(n: Int): ByteDecode[fs2.Chunk[Byte]] = ReadBytes[ByteDecode].ofSize(n)
 
-  def readByte: ByteDecode[Byte] =
-    input => input.splitAt(1) match
-      case (head, tail) if head.nonEmpty => DecodeResult.Decoded(head.head.get, tail)
-      case _ => DecodeResult.InsufficientInput
+  def readByte: ByteDecode[Byte] = ReadBytes[ByteDecode].forByte
 
-  def readUntilPacketEnd: ByteDecode[Chunk[Byte]] = ???
+  def readUntilPacketEnd: ByteDecode[fs2.Chunk[Byte]] = ReadUntilEnd
 
-  def raiseParseError(reason: String): ByteDecode[Nothing] =
-    _ => DecodeResult.InvalidInput(Some(reason))
+  def raisePacketError(errorMessage: String): ByteDecode[Nothing] = SignalInvalidData(java.io.IOException(errorMessage))
 
-  def giveUpParsingPacket(reason: String): ByteDecode[Nothing] =
-    // TODO distinguish between giving up and throwing an error
-    _ => DecodeResult.InvalidInput(Some(reason))
+  def giveupParsingPacket(reason: String): ByteDecode[Nothing] = Giveup(reason)
 
-  /**
-   * Partially apply input to the decoder and produce another decoder that never consumes additional input.
-   *
-   * The resulting decoder fails if either of the following happens:
-   *  - [[decode]] decides that [[chunk]] is an insufficient or invalid input
-   *  - [[decode]] parses a value out, but spits out unparsed tail of [[chunk]] as redundant data
-   */
   def readPrecise[A](chunk: Chunk[Byte], decode: ByteDecode[A]): ByteDecode[A] =
-    decode.readOne(chunk) match {
-      case DecodeResult.Decoded(value, rest) =>
-        if rest.isEmpty then
-          Monad[ByteDecode].pure(value)
-        else
-          raiseParseError(s"expected an exact input without additional data for readPrecise, got $chunk")
-      case DecodeResult.InsufficientInput => raiseParseError(s"expected an exact input, $chunk was insufficient")
-      case DecodeResult.InvalidInput(err) => raiseParseError {
-        "readPrecise failed, the underlying decoder returned an error" + err.fold("")(": " + _)
-      }
-    }
+    ReadPreciselyFrom(chunk, decode)
 
-  /**
-   * The [[Monad]] instance for [[ByteDecode]].
-   */
-  given MonadThrow[ByteDecode] with
-    override def flatMap[A, B](fa: ByteDecode[A])(f: A => ByteDecode[B]): ByteDecode[B] =
-      input => fa.readOne(input) match
-        case DecodeResult.Decoded(v, remaining) => f(v).readOne(remaining)
-        case r @ (_: DecodeResult.InvalidInput | _: DecodeResult.InsufficientInput.type) => r
-
-    override def tailRecM[A, B](a: A)(f: A => ByteDecode[Either[A, B]]): ByteDecode[B] =
-      @tailrec
-      def go(current: A, remaining: Chunk[Byte]): DecodeResult[B] =
-        f(current).readOne(remaining) match {
-          case DecodeResult.Decoded(Left(newA), newRemaining) => go(newA, newRemaining)
-          case DecodeResult.Decoded(Right(b), newRemaining) => DecodeResult.Decoded(b, newRemaining)
-          case r @ (_: DecodeResult.InvalidInput | _: DecodeResult.InsufficientInput.type) => r
-        }
-
-      go(a, _)
-
-    override def map[A, B](fa: ByteDecode[A])(f: A => B): ByteDecode[B] =
-      input => fa.readOne(input).map(f)
-
-    override def pure[A](x: A): ByteDecode[A] =
-      DecodeResult.Decoded(x, _)
-
-    override def raiseError[A](e: Throwable): ByteDecode[A] = ???
-
-    override def handleErrorWith[A](fa: ByteDecode[A])(f: Throwable => ByteDecode[A]): ByteDecode[A] = ???
+}

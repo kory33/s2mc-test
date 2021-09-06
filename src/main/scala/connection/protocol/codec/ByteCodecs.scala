@@ -5,6 +5,7 @@ import connection.protocol.data.PacketDataCompoundTypes.*
 import connection.protocol.data.PacketDataPrimitives.*
 import connection.protocol.typeclass.IntLike
 import connection.protocol.macros.GenByteDecode
+import algebra.ReadBytes
 import typenbtio.{ReadNBT, WriteNBT}
 
 import cats.Monad
@@ -132,7 +133,7 @@ object ByteCodecs {
         def nextIterationWith(state: State) =
           Monad[ByteDecode].pure(Left(state))
 
-        def concludeLoopWithError(latestState: State, nextByte: Byte) = raiseParseError {
+        def concludeLoopWithError(latestState: State, nextByte: Byte) = raisePacketError {
           s"encountered excess bytes while reading variable-length integer.\n" +
             s"maxBits was ${maxBits}, but the state reached is: st = $latestState, nextByte = $nextByte"
         }
@@ -198,27 +199,12 @@ object ByteCodecs {
     export VarNumCodecs.given
 
     given ByteCodec[String] = {
-      import java.io.UnsupportedEncodingException
-
       val utf8Charset = Charset.forName("UTF-8")
 
-      val decoder = for {
-        length <- ByteCodec[VarInt].decode
-        chunk <- readByteBlock(length.raw)
-        result <- {
-          try Monad[ByteDecode].pure(String(chunk.toArray, utf8Charset))
-          catch case e: UnsupportedEncodingException => raiseParseError {
-            s"Failed to decode UTF-8 string.\n" +
-            s"Expected a UTF-8 string of length ${length.raw} but got the byte array:" +
-            s"[${chunk.toArray.mkString(", ")}]"
-          }
-        }
-      } yield result
-
-      val encoder: ByteEncode[String] = (x: String) =>
-        ByteCodec[VarInt].encode.write(VarInt(x.length)) ++ Chunk.array(x.getBytes(utf8Charset))
-
-      ByteCodec[String](decoder, encoder)
+      ByteCodec[String](
+        ByteCodec[VarInt].decode.flatMap(length => ReadBytes[ByteDecode].forUTF8String(length.raw)),
+        (x: String) => ByteCodec[VarInt].encode.write(VarInt(x.length)) ++ Chunk.array(x.getBytes(utf8Charset))
+      )
     }
 
     // TODO this is not a common codec
@@ -386,7 +372,7 @@ object ByteCodecs {
              "crafting_special_suspiciousstew" =>
           Monad[ByteDecode].pure(RecipeData.NoAdditionalData(recipeType))
         case _ =>
-          giveUpParsingPacket(s"The recipe type ${recipeType} is unknown to the parser.")
+          giveupParsingPacket(s"The recipe type ${recipeType} is unknown to the parser.")
       }
     }
 
@@ -476,7 +462,7 @@ object ByteCodecs {
            "minecraft:time" |
            "forge:modid" |
            "forge:enum" => Monad[ByteDecode].pure(CommandArgument.ArgumentWithoutProperties(typeIdentifier))
-      case _ => giveUpParsingPacket(s"command argument type $typeIdentifier is unknown")
+      case _ => giveupParsingPacket(s"command argument type $typeIdentifier is unknown")
     }
 
     /**

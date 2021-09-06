@@ -31,13 +31,13 @@ trait ReadBytes[F[_]] {
 
   def forDouble(using F: cats.Functor[F]): F[Double] = byteBufferOfSize(8).map(_.getDouble)
 
-  def forUTF8String(using F: cats.MonadThrow[F])(length: Int): F[String] =
+  def forUTF8String(using F: cats.Monad[F], FRaise: cats.mtl.Raise[F, Throwable])(length: Int): F[String] =
     for {
       bytes <- ofSize(length)
-      result <- F.catchNonFatal(String(bytes.toArray, StandardCharsets.UTF_8))
+      result <- FRaise.catchNonFatal(String(bytes.toArray, StandardCharsets.UTF_8))(identity)
     } yield result
 
-  def forShortPrefixedUTF8String(using F: cats.MonadThrow[F]): F[String] =
+  def forShortPrefixedUTF8String(using cats.Monad[F], cats.mtl.Raise[F, Throwable]): F[String] =
     forShort.map(_.toInt).flatMap(forUTF8String)
 
   def forArray[A](using F: cats.Applicative[F])(arraySize: Int)(read: F[A]): F[List[A]] =

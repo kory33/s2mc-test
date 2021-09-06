@@ -33,20 +33,25 @@ object ReadNBT {
 
   import cats.implicits.given
 
+  type RaiseThrowable[F[_]] = cats.mtl.Raise[F, Throwable]
+  object RaiseThrowable {
+    def apply[F[_]](using ev: RaiseThrowable[F]): RaiseThrowable[F] = ev
+  }
+
   /**
-   * Reads an [[net.katsstuff.typenbt.NBTCompound]] in the context [[F]] with [[ReadBytes]] implementation provided.
+   * Reads an [[net.katsstuff.typenbt.NBTCompound]] in the context [[F]].
    *
    * @return a computation resulting in a tuple of [[NBTCompound]] and its root name.
    */
-  def read[F[_]: MonadThrow](using readAlgebra: ReadBytes[F]): F[(String, NBTCompound)] =
+  def read[F[_]: Monad: RaiseThrowable: ReadBytes]: F[(String, NBTCompound)] =
     readType[F].flatMap { tpe =>
       if tpe == NBTType.TagCompound then
         Monad[F].product(readString[F], readCompound)
       else
-        MonadThrow[F].raiseError(IOException("Wrong starting type for NBT"))
+        RaiseThrowable[F].raise(IOException("Wrong starting type for NBT"))
     }
 
-  private def readCompound[F[_]: MonadThrow: ReadBytes]: F[NBTCompound] =
+  private def readCompound[F[_]: Monad: RaiseThrowable: ReadBytes]: F[NBTCompound] =
     Monad[F].tailRecM(NBTCompound()) { compound =>
       readType[F].flatMap { nbtType =>
         if nbtType == NBTType.TagEnd then
@@ -60,10 +65,10 @@ object ReadNBT {
       }
     }
 
-  private def readString[F[_]: MonadThrow: ReadBytes]: F[String] =
+  private def readString[F[_]: Monad: RaiseThrowable: ReadBytes]: F[String] =
     ReadBytes[F].forShortPrefixedUTF8String
 
-  private def readList[F[_]: MonadThrow: ReadBytes]: F[NBTList[Any, unsafe.AnyTag]] =
+  private def readList[F[_]: Monad: RaiseThrowable: ReadBytes]: F[NBTList[Any, unsafe.AnyTag]] =
     for {
       nbtType <- readType[F]
       listType = NBTListType(nbtType)
@@ -79,18 +84,18 @@ object ReadNBT {
   private def readLongArray[F[_]: Monad: ReadBytes]: F[List[Long]] =
     ReadBytes[F].forIntPrefixedArray(ReadBytes[F].forLong)
 
-  private def readType[F[_]: MonadThrow: ReadBytes]: F[unsafe.AnyTagType] =
+  private def readType[F[_]: Monad: RaiseThrowable: ReadBytes]: F[unsafe.AnyTagType] =
     for {
       byte <- ReadBytes[F].forByte
-      result <- MonadThrow[F].catchNonFatal {
+      result <- RaiseThrowable[F].catchNonFatal {
         NBTType
           .fromId(byte)
           .asInstanceOf[Option[unsafe.AnyTagType]]
           .getOrElse(throw IOException(s"Read type $byte on NBT is not valid"))
-      }
+      }(identity)
     } yield result
 
-  private def readTag[F[_]: MonadThrow: ReadBytes, A](nbtType: NBTType.CovarObj[A]): F[NBTTag.Aux[A]] =
+  private def readTag[F[_]: Monad: RaiseThrowable: ReadBytes, A](nbtType: NBTType.CovarObj[A]): F[NBTTag.Aux[A]] =
     nbtType match {
       case NBTType.TagByte      => ReadBytes[F].forByte.map(NBTByte(_).asInstanceOf[NBTTag.Aux[A]])
       case NBTType.TagShort     => ReadBytes[F].forShort.map(NBTShort(_).asInstanceOf[NBTTag.Aux[A]])
@@ -104,8 +109,8 @@ object ReadNBT {
       case NBTType.TagCompound  => readCompound.asInstanceOf[F[NBTTag.Aux[A]]]
       case NBTType.TagIntArray  => readIntArray.map(a => NBTIntArray(a.toIndexedSeq).asInstanceOf[NBTTag.Aux[A]])
       case NBTType.TagLongArray => readLongArray.map(a => NBTLongArray(a.toIndexedSeq).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagEnd       => MonadThrow[F].raiseError(IOException("Unexpected end tag"))
-      case _                    => MonadThrow[F].raiseError(IOException("Unexpected tag type"))
+      case NBTType.TagEnd       => RaiseThrowable[F].raise(IOException("Unexpected end tag"))
+      case _                    => RaiseThrowable[F].raise(IOException("Unexpected tag type"))
     }
 
 }
