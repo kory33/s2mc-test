@@ -2,6 +2,7 @@ package com.github.kory33.s2mctest
 package typenbtio
 
 import algebra.ReadBytes
+import typeclass.RaiseThrowable
 
 import cats.{Monad, MonadThrow}
 import net.katsstuff.typenbt.{NBTByte, NBTByteArray, NBTCompound, NBTDouble, NBTFloat, NBTInt, NBTIntArray, NBTList, NBTListType, NBTLong, NBTLongArray, NBTShort, NBTString, NBTTag, NBTType, unsafe}
@@ -32,11 +33,6 @@ import java.io.IOException
 object ReadNBT {
 
   import cats.implicits.given
-
-  type RaiseThrowable[F[_]] = cats.mtl.Raise[F, Throwable]
-  object RaiseThrowable {
-    def apply[F[_]](using ev: RaiseThrowable[F]): RaiseThrowable[F] = ev
-  }
 
   /**
    * Reads an [[net.katsstuff.typenbt.NBTCompound]] in the context [[F]].
