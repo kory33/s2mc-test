@@ -54,6 +54,8 @@ object GenericDecode {
    * </pre>
    */
   def decodeVarNumF[F[_] : Monad : ReadBytes : RaiseThrowable](maxBits: Int): F[Chunk[Byte]] = {
+    require(maxBits % 8 == 0)
+
     import scodec.bits.{BitVector, ByteVector}
 
     extension (bv: BitVector)
@@ -64,8 +66,15 @@ object GenericDecode {
     type LoopIterResult = F[Either[State, Chunk[Byte]]]
 
     def concludeLoopWith(result: BitVector): LoopIterResult =
-      // FIXME we need to zero-pad output to fit to maxBits
-      Monad[F].pure(Right(Chunk.array(result.reverseBitOrder.toByteArray)))
+      Monad[F].pure(Right {
+        val totalBytes = maxBits / 8
+        val lower = Chunk.array(result.reverseBitOrder.toByteArray)
+
+        val bytesToFill = totalBytes - lower.size
+        val pad = Chunk.vector(Vector.fill(bytesToFill)(0: Byte))
+
+        pad ++ lower
+      })
 
     def nextIterationWith(state: State): LoopIterResult =
       Monad[F].pure(Left(state))
