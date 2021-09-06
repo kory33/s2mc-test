@@ -64,6 +64,7 @@ object GenericDecode {
     type LoopIterResult = F[Either[State, Chunk[Byte]]]
 
     def concludeLoopWith(result: BitVector): LoopIterResult =
+      // FIXME we need to zero-pad output to fit to maxBits
       Monad[F].pure(Right(Chunk.array(result.reverseBitOrder.toByteArray)))
 
     def nextIterationWith(state: State): LoopIterResult =
