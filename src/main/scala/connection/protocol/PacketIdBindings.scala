@@ -4,6 +4,8 @@ package connection.protocol
 import connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
 import generic.compiletime.*
 
+import cats.Monad
+
 import scala.collection.immutable.Queue
 
 type PacketId = Int
@@ -28,7 +30,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
     packetIds.size == packetIds.toSet.size
   }, "bindings must not contain duplicate packet IDs")
 
-  def decoderFor(id: PacketId): Option[DecodeScopedBytes[Tuple.Union[Tuple.InverseMap[BindingTup, CodecBinding]]]] =
+  def decoderFor(id: PacketId): Option[DecodeScopedBytes[UnionBindingTypes[BindingTup]]] =
     // we can't use these types as type parameter bound or return type
     // because compiler does not reduce them to concrete types for some reason
     type PacketTuple = Tuple.InverseMap[BindingTup, CodecBinding]
@@ -39,6 +41,20 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
     )
       .find { case (i, _) => i == id }
       .map { case (_, decoder) => decoder }
+
+  def parsePacket: DecodeScopedBytes[UnionBindingTypes[BindingTup]] = {
+    import cats.implicits.given
+    import data.PacketDataPrimitives.VarInt
+    import codec.ByteCodecs.Common.VarNumCodecs.given
+
+    for {
+      packetIdVarInt <- ByteCodec[VarInt].decode
+      decodeOption = decoderFor(packetIdVarInt.raw)
+      result <- decodeOption.getOrElse {
+        DecodeScopedBytes.giveupParsingPacket(s"Packet of ID ${packetIdVarInt.raw} is unknown")
+      }
+    } yield result
+  }
 
   /**
    * Statically resolve the codec associated with type [[O]].

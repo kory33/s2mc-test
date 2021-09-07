@@ -78,7 +78,7 @@ object ByteCodecs {
 
     given ByteCodec[UShort] = ByteCodec[Short].imap(UShort.fromRawShort)(_.asRawShort)
 
-    private object VarNumCodecs {
+    object VarNumCodecs {
       def decodeVarNum(maxBits: Int): DecodeScopedBytes[Chunk[Byte]] = generic.GenericDecode.decodeVarNumF[DecodeScopedBytes](maxBits)
 
       def encodeVarNum(fixedSizeBigEndianBytes: Chunk[Byte]): Chunk[Byte] = {

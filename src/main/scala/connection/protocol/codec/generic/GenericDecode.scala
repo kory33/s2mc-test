@@ -101,4 +101,8 @@ object GenericDecode {
         concludeLoopWith(accum)
     }
   }
+
+  def decodeVarIntF[F[_] : Monad : ReadBytes : RaiseThrowable]: F[Int] =
+    Monad[F].map(decodeVarNumF(32))(chunk => java.nio.ByteBuffer.wrap(chunk.toArray).getInt)
+
 }
