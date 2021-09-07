@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 
 object ByteCodecs {
 
-  import ByteDecode.*
+  import DecodeScopedBytes.*
   import cats.implicits.given
 
   inline def autogenerateFor[T](using gen: K0.Generic[T]): ByteCodec[T] =
@@ -31,11 +31,11 @@ object ByteCodecs {
   object Common {
 
     inline given codecToEncode[A: ByteCodec]: ByteEncode[A] = ByteCodec[A].encode
-    inline given codecToDecode[A: ByteCodec]: ByteDecode[A] = ByteCodec[A].decode
+    inline given codecToDecode[A: ByteCodec]: DecodeScopedBytes[A] = ByteCodec[A].decode
 
     /** Codec of Unit (empty type). */
     given ByteCodec[Unit] = ByteCodec[Unit](
-      Monad[ByteDecode].pure(()),
+      Monad[DecodeScopedBytes].pure(()),
       (x: Unit) => Chunk.empty[Byte]
     )
 
@@ -79,7 +79,7 @@ object ByteCodecs {
     given ByteCodec[UShort] = ByteCodec[Short].imap(UShort.fromRawShort)(_.asRawShort)
 
     private object VarNumCodecs {
-      def decodeVarNum(maxBits: Int): ByteDecode[Chunk[Byte]] = generic.GenericDecode.decodeVarNumF[ByteDecode](maxBits)
+      def decodeVarNum(maxBits: Int): DecodeScopedBytes[Chunk[Byte]] = generic.GenericDecode.decodeVarNumF[DecodeScopedBytes](maxBits)
 
       def encodeVarNum(fixedSizeBigEndianBytes: Chunk[Byte]): Chunk[Byte] = {
         extension [A] (list: List[A])
@@ -129,13 +129,13 @@ object ByteCodecs {
       val utf8Charset = Charset.forName("UTF-8")
 
       ByteCodec[String](
-        ByteCodec[VarInt].decode.flatMap(length => ReadBytes[ByteDecode].forUTF8String(length.raw)),
+        ByteCodec[VarInt].decode.flatMap(length => ReadBytes[DecodeScopedBytes].forUTF8String(length.raw)),
         (x: String) => ByteCodec[VarInt].encode.write(VarInt(x.length)) ++ Chunk.array(x.getBytes(utf8Charset))
       )
     }
 
     given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
-      val decode: ByteDecode[LenPrefixedSeq[L, A]] = for {
+      val decode: DecodeScopedBytes[LenPrefixedSeq[L, A]] = for {
         length <- ByteCodec[L].decode
         intLength = IntLike[L].toInt(length)
         aList <- ByteCodec[A].decode.replicateA(intLength)
@@ -155,7 +155,7 @@ object ByteCodecs {
       ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValueFP12)
 
     given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](
-      ByteDecode.readUntilPacketEnd.map(c => UnspecifiedLengthByteArray(c.toArray)),
+      DecodeScopedBytes.readUntilPacketEnd.map(c => UnspecifiedLengthByteArray(c.toArray)),
       ulArray => Chunk.array(ulArray.asArray)
     )
 
@@ -267,7 +267,7 @@ object ByteCodecs {
     given ByteCodec[RecipeData.Stonecutting] = autogenerateFor[RecipeData.Stonecutting]
     given ByteCodec[RecipeData.Smithing] = autogenerateFor[RecipeData.Smithing]
 
-    def decodeRecipeData(recipeType: String): ByteDecode[RecipeData] = {
+    def decodeRecipeData(recipeType: String): DecodeScopedBytes[RecipeData] = {
       def decodeCookingRecipeDataWith(recipeType: CookingDataType) =
         ByteCodec[CookingRecipeData].decode.map(RecipeData.Cooking(recipeType, _))
 
@@ -294,7 +294,7 @@ object ByteCodecs {
              "crafting_special_shielddecoration" |
              "crafting_special_shulkerboxcoloring" |
              "crafting_special_suspiciousstew" =>
-          Monad[ByteDecode].pure(RecipeData.NoAdditionalData(recipeType))
+          Monad[DecodeScopedBytes].pure(RecipeData.NoAdditionalData(recipeType))
         case _ =>
           giveupParsingPacket(s"The recipe type ${recipeType} is unknown to the parser.")
       }
@@ -312,7 +312,7 @@ object ByteCodecs {
     }
 
     given ByteCodec[Recipe] = {
-      val decode: ByteDecode[Recipe] =
+      val decode: DecodeScopedBytes[Recipe] =
         for {
           recipeType <- ByteCodec[String].decode
           recipeId <- ByteCodec[String].decode
@@ -337,7 +337,7 @@ object ByteCodecs {
     given ByteCodec[CommandArgument.ScoreHolderA] = autogenerateFor[CommandArgument.ScoreHolderA]
     given ByteCodec[CommandArgument.RangeA] = autogenerateFor[CommandArgument.RangeA]
 
-    def decodeCommandArgumentFor(typeIdentifier: String): ByteDecode[CommandArgument] = typeIdentifier match {
+    def decodeCommandArgumentFor(typeIdentifier: String): DecodeScopedBytes[CommandArgument] = typeIdentifier match {
       case "brigadier:double" => ByteCodec[CommandArgument.DoubleA].decode
       case "brigadier:float" => ByteCodec[CommandArgument.FloatA].decode
       case "brigadier:integer" => ByteCodec[CommandArgument.IntegerA].decode
@@ -385,7 +385,7 @@ object ByteCodecs {
            "minecraft:nbt_compound_tag" |
            "minecraft:time" |
            "forge:modid" |
-           "forge:enum" => Monad[ByteDecode].pure(CommandArgument.ArgumentWithoutProperties(typeIdentifier))
+           "forge:enum" => Monad[DecodeScopedBytes].pure(CommandArgument.ArgumentWithoutProperties(typeIdentifier))
       case _ => giveupParsingPacket(s"command argument type $typeIdentifier is unknown")
     }
 
@@ -425,13 +425,13 @@ object ByteCodecs {
     )
 
     given ByteCodec[CommandNode] = {
-      given ByteDecode[CommandArgument] = codecToDecode[CommandArgument]
+      given DecodeScopedBytes[CommandArgument] = codecToDecode[CommandArgument]
 
       autogenerateFor[CommandNode]
     }
 
     given ByteCodec[NBTCompound] = ByteCodec[NBTCompound](
-      ReadNBT.read[ByteDecode].map(_._2),
+      ReadNBT.read[DecodeScopedBytes].map(_._2),
       (compound: NBTCompound) => WriteNBT.toChunk(compound, rootName = "", gzip = false)
     )
 

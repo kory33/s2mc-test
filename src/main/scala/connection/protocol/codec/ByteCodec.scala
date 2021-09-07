@@ -7,7 +7,7 @@ import fs2.Chunk
 /**
  * An object that has capability to encode or decode values of type [[A]].
  */
-case class ByteCodec[A](decode: ByteDecode[A], encode: ByteEncode[A])
+case class ByteCodec[A](decode: DecodeScopedBytes[A], encode: ByteEncode[A])
 
 object ByteCodec {
 
@@ -19,6 +19,6 @@ object ByteCodec {
 
   def apply[A: ByteCodec]: ByteCodec[A] = summon
 
-  def summonPair[A](using decode: ByteDecode[A], encode: ByteEncode[A]): ByteCodec[A] = ByteCodec(decode, encode)
+  def summonPair[A](using decode: DecodeScopedBytes[A], encode: ByteEncode[A]): ByteCodec[A] = ByteCodec(decode, encode)
 
 }

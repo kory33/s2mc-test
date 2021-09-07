@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest
 package connection.protocol
 
-import connection.protocol.codec.{ByteCodec, ByteDecode}
+import connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
 import generic.compiletime.*
 
 import scala.collection.immutable.Queue
@@ -28,14 +28,14 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
     packetIds.size == packetIds.toSet.size
   }, "bindings must not contain duplicate packet IDs")
 
-  def decoderFor(id: PacketId): Option[ByteDecode[Tuple.Union[Tuple.InverseMap[BindingTup, CodecBinding]]]] =
+  def decoderFor(id: PacketId): Option[DecodeScopedBytes[Tuple.Union[Tuple.InverseMap[BindingTup, CodecBinding]]]] =
     // we can't use these types as type parameter bound or return type
     // because compiler does not reduce them to concrete types for some reason
     type PacketTuple = Tuple.InverseMap[BindingTup, CodecBinding]
     type Packet = Tuple.Union[PacketTuple]
 
     foldToList[CodecBinding, PacketTuple](ev(bindings))([t <: Packet] => (pair: CodecBinding[t]) =>
-      (pair._1, pair._2.decode): (PacketId, ByteDecode[Packet])
+      (pair._1, pair._2.decode): (PacketId, DecodeScopedBytes[Packet])
     )
       .find { case (i, _) => i == id }
       .map { case (_, decoder) => decoder }

@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest
 package connection.protocol.macros
 
-import connection.protocol.codec.ByteDecode
+import connection.protocol.codec.DecodeScopedBytes
 
 import scala.annotation.{StaticAnnotation, tailrec}
 import scala.collection.immutable.Queue
@@ -17,7 +17,7 @@ object GenByteDecode {
   import scala.quoted.*
   import scala.tasty.inspector.*
 
-  inline given gen[A]: ByteDecode[A] =
+  inline given gen[A]: DecodeScopedBytes[A] =
     ${ genImpl[A] }
 
   private[this] case class OptionalFieldCondition(fieldName: String, condition: Expr[Boolean])
@@ -67,18 +67,18 @@ object GenByteDecode {
 
   private def summonDecoderExpr[T: Type](using quotes: Quotes) =
     import quotes.reflect.*
-    Expr.summon[ByteDecode[T]] match {
+    Expr.summon[DecodeScopedBytes[T]] match {
       case Some(d) => d
       case _ => report.throwError(
-        s"\tAttemped to summon ByteDecode[${TypeRepr.of[T].show}] but could not be resolved.\n"
+        s"\tAttemped to summon DecodeScopedBytes[${TypeRepr.of[T].show}] but could not be resolved.\n"
       )
     }
 
-  private def genImpl[A: Type](using quotes: Quotes): Expr[ByteDecode[A]] = {
+  private def genImpl[A: Type](using quotes: Quotes): Expr[DecodeScopedBytes[A]] = {
     import quotes.reflect.*
 
-    // this instance is provided in `ByteDecode`'s companion
-    val byteDecodeMonad: Expr[cats.Monad[ByteDecode]] = Expr.summon[cats.Monad[ByteDecode]].get
+    // this instance is provided in `DecodeScopedBytes`'s companion
+    val byteDecodeMonad: Expr[cats.Monad[DecodeScopedBytes]] = Expr.summon[cats.Monad[DecodeScopedBytes]].get
 
     sealed trait ClassField {
       val fieldType: TypeRepr
@@ -152,19 +152,19 @@ object GenByteDecode {
               case _ => super.transformTerm(tree)(_owner)
           mapper.transformTerm(expr.asTerm)(Symbol.spliceOwner).asExprOf[Boolean]
 
-        def mapConstructorParamsToPureDecoder(constructorParameters: Queue[Term]): Expr[ByteDecode[A]] =
+        def mapConstructorParamsToPureDecoder(constructorParameters: Queue[Term]): Expr[DecodeScopedBytes[A]] =
           '{
             ${byteDecodeMonad}.pure {
               ${Apply(primaryConstructorTermOf[A](using quotes), constructorParameters.toList).asExprOf[A]}
             }
           }
 
-        def recurse(currentOwner: Symbol, parametersSoFar: Queue[Term], remainingFields: List[ClassField]): Expr[ByteDecode[A]] =
+        def recurse(currentOwner: Symbol, parametersSoFar: Queue[Term], remainingFields: List[ClassField]): Expr[DecodeScopedBytes[A]] =
           remainingFields match {
             case (next :: rest) =>
               next.fieldType.asType match
                 case '[ft] =>
-                  val fieldDecoder: Expr[ByteDecode[ft]] = {
+                  val fieldDecoder: Expr[DecodeScopedBytes[ft]] = {
                     next match {
                       case OptionalField(_, uType, cond) => uType.asType match
                         // ut is a type such that Option[ut] =:= ft
@@ -173,15 +173,15 @@ object GenByteDecode {
                             ${byteDecodeMonad}.map(${summonDecoderExpr[ut]})(Some(_))
                           else
                             ${byteDecodeMonad}.pure(None)
-                        } // Expr of type ByteDecode[Option[ut]]
+                        } // Expr of type DecodeScopedBytes[Option[ut]]
                       case RequiredField(_, fieldType) => summonDecoderExpr[ft]
                     }
-                  }.asExprOf[ByteDecode[ft]]
+                  }.asExprOf[DecodeScopedBytes[ft]]
 
-                  val continuation: Expr[ft => ByteDecode[A]] =
+                  val continuation: Expr[ft => DecodeScopedBytes[A]] =
                     Lambda(
                       currentOwner,
-                      MethodType(List(next.fieldName))(_ => List(next.fieldType), _ => TypeRepr.of[ByteDecode[A]]),
+                      MethodType(List(next.fieldName))(_ => List(next.fieldType), _ => TypeRepr.of[DecodeScopedBytes[A]]),
                       (innerOwner, params) => params.head match {
                         case p: Term => recurse(innerOwner, parametersSoFar.enqueue(p), rest).asTerm
                           // we need explicit owner conversion
@@ -189,7 +189,7 @@ object GenByteDecode {
                           .changeOwner(innerOwner)
                         case p => report.throwError(s"Expected an identifier, got unexpected $p")
                       }
-                    ).asExprOf[ft => ByteDecode[A]]
+                    ).asExprOf[ft => DecodeScopedBytes[A]]
 
                   '{ ${byteDecodeMonad}.flatMap(${fieldDecoder})(${continuation}) }
             case Nil => mapConstructorParamsToPureDecoder(parametersSoFar)
