@@ -22,6 +22,10 @@ import scala.reflect.ClassTag
 
 object ByteCodecs {
 
+  // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
+  import conversions.AutoWidenFunctor.given
+  import scala.language.implicitConversions
+
   import DecodeScopedBytes.*
   import cats.implicits.given
 

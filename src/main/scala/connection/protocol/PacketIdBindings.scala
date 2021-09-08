@@ -31,6 +31,10 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
   }, "bindings must not contain duplicate packet IDs")
 
   def decoderFor(id: PacketId): Option[DecodeScopedBytes[UnionBindingTypes[BindingTup]]] =
+    // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
+    import conversions.AutoWidenFunctor.given
+    import scala.language.implicitConversions
+
     type PacketTuple = Tuple.InverseMap[BindingTup, CodecBinding]
     type Packet = Tuple.Union[PacketTuple]
 
