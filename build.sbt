@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   "org.scala-lang" %% "scala3-tasty-inspector" % scalaVersion.value,
 
   "org.typelevel" %% "cats-mtl" % "1.2.1",
+  "org.typelevel" %% "cats-free" % "2.6.1",
 
   // effect libraries
   "org.typelevel" %% "cats-effect" % "3.2.2",
