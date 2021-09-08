@@ -12,7 +12,12 @@ trait ReadBytes[F[_]] {
   import cats.implicits.given
 
   /**
-   * An effect to obtain a chunk of [[Byte]] of size `n`
+   * An effect to obtain a chunk of [[Byte]] of size `n`.
+   *
+   * The resulting [[fs2.Chunk]] in the returned action will always have size of `n`.
+   * If that requirement cannot be filled, the action may (within the context of the action) throw.
+   *
+   * @param n size of byte chunk to read, must be nonnegative.
    */
   def ofSize(n: Int): F[fs2.Chunk[Byte]]
 
