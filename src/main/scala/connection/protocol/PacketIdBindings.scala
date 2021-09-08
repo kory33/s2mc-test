@@ -31,8 +31,6 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
   }, "bindings must not contain duplicate packet IDs")
 
   def decoderFor(id: PacketId): Option[DecodeScopedBytes[UnionBindingTypes[BindingTup]]] =
-    // we can't use these types as type parameter bound or return type
-    // because compiler does not reduce them to concrete types for some reason
     type PacketTuple = Tuple.InverseMap[BindingTup, CodecBinding]
     type Packet = Tuple.Union[PacketTuple]
 
