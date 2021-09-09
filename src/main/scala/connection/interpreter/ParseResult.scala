@@ -3,9 +3,5 @@ package connection.interpreter
 
 import connection.protocol.UnionBindingTypes
 
-enum ParseResult[+A]:
-  case Parsed(result: A)
-  case UnknownFormat(unknownReason: String) extends ParseResult[Nothing]
-  case Errored(error: Throwable) extends ParseResult[Nothing]
-
+type ParseResult[+A] = Either[ParseInterruption, A]
 type ParseResultForBindings[BindingTup <: Tuple] = ParseResult[UnionBindingTypes[BindingTup]]
