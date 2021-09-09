@@ -61,15 +61,19 @@ import cats.free.Free
 
 opaque type DecodeScopedBytes[T] = Free[DecodeScopedBytesInstruction, T]
 
-extension [T] (program: DecodeScopedBytes[T])
-  def asFree: Free[DecodeScopedBytesInstruction, T] = program
-
 /**
  * Companion object of DSL type that provides combinators.
  */
 object DecodeScopedBytes {
   import algebra.ReadBytes
   import DecodeScopedBytesInstruction.*
+
+  import cats.~>
+
+  def asFreeK: DecodeScopedBytes ~> ([t] =>> Free[DecodeScopedBytesInstruction, t]) =
+    new (DecodeScopedBytes ~> ([t] =>> Free[DecodeScopedBytesInstruction, t])) {
+      override def apply[A](fa: DecodeScopedBytes[A]): Free[DecodeScopedBytesInstruction, A] = fa
+    }
 
   given ReadBytes[DecodeScopedBytes] with
     override def ofSize(n: Int): DecodeScopedBytes[Chunk[Byte]] =
