@@ -29,4 +29,4 @@ libraryDependencies ++= Seq(
   "org.scodec" %% "scodec-bits" % "1.1.28"
 )
 
-scalacOptions ++= Seq("-Yretain-trees", "-Xcheck-macros")
+scalacOptions ++= Seq("-Yretain-trees", "-Xcheck-macros", "-Ykind-projector:underscores")

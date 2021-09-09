@@ -16,8 +16,8 @@ type IncludedInLockedT[T <: Tuple, A] <: Boolean =
   // to prevent S not being disjoint from some other type in T
   T match {
     case EmptyTuple   => false
-    case Lock[A] *: _ => true
-    case _ *: tail    => IncludedInLockedT[tail, A]
+    case Lock[A] *: ? => true
+    case ? *: tail    => IncludedInLockedT[tail, A]
   }
 
 /**
@@ -39,8 +39,8 @@ type ContainsDistinctT[T <: Tuple] = ContainsDistinctLockedT[LockTuple[T]]
 
 type IndexOfT[A, T <: Tuple] <: Int =
   Tuple.Map[T, Lock] match {
-    case Lock[A] *: _ => 0
-    case _ *: tail    => S[IndexOfT[A, Tuple.InverseMap[tail, Lock]]]
+    case Lock[A] *: ? => 0
+    case ? *: tail    => S[IndexOfT[A, Tuple.InverseMap[tail, Lock]]]
   }
 
 extension [F[_], BaseTuple <: Tuple](tuple: Tuple.Map[BaseTuple, F])
