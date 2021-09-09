@@ -1,6 +1,8 @@
 package com.github.kory33.s2mctest
 package algebra
 
+import fs2.Chunk
+
 import java.nio.charset.StandardCharsets
 
 /**
@@ -15,7 +17,8 @@ trait ReadBytes[F[_]] {
    * An effect to obtain a chunk of [[Byte]] of size `n`.
    *
    * The resulting [[fs2.Chunk]] in the returned action will always have size of `n`.
-   * If that requirement cannot be filled, the action may (within the context of the action) throw.
+   * If that requirement cannot be filled, the action must (within the context of the action) throw
+   * without reading any byte in the first place (so the Atomicity is ensured in vocabulary of ACID).
    *
    * @param n size of byte chunk to read, must be nonnegative.
    */
@@ -51,10 +54,20 @@ trait ReadBytes[F[_]] {
   def forIntPrefixedArray[A](using F: cats.Monad[F])(forA: F[A]): F[List[A]] =
     forInt.flatMap(forArray(_)(forA))
 
+  import cats.~>
+
+  final def mapK[G[_]](trans: F ~> G): ReadBytes[G] = new ReadBytes[G] {
+    override def ofSize(n: Int): G[Chunk[Byte]] = trans(ReadBytes.this.ofSize(n))
+  }
+
 }
 
 object ReadBytes {
 
   def apply[F[_]](using ev: ReadBytes[F]): ReadBytes[F] = ev
 
+  import cats.mtl.MonadPartialOrder
+
+  given readBytesForPartialOrder[F[_], G[_]](using MonadPartialOrder[F, G], ReadBytes[F]): ReadBytes[G] =
+    ReadBytes[F].mapK(MonadPartialOrder[F, G])
 }

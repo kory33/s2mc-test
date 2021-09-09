@@ -6,7 +6,7 @@ import connection.interpreter.ParseResult
 import connection.protocol.codec.DecodeScopedBytes
 import connection.protocol.codec.DecodeScopedBytesInstruction
 
-import cats.Monad
+import cats.{Applicative, Monad}
 import cats.~>
 import cats.mtl.{Stateful, Raise}
 import fs2.Chunk
@@ -31,38 +31,42 @@ object DecodeProgramInterpreter {
     def apply[F[_]](using ev: RaiseParseError[F]): RaiseParseError[F] = ev
   }
 
-  def runInstructionF[F[_]: ReadBytes: HasRemainingByteCount: RaiseParseError]: DecodeScopedBytesInstruction ~> F =
+  private def runInstructionM[M[_]: ReadBytes: HasRemainingByteCount: RaiseParseError]: DecodeScopedBytesInstruction ~> M = {
+    given Monad[M] = HasRemainingByteCount[M].monad
+
     toFunctionK([A] => (instruction: DecodeScopedBytesInstruction[A]) => {
       import DecodeScopedBytesInstruction.*
-      given Monad[F] = HasRemainingByteCount[F].monad
+
+      def readChunkSafely(length: Int): M[Chunk[Byte]] =
+        for {
+          remainingBytes <- HasRemainingByteCount[M].get
+          chunk <-
+            if (length <= remainingBytes) then
+              ReadBytes[M].ofSize(length)
+            else
+              RaiseParseError[M].raise[ParseInterruption, Chunk[Byte]](ParseInterruption.RanOutOfBytes)
+          _ <- HasRemainingByteCount[M].set(remainingBytes - length)
+        } yield chunk
 
       instruction match {
-        case ReadFromScope(size) =>
-          // since DecodeScopedBytesInstruction is covariant, A is inferred a bound >: Chunk[Byte] so we need to widen
-          ReadBytes[F].ofSize(size).widen
-        case ReadEntireScope => for {
-          remainingBytesInScope <- HasRemainingByteCount[F].get
-          entireChunkInScope <- ReadBytes[F].ofSize(remainingBytesInScope)
-          _ <- HasRemainingByteCount[F].set(0)
-        } yield entireChunkInScope
-        case ps: PreciseScope[a2] => for {
-          result <- interpretOnChunk[F, a2](ps.chunk, ps.program)
-          value <- result match {
-            case Left(interruption) => RaiseParseError[F].raise[ParseInterruption, A](interruption)
-            case Right(value) => Monad[F].pure(value)
-          }
-        } yield value
-        case RaiseError(err) => RaiseParseError[F].raise[ParseInterruption, A](ParseInterruption.Raised(err))
-        case Giveup(reason) => RaiseParseError[F].raise[ParseInterruption, A](ParseInterruption.Gaveup(reason))
+        case ReadFromScope(size) => readChunkSafely(size).widen
+        case ReadEntireScope => HasRemainingByteCount[M].get.flatMap(readChunkSafely).widen
+        case ps: PreciseScope[a2] => interpretOnChunkAndGet[M, a2](ps.chunk, ps.program).widen
+        case RaiseError(err) => RaiseParseError[M].raise[ParseInterruption, A](ParseInterruption.Raised(err))
+        case Giveup(reason) => RaiseParseError[M].raise[ParseInterruption, A](ParseInterruption.Gaveup(reason))
       }
-    }: F[A])
+    }: M[A])
+  }
 
-  def runProgramInF[F[_]: ReadBytes: HasRemainingByteCount: RaiseParseError]: DecodeScopedBytes ~> F =
+  private def compileToM[M[_]: ReadBytes: HasRemainingByteCount: RaiseParseError]: DecodeScopedBytes ~> M =
     DecodeScopedBytes.asFreeK.andThen {
-      cats.free.Free.foldMap[DecodeScopedBytesInstruction, F](runInstructionF[F])(using HasRemainingByteCount[F].monad)
+      cats.free.Free.foldMap[DecodeScopedBytesInstruction, M](runInstructionM[M])(using HasRemainingByteCount[M].monad)
     }
 
-  def readBytesFromState[F[_]: WithRemainingByteChunk: RaiseParseError]: ReadBytes[F] =
+  import cats.Id
+  import cats.data.{StateT, EitherT}
+
+  private def readBytesForChunkContext[F[_]: WithRemainingByteChunk: RaiseParseError]: ReadBytes[F] =
     new ReadBytes[F] {
       override def ofSize(n: Int): F[Chunk[Byte]] =
         given Monad[F] = WithRemainingByteChunk[F].monad
@@ -79,12 +83,48 @@ object DecodeProgramInterpreter {
         } yield chunkToUse
     }
 
-  import cats.data.{StateT, EitherT}
+  /**
+   * Interpret the decode program within any monadic context that admits [[ReadBytes]].
+   *
+   * If the program does not crash (that is, correctly raises error when encountering bad input),
+   * the effect is guaranteed to read exactly [[size]] bytes, and otherwise the entire effect would fail.
+   */
+  def interpretWithSize[F[_]: Monad: ReadBytes, A](size: Int, program: DecodeScopedBytes[A]): F[ParseResult[A]] =
+    type Execution = EitherT[StateT[F, Int, _], ParseInterruption, _]
 
-  def interpretOnChunk[F[_]: Monad: RaiseParseError, A](chunk: Chunk[Byte], program: DecodeScopedBytes[A]): F[ParseResult[A]] =
-    ???
+    compileToM[Execution].apply(program)
+      .value
+      .run(size)
+      .map {
+        case (remainingBytes, _) if remainingBytes != 0 => Left(ParseInterruption.ExcessBytes)
+        case (_, result) => result
+      }
 
-  def interpretWithSize[F[_]: ReadBytes, A](size: Int, program: DecodeScopedBytes[A]): F[ParseResult[A]] =
-    ???
+  /**
+   * Interpret the decode program purely on the provided chunk.
+   */
+  def interpretOnChunk[A](chunk: Chunk[Byte], program: DecodeScopedBytes[A]): ParseResult[A] =
+    type Execution[A] = EitherT[StateT[Id, Chunk[Byte], _], ParseInterruption, A]
 
+    given Monad[Id] = cats.catsInstancesForId
+    given ReadBytes[Execution] = readBytesForChunkContext[Execution]
+
+    val output = interpretWithSize[Execution, A](chunk.size, program)
+      .value
+      .run(chunk)
+
+    output match {
+      case (remainingChunk, _) if remainingChunk.nonEmpty => Left(ParseInterruption.ExcessBytes)
+      case (_, result) => result.flatten
+    }
+
+  /**
+   * Interpret the decode program purely on the provided chunk and get the result,
+   * but throw in the context of [[F]] if obtained [[ParseResult]] was a failure.
+   */
+  private def interpretOnChunkAndGet[F[_]: Applicative: RaiseParseError, A](chunk: Chunk[Byte], program: DecodeScopedBytes[A]): F[A] =
+    interpretOnChunk(chunk, program) match {
+      case Left(interruption) => RaiseParseError[F].raise(interruption)
+      case Right(value) => Applicative[F].pure(value)
+    }
 }
