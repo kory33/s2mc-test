@@ -104,8 +104,6 @@ object PacketIntent {
                               target: Option[Position],
                             ) {
         require(target.nonEmpty == (hasTarget))
-
-        def a(x: Int) = x + 1
       }
 
       case class TabComplete_NoAssume(
