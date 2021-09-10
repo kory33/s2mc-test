@@ -16,17 +16,17 @@ class PureDecodeProgramInterpreterSpec extends AnyFlatSpec with should.Matchers 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readByteBlock(5)
-    ) should be (scala.Right(Chunk[Byte](0x1a, 0x71, 0x12, -0x01, -0x1f)))
+    ) should be (scala.Right(chunk))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readByteBlock(2) >> DecodeScopedBytes.readByteBlock(3)
-    ) should be (scala.Right(Chunk[Byte](0x12, -0x01, -0x1f)))
+    ) should be (scala.Right(chunk.drop(2)))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readByteBlock(2) <* DecodeScopedBytes.readByteBlock(3)
-    ) should be (scala.Right(Chunk[Byte](0x1a, 0x71)))
+    ) should be (scala.Right(chunk.take(2)))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
