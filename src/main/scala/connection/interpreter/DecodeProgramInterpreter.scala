@@ -95,11 +95,15 @@ object DecodeProgramInterpreter {
     compileToM[Execution].apply(program)
       .value
       .run(size)
-      .map {
+      .flatMap { case (remainingBytes, result) =>
         // if we have succeeded in parsing (result.isRight) and still have some bytes remaining,
         // something must have gone wrong so we are raising ExcessBytes error.
-        case (remainingBytes, result) if remainingBytes != 0 && result.isRight => Left(ParseInterruption.ExcessBytes)
-        case (_, result) => result
+        val resultToReturn =
+          if result.isRight then Left(ParseInterruption.ExcessBytes)
+          else result
+
+        if (remainingBytes != 0) ReadBytes[F].ofSize(remainingBytes).as(resultToReturn)
+        else Monad[F].pure(result)
       }
 
   /**
