@@ -53,7 +53,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
       packetIdVarInt <- ByteCodec[VarInt].decode
       decodeOption = decoderFor(packetIdVarInt.raw)
       result <- decodeOption.getOrElse {
-        DecodeScopedBytes.giveupParsingPacket(s"Packet of ID ${packetIdVarInt.raw} is unknown")
+        DecodeScopedBytes.giveupParsingScope(s"Packet of ID ${packetIdVarInt.raw} is unknown")
       }
     } yield result
   }

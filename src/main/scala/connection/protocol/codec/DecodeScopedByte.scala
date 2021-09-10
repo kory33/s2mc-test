@@ -90,13 +90,13 @@ object DecodeScopedBytes {
 
   def readByte: DecodeScopedBytes[Byte] = ReadBytes[DecodeScopedBytes].forByte
 
-  def readUntilPacketEnd: DecodeScopedBytes[fs2.Chunk[Byte]] =
+  def readUntilScopeEnd: DecodeScopedBytes[fs2.Chunk[Byte]] =
     Free.liftF(ReadEntireScope)
 
-  def raisePacketError[A](errorMessage: String): DecodeScopedBytes[A] =
+  def raiseErrorInScope[A](errorMessage: String): DecodeScopedBytes[A] =
     Free.liftF(RaiseError(java.io.IOException(errorMessage)))
 
-  def giveupParsingPacket[A](reason: String): DecodeScopedBytes[A] =
+  def giveupParsingScope[A](reason: String): DecodeScopedBytes[A] =
     Free.liftF(Giveup(reason))
 
   def readPrecise[A](chunk: Chunk[Byte], decode: DecodeScopedBytes[A]): DecodeScopedBytes[A] =

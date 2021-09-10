@@ -157,7 +157,7 @@ object ByteCodecs {
       ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValueFP12)
 
     given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](
-      DecodeScopedBytes.readUntilPacketEnd.map(c => UnspecifiedLengthByteArray(c.toArray)),
+      DecodeScopedBytes.readUntilScopeEnd.map(c => UnspecifiedLengthByteArray(c.toArray)),
       ulArray => Chunk.array(ulArray.asArray)
     )
 
@@ -298,7 +298,7 @@ object ByteCodecs {
              "crafting_special_suspiciousstew" =>
           Monad[DecodeScopedBytes].pure(RecipeData.NoAdditionalData(recipeType))
         case _ =>
-          giveupParsingPacket(s"The recipe type ${recipeType} is unknown to the parser.")
+          giveupParsingScope(s"The recipe type ${recipeType} is unknown to the parser.")
       }
     }
 
@@ -388,7 +388,7 @@ object ByteCodecs {
            "minecraft:time" |
            "forge:modid" |
            "forge:enum" => Monad[DecodeScopedBytes].pure(CommandArgument.ArgumentWithoutProperties(typeIdentifier))
-      case _ => giveupParsingPacket(s"command argument type $typeIdentifier is unknown")
+      case _ => giveupParsingScope(s"command argument type $typeIdentifier is unknown")
     }
 
     /**
