@@ -105,4 +105,7 @@ object GenericDecode {
   def decodeVarIntF[F[_] : Monad : ReadBytes : RaiseThrowable]: F[Int] =
     Monad[F].map(decodeVarNumF(32))(chunk => java.nio.ByteBuffer.wrap(chunk.toArray).getInt)
 
+  def decodeVarLongF[F[_] : Monad : ReadBytes : RaiseThrowable]: F[Long] =
+    Monad[F].map(decodeVarNumF(64))(chunk => java.nio.ByteBuffer.wrap(chunk.toArray).getLong)
+
 }

@@ -83,8 +83,6 @@ object ByteCodecs {
     given ByteCodec[UShort] = ByteCodec[Short].imap(UShort.fromRawShort)(_.asRawShort)
 
     object VarNumCodecs {
-      def decodeVarNum(maxBits: Int): DecodeScopedBytes[Chunk[Byte]] = generic.GenericDecode.decodeVarNumF[DecodeScopedBytes](maxBits)
-
       def encodeVarNum(fixedSizeBigEndianBytes: Chunk[Byte]): Chunk[Byte] = {
         extension [A] (list: List[A])
           def dropRightWhile(predicate: A => Boolean): List[A] = list.reverse.dropWhile(predicate).reverse
@@ -117,12 +115,12 @@ object ByteCodecs {
       }
 
       given ByteCodec[VarInt] = ByteCodec[VarInt](
-        decodeVarNum(32).flatMap(readPrecise(_, ByteCodec[Int].decode)).map(VarInt.apply),
+        generic.GenericDecode.decodeVarIntF[DecodeScopedBytes].map(VarInt.apply),
         (x: VarInt) => encodeVarNum(ByteCodec[Int].encode.write(x.raw))
       )
 
       given ByteCodec[VarLong] = ByteCodec[VarLong](
-        decodeVarNum(64).flatMap(readPrecise(_, ByteCodec[Long].decode)).map(VarLong.apply),
+        generic.GenericDecode.decodeVarLongF[DecodeScopedBytes].map(VarLong.apply),
         (x: VarLong) => encodeVarNum(ByteCodec[Long].encode.write(x.raw))
       )
     }
