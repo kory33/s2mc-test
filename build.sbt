@@ -26,7 +26,11 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "shapeless3-deriving" % "3.0.2",
 
   // to easily deal with byte/bit vectors
-  "org.scodec" %% "scodec-bits" % "1.1.28"
+  "org.scodec" %% "scodec-bits" % "1.1.28",
+
+  // test libraries
+  "org.scalactic" %% "scalactic" % "3.2.9",
+  "org.scalatest" %% "scalatest" % "3.2.9" % "test",
 )
 
 scalacOptions ++= Seq("-Yretain-trees", "-Xcheck-macros", "-Ykind-projector:underscores")
