@@ -96,7 +96,9 @@ object DecodeProgramInterpreter {
       .value
       .run(size)
       .map {
-        case (remainingBytes, _) if remainingBytes != 0 => Left(ParseInterruption.ExcessBytes)
+        // if we have succeeded in parsing (result.isRight) and still have some bytes remaining,
+        // something must have gone wrong so we are raising ExcessBytes error.
+        case (remainingBytes, result) if remainingBytes != 0 && result.isRight => Left(ParseInterruption.ExcessBytes)
         case (_, result) => result
       }
 
@@ -113,10 +115,19 @@ object DecodeProgramInterpreter {
       .value
       .run(chunk)
 
-    output match {
-      case (remainingChunk, _) if remainingChunk.nonEmpty => Left(ParseInterruption.ExcessBytes)
-      case (_, result) => result.flatten
-    }
+    // If we have succeeded in parsing (result.isRight) and still have some bytes remaining,
+    // something must have gone wrong so we are raising ExcessBytes error.
+
+    // Because the inner error-handling monad checks the size of every read request before
+    // reading from ReadBytes[Execution], readBytesForChunkContext used here will never be required
+    // to read any more than the size of the remaining chunk.
+    // We are hence flattening the result.
+
+    val (remainingChunk, flattenedResult) = (output._1, output._2.flatten)
+    if remainingChunk.nonEmpty && flattenedResult.isRight then
+      Left(ParseInterruption.ExcessBytes)
+    else
+      flattenedResult
 
   /**
    * Interpret the decode program purely on the provided chunk and get the result,
