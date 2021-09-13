@@ -1,14 +1,10 @@
-name := "s2mc-test"
+ThisBuild / scalaVersion := "3.0.1"
+ThisBuild / version := "0.1.0"
 
-version := "0.1.0"
+ThisBuild / name := "s2mc"
 
-scalaVersion := "3.0.1"
-
-idePackagePrefix := Some("com.github.kory33.s2mctest")
-
-resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/"
-
-libraryDependencies ++= Seq(
+ThisBuild / resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/"
+ThisBuild / libraryDependencies ++= Seq(
   "org.scala-lang" %% "scala3-tasty-inspector" % scalaVersion.value,
 
   "org.typelevel" %% "cats-mtl" % "1.2.1",
@@ -33,4 +29,15 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.9" % "test",
 )
 
-scalacOptions ++= Seq("-Yretain-trees", "-Xcheck-macros", "-Ykind-projector:underscores")
+ThisBuild / scalacOptions ++= Seq("-Yretain-trees", "-Xcheck-macros", "-Ykind-projector:underscores")
+
+ThisBuild / idePackagePrefix := Some("com.github.kory33.s2mctest")
+
+lazy val core = project
+  .in(file("core"))
+  .settings()
+
+lazy val impl = project
+  .dependsOn(core)
+  .in(file("impl"))
+  .settings()
