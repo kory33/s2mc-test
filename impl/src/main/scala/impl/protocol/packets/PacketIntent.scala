@@ -1,9 +1,8 @@
 package com.github.kory33.s2mctest
-package connection.protocol.packets
+package impl.protocol.packets
 
-import connection.protocol.data.SupportedProtocolVersions
-import connection.protocol.data.PacketDataPrimitives.*
-import connection.protocol.data.PacketDataCompoundTypes.*
+import PacketDataPrimitives.*
+import PacketDataCompoundTypes.*
 
 import cats.Monad
 import cats.instances.map

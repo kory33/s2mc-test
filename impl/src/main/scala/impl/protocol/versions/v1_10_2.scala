@@ -3,17 +3,16 @@ package com.github.kory33.s2mctest.connection.protocol.versions
 
 import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
-import connection.protocol.packets.PacketIntent
+import impl.protocol.packets.PacketIntent
+import impl.protocol.packets.PacketIntent.Handshaking.ServerBound.*
+import impl.protocol.packets.PacketIntent.Login.ClientBound.*
+import impl.protocol.packets.PacketIntent.Login.ServerBound.*
+import impl.protocol.packets.PacketIntent.Play.ClientBound.*
+import impl.protocol.packets.PacketIntent.Play.ServerBound.*
+import impl.protocol.packets.PacketIntent.Status.ClientBound.*
+import impl.protocol.packets.PacketIntent.Status.ServerBound.*
 
-import PacketIntent.Handshaking.ServerBound.*
-import PacketIntent.Play.ServerBound.*
-import PacketIntent.Play.ClientBound.*
-import PacketIntent.Login.ServerBound.*
-import PacketIntent.Login.ClientBound.*
-import PacketIntent.Status.ClientBound.*
-import PacketIntent.Status.ServerBound.*
-
-object v1_9 {
+object v1_10_2 {
   import connection.protocol.codec.ByteCodecs.Common.given
   import connection.protocol.codec.ByteCodecs.PositionCodecBefore1_14.given
   import connection.protocol.macros.GenByteDecode.given
@@ -42,7 +41,7 @@ object v1_9 {
       0x13 -> ByteCodec.summonPair[PlayerDigging],
       0x14 -> ByteCodec.summonPair[PlayerAction],
       0x15 -> ByteCodec.summonPair[SteerVehicle],
-      0x16 -> ByteCodec.summonPair[ResourcePackStatus_hash],
+      0x16 -> ByteCodec.summonPair[ResourcePackStatus],
       0x17 -> ByteCodec.summonPair[HeldItemChange],
       0x18 -> ByteCodec.summonPair[CreativeInventoryAction],
       0x19 -> ByteCodec.summonPair[SetSign],
@@ -77,17 +76,17 @@ object v1_9 {
       0x16 -> ByteCodec.summonPair[WindowSetSlot],
       0x17 -> ByteCodec.summonPair[SetCooldown],
       0x18 -> ByteCodec.summonPair[PluginMessageClientbound],
-      0x19 -> ByteCodec.summonPair[NamedSoundEffect_u8],
+      0x19 -> ByteCodec.summonPair[NamedSoundEffect],
       0x1a -> ByteCodec.summonPair[Disconnect],
       0x1b -> ByteCodec.summonPair[EntityAction],
       0x1c -> ByteCodec.summonPair[Explosion],
       0x1d -> ByteCodec.summonPair[ChunkUnload],
       0x1e -> ByteCodec.summonPair[ChangeGameState],
       0x1f -> ByteCodec.summonPair[KeepAliveClientbound_VarInt],
-      0x20 -> ByteCodec.summonPair[ChunkData_NoEntities],
+      0x20 -> ByteCodec.summonPair[ChunkData],
       0x21 -> ByteCodec.summonPair[Effect],
       0x22 -> ByteCodec.summonPair[Particle_VarIntArray],
-      0x23 -> ByteCodec.summonPair[JoinGame_i8],
+      0x23 -> ByteCodec.summonPair[JoinGame_i32],
       0x24 -> ByteCodec.summonPair[Maps_NoLocked],
       0x25 -> ByteCodec.summonPair[EntityMove_i16],
       0x26 -> ByteCodec.summonPair[EntityLookAndMove_i16],
@@ -122,13 +121,12 @@ object v1_9 {
       0x43 -> ByteCodec.summonPair[SpawnPosition],
       0x44 -> ByteCodec.summonPair[TimeUpdate],
       0x45 -> ByteCodec.summonPair[Title_notext],
-      0x46 -> ByteCodec.summonPair[UpdateSign],
-      0x47 -> ByteCodec.summonPair[SoundEffect_u8],
-      0x48 -> ByteCodec.summonPair[PlayerListHeaderFooter],
-      0x49 -> ByteCodec.summonPair[CollectItem_nocount],
-      0x4a -> ByteCodec.summonPair[EntityTeleport_f64],
-      0x4b -> ByteCodec.summonPair[EntityProperties],
-      0x4c -> ByteCodec.summonPair[EntityEffect],
+      0x46 -> ByteCodec.summonPair[SoundEffect],
+      0x47 -> ByteCodec.summonPair[PlayerListHeaderFooter],
+      0x48 -> ByteCodec.summonPair[CollectItem_nocount],
+      0x49 -> ByteCodec.summonPair[EntityTeleport_f64],
+      0x4a -> ByteCodec.summonPair[EntityProperties],
+      0x4b -> ByteCodec.summonPair[EntityEffect],
     ))
   )
 

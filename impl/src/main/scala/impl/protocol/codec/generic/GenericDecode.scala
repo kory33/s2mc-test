@@ -1,5 +1,5 @@
 package com.github.kory33.s2mctest
-package connection.protocol.codec.generic
+package impl.protocol.codec.generic
 
 import cats.Monad
 import fs2.Chunk

@@ -3,14 +3,14 @@ package com.github.kory33.s2mctest.connection.protocol.versions
 
 import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
-import connection.protocol.packets.PacketIntent
-import connection.protocol.packets.PacketIntent.Handshaking.ServerBound.*
-import connection.protocol.packets.PacketIntent.Login.ClientBound.*
-import connection.protocol.packets.PacketIntent.Login.ServerBound.*
-import connection.protocol.packets.PacketIntent.Play.ClientBound.*
-import connection.protocol.packets.PacketIntent.Play.ServerBound.*
-import connection.protocol.packets.PacketIntent.Status.ClientBound.*
-import connection.protocol.packets.PacketIntent.Status.ServerBound.*
+import impl.protocol.packets.PacketIntent
+import impl.protocol.packets.PacketIntent.Handshaking.ServerBound.*
+import impl.protocol.packets.PacketIntent.Login.ClientBound.*
+import impl.protocol.packets.PacketIntent.Login.ServerBound.*
+import impl.protocol.packets.PacketIntent.Play.ClientBound.*
+import impl.protocol.packets.PacketIntent.Play.ServerBound.*
+import impl.protocol.packets.PacketIntent.Status.ClientBound.*
+import impl.protocol.packets.PacketIntent.Status.ServerBound.*
 
 object v1_14_2 {
   import connection.protocol.codec.ByteCodecs.Common.given

@@ -3,7 +3,7 @@ package com.github.kory33.s2mctest.connection.protocol.versions
 
 import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
-import connection.protocol.packets.PacketIntent
+import impl.protocol.packets.PacketIntent
 
 import PacketIntent.Handshaking.ServerBound.*
 import PacketIntent.Play.ServerBound.*

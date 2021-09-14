@@ -1,40 +1,39 @@
-package com.github.kory33.s2mctest
-package connection.protocol.codec
-
-import connection.protocol.data.PacketDataCompoundTypes.*
-import connection.protocol.data.PacketDataPrimitives.*
-import connection.protocol.typeclass.IntLike
-import connection.protocol.macros.GenByteDecode
-import algebra.ReadBytes
-import typenbtio.{ReadNBT, WriteNBT}
+package impl.protocol.codec
 
 import cats.Monad
+import com.github.kory33.s2mctest.algebra.ReadBytes
+import com.github.kory33.s2mctest.connection.protocol.codec.DecodeScopedBytes.{giveupParsingScope, readByteBlock}
+import com.github.kory33.s2mctest.connection.protocol.codec.{ByteCodec, ByteEncode, DecodeScopedBytes}
+import impl.protocol.packets.PacketDataCompoundTypes.*
+import impl.protocol.packets.PacketDataPrimitives.*
+import com.github.kory33.s2mctest.connection.protocol.macros.GenByteDecode
+import com.github.kory33.s2mctest.connection.protocol.typeclass.IntLike
+import com.github.kory33.s2mctest.typenbtio.{ReadNBT, WriteNBT}
+import com.github.kory33.s2mctest.{conversions, extensions, generic}
 import fs2.Chunk
 import net.katsstuff.typenbt.NBTCompound
 import shapeless3.deriving.K0
 
-import java.io.UnsupportedEncodingException
 import java.nio.charset.Charset
 import java.util.UUID
-import scala.annotation.tailrec
-import scala.collection.immutable.Queue
-import scala.reflect.ClassTag
 
 object ByteCodecs {
 
   // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
-  import conversions.AutoWidenFunctor.given
-  import scala.language.implicitConversions
 
   import DecodeScopedBytes.*
-  import cats.implicits.given
+  import cats.implicits
+  import conversions.AutoWidenFunctor
 
-  inline def autogenerateFor[T](using gen: K0.Generic[T]): ByteCodec[T] =
+  import scala.language.implicitConversions
+
+  def autogenerateFor[T](using gen: K0.Generic[T]): ByteCodec[T] =
     ByteCodec(GenByteDecode.gen[T], ByteEncode.forADT[T])
 
   object Common {
 
     inline given codecToEncode[A: ByteCodec]: ByteEncode[A] = ByteCodec[A].encode
+
     inline given codecToDecode[A: ByteCodec]: DecodeScopedBytes[A] = ByteCodec[A].decode
 
     /** Codec of Unit (empty type). */
@@ -84,7 +83,7 @@ object ByteCodecs {
 
     object VarNumCodecs {
       def encodeVarNum(fixedSizeBigEndianBytes: Chunk[Byte]): Chunk[Byte] = {
-        extension [A] (list: List[A])
+        extension[A] (list: List[A])
           def dropRightWhile(predicate: A => Boolean): List[A] = list.reverse.dropWhile(predicate).reverse
           def unconsLast: (List[A], A) = list.reverse match {
             case ::(last, restRev) => (restRev.reverse, last)
@@ -136,7 +135,7 @@ object ByteCodecs {
       )
     }
 
-    given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
+    given lenPrefixed[L: IntLike : ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
       val decode: DecodeScopedBytes[LenPrefixedSeq[L, A]] = for {
         length <- ByteCodec[L].decode
         intLength = IntLike[L].toInt(length)
@@ -150,10 +149,10 @@ object ByteCodecs {
       ByteCodec[LenPrefixedSeq[L, A]](decode, encode)
     }
 
-    given fixedPoint5ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint5[A]] =
+    given fixedPoint5ForIntegral[A: ByteCodec : Integral]: ByteCodec[FixedPoint5[A]] =
       ByteCodec[A].imap(FixedPoint5.fromRaw[A])(_.rawValueFP5)
 
-    given fixedPoint12ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint12[A]] =
+    given fixedPoint12ForIntegral[A: ByteCodec : Integral]: ByteCodec[FixedPoint12[A]] =
       ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValueFP12)
 
     given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](
@@ -169,24 +168,32 @@ object ByteCodecs {
         (longCodec.decode, longCodec.decode).mapN(UUID(_, _)),
         (uuid) =>
           longCodec.encode.write(uuid.getMostSignificantBits) ++
-          longCodec.encode.write(uuid.getLeastSignificantBits)
+            longCodec.encode.write(uuid.getLeastSignificantBits)
       )
     }
 
     given ByteCodec[Statistic] = autogenerateFor[Statistic]
+
     given ByteCodec[ChunkMeta] = autogenerateFor[ChunkMeta]
+
     given ByteCodec[MapIcon] = autogenerateFor[MapIcon]
+
     given ByteCodec[SpawnProperty] = autogenerateFor[SpawnProperty]
+
     given ByteCodec[ExplosionRecord] = autogenerateFor[ExplosionRecord]
 
     given ByteCodec[BlockChangeRecord] = autogenerateFor[BlockChangeRecord]
 
     given ByteCodec[Tag] = autogenerateFor[Tag]
+
     given ByteCodec[Slot] = autogenerateFor[Slot]
 
     given ByteCodec[Trade] = autogenerateFor[Trade]
+
     given ByteCodec[EntityPropertyModifier] = autogenerateFor[EntityPropertyModifier]
+
     given ByteCodec[EntityPropertyShort] = autogenerateFor[EntityPropertyShort]
+
     given ByteCodec[EntityProperty] = autogenerateFor[EntityProperty]
 
     given ByteCodec[EntityEquipment] = autogenerateFor[EntityEquipment]
@@ -210,11 +217,17 @@ object ByteCodecs {
       )
 
     given ByteCodec[PlayerProperty] = autogenerateFor[PlayerProperty]
+
     given ByteCodec[PlayerInfoDataRecord.AddPlayer] = autogenerateFor[PlayerInfoDataRecord.AddPlayer]
+
     given ByteCodec[PlayerInfoDataRecord.UpdateGamemode] = autogenerateFor[PlayerInfoDataRecord.UpdateGamemode]
+
     given ByteCodec[PlayerInfoDataRecord.UpdateLatency] = autogenerateFor[PlayerInfoDataRecord.UpdateLatency]
+
     given ByteCodec[PlayerInfoDataRecord.UpdateDisplayName] = autogenerateFor[PlayerInfoDataRecord.UpdateDisplayName]
+
     given ByteCodec[PlayerInfoDataRecord.RemovePlayer] = autogenerateFor[PlayerInfoDataRecord.RemovePlayer]
+
     given ByteCodec[PlayerInfoData] = ByteCodec[PlayerInfoData](
       ByteCodec[VarInt].decode.flatMap { actionVarInt =>
         actionVarInt.raw match {
@@ -233,19 +246,19 @@ object ByteCodecs {
       (playerInfoData: PlayerInfoData) => playerInfoData match {
         case PlayerInfoData.AddPlayer(players) =>
           ByteCodec[VarInt].encode.write(VarInt(0)) ++
-          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer]].encode.write(players)
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer]].encode.write(players)
         case PlayerInfoData.UpdateGamemode(players) =>
           ByteCodec[VarInt].encode.write(VarInt(1)) ++
-          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode]].encode.write(players)
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode]].encode.write(players)
         case PlayerInfoData.UpdateLatency(players) =>
           ByteCodec[VarInt].encode.write(VarInt(2)) ++
-          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency]].encode.write(players)
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency]].encode.write(players)
         case PlayerInfoData.UpdateDisplayName(players) =>
           ByteCodec[VarInt].encode.write(VarInt(3)) ++
-          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName]].encode.write(players)
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName]].encode.write(players)
         case PlayerInfoData.RemovePlayer(players) =>
           ByteCodec[VarInt].encode.write(VarInt(4)) ++
-          ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer]].encode.write(players)
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer]].encode.write(players)
       }
     )
 
@@ -264,9 +277,13 @@ object ByteCodecs {
     }
 
     given ByteCodec[CookingRecipeData] = autogenerateFor[CookingRecipeData]
+
     given ByteCodec[RecipeData.Shapeless] = autogenerateFor[RecipeData.Shapeless]
+
     given ByteCodec[RecipeData.Shaped] = autogenerateFor[RecipeData.Shaped]
+
     given ByteCodec[RecipeData.Stonecutting] = autogenerateFor[RecipeData.Stonecutting]
+
     given ByteCodec[RecipeData.Smithing] = autogenerateFor[RecipeData.Smithing]
 
     def decodeRecipeData(recipeType: String): DecodeScopedBytes[RecipeData] = {
@@ -321,22 +338,30 @@ object ByteCodecs {
           recipeData <- decodeRecipeData(recipeType)
         } yield Recipe(recipeId, recipeData)
 
-      val encode: ByteEncode[Recipe] = { case Recipe(identifier, data) =>
-        ByteCodec[String].encode.write(recipeDataTypeString(data)) ++
-        ByteCodec[String].encode.write(identifier) ++
-        encodeRecipeData.write(data)
+      val encode: ByteEncode[Recipe] = {
+        case Recipe(identifier, data) =>
+          ByteCodec[String].encode.write(recipeDataTypeString(data)) ++
+            ByteCodec[String].encode.write(identifier) ++
+            encodeRecipeData.write(data)
       }
 
       ByteCodec[Recipe](decode, encode)
     }
 
     given ByteCodec[CommandArgument.DoubleA] = autogenerateFor[CommandArgument.DoubleA]
+
     given ByteCodec[CommandArgument.FloatA] = autogenerateFor[CommandArgument.FloatA]
+
     given ByteCodec[CommandArgument.IntegerA] = autogenerateFor[CommandArgument.IntegerA]
+
     given ByteCodec[CommandArgument.LongA] = autogenerateFor[CommandArgument.LongA]
+
     given ByteCodec[CommandArgument.StringA] = autogenerateFor[CommandArgument.StringA]
+
     given ByteCodec[CommandArgument.EntityA] = autogenerateFor[CommandArgument.EntityA]
+
     given ByteCodec[CommandArgument.ScoreHolderA] = autogenerateFor[CommandArgument.ScoreHolderA]
+
     given ByteCodec[CommandArgument.RangeA] = autogenerateFor[CommandArgument.RangeA]
 
     def decodeCommandArgumentFor(typeIdentifier: String): DecodeScopedBytes[CommandArgument] = typeIdentifier match {
@@ -399,28 +424,28 @@ object ByteCodecs {
       (argInfo: CommandArgument) => argInfo match {
         case argInfo: CommandArgument.DoubleA =>
           ByteCodec[String].encode.write("brigadier:double") ++
-          ByteCodec[CommandArgument.DoubleA].encode.write(argInfo)
+            ByteCodec[CommandArgument.DoubleA].encode.write(argInfo)
         case argInfo: CommandArgument.FloatA =>
           ByteCodec[String].encode.write("brigadier:float") ++
-          ByteCodec[CommandArgument.FloatA].encode.write(argInfo)
+            ByteCodec[CommandArgument.FloatA].encode.write(argInfo)
         case argInfo: CommandArgument.IntegerA =>
           ByteCodec[String].encode.write("brigadier:integer") ++
-          ByteCodec[CommandArgument.IntegerA].encode.write(argInfo)
+            ByteCodec[CommandArgument.IntegerA].encode.write(argInfo)
         case argInfo: CommandArgument.LongA =>
           ByteCodec[String].encode.write("brigadier:long") ++
-          ByteCodec[CommandArgument.LongA].encode.write(argInfo)
+            ByteCodec[CommandArgument.LongA].encode.write(argInfo)
         case argInfo: CommandArgument.StringA =>
           ByteCodec[String].encode.write("brigadier:string") ++
-          ByteCodec[CommandArgument.StringA].encode.write(argInfo)
+            ByteCodec[CommandArgument.StringA].encode.write(argInfo)
         case argInfo: CommandArgument.EntityA =>
           ByteCodec[String].encode.write("brigadier:entity") ++
-          ByteCodec[CommandArgument.EntityA].encode.write(argInfo)
+            ByteCodec[CommandArgument.EntityA].encode.write(argInfo)
         case argInfo: CommandArgument.ScoreHolderA =>
           ByteCodec[String].encode.write("brigadier:score_holder") ++
-          ByteCodec[CommandArgument.ScoreHolderA].encode.write(argInfo)
+            ByteCodec[CommandArgument.ScoreHolderA].encode.write(argInfo)
         case argInfo: CommandArgument.RangeA =>
           ByteCodec[String].encode.write("brigadier:range") ++
-          ByteCodec[CommandArgument.RangeA].encode.write(argInfo)
+            ByteCodec[CommandArgument.RangeA].encode.write(argInfo)
         case argInfo: CommandArgument.ArgumentWithoutProperties =>
           ByteCodec[String].encode.write(argInfo.typeIdentifier)
       }
@@ -440,7 +465,6 @@ object ByteCodecs {
   }
 
   object PositionCodec {
-    import Common.given
 
     // current codec of Position type.
     // see https://wiki.vg/Protocol#Position for details.
@@ -454,7 +478,6 @@ object ByteCodecs {
   }
 
   object PositionCodecBefore1_14 {
-    import Common.given
 
     // codec of Position type before 1.14.
     // see https://wiki.vg/index.php?title=Data_types&oldid=14345#Position for details

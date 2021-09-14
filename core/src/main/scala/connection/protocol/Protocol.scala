@@ -7,37 +7,3 @@ case class Protocol[
   ServerBoundBindings <: Tuple,
   ClientBoundBindings <: Tuple
 ](serverBound: PacketIdBindings[ServerBoundBindings], clientBound: PacketIdBindings[ClientBoundBindings])
-
-object Protocol {
-  import connection.protocol.codec.ByteCodecs.Common.given
-  import connection.protocol.macros.GenByteDecode.given
-  import connection.protocol.packets.PacketIntent
-
-  import PacketIntent.Handshaking.ServerBound.*
-  import PacketIntent.Login.ClientBound.*
-  import PacketIntent.Login.ServerBound.*
-  import PacketIntent.Play.ClientBound.*
-  import PacketIntent.Play.ServerBound.*
-  import PacketIntent.Status.ClientBound.*
-  import PacketIntent.Status.ServerBound.*
-
-  object common {
-    val handshakeProtocol = Protocol(
-      PacketIdBindings(Tuple(
-        0x00 -> ByteCodec.summonPair[Handshake],
-      )),
-      PacketIdBindings(Tuple())
-    )
-
-    val statusProtocol = Protocol(
-      PacketIdBindings((
-        0x00 -> ByteCodec.summonPair[StatusRequest],
-        0x01 -> ByteCodec.summonPair[StatusPing],
-      )),
-      PacketIdBindings((
-        0x00 -> ByteCodec.summonPair[StatusResponse],
-        0x01 -> ByteCodec.summonPair[StatusPong],
-      ))
-    )
-  }
-}

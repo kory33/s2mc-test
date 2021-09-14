@@ -3,16 +3,16 @@ package com.github.kory33.s2mctest.connection.protocol.versions
 
 import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
-import connection.protocol.packets.PacketIntent
-import connection.protocol.packets.PacketIntent.Handshaking.ServerBound.*
-import connection.protocol.packets.PacketIntent.Login.ClientBound.*
-import connection.protocol.packets.PacketIntent.Login.ServerBound.*
-import connection.protocol.packets.PacketIntent.Play.ClientBound.*
-import connection.protocol.packets.PacketIntent.Play.ServerBound.*
-import connection.protocol.packets.PacketIntent.Status.ClientBound.*
-import connection.protocol.packets.PacketIntent.Status.ServerBound.*
+import impl.protocol.packets.PacketIntent
+import impl.protocol.packets.PacketIntent.Handshaking.ServerBound.*
+import impl.protocol.packets.PacketIntent.Login.ClientBound.*
+import impl.protocol.packets.PacketIntent.Login.ServerBound.*
+import impl.protocol.packets.PacketIntent.Play.ClientBound.*
+import impl.protocol.packets.PacketIntent.Play.ServerBound.*
+import impl.protocol.packets.PacketIntent.Status.ClientBound.*
+import impl.protocol.packets.PacketIntent.Status.ServerBound.*
 
-object v1_10_2 {
+object v1_11_2 {
   import connection.protocol.codec.ByteCodecs.Common.given
   import connection.protocol.codec.ByteCodecs.PositionCodecBefore1_14.given
   import connection.protocol.macros.GenByteDecode.given
@@ -47,14 +47,14 @@ object v1_10_2 {
       0x19 -> ByteCodec.summonPair[SetSign],
       0x1a -> ByteCodec.summonPair[ArmSwing],
       0x1b -> ByteCodec.summonPair[SpectateTeleport],
-      0x1c -> ByteCodec.summonPair[PlayerBlockPlacement_u8],
+      0x1c -> ByteCodec.summonPair[PlayerBlockPlacement_f32],
       0x1d -> ByteCodec.summonPair[UseItem],
     )),
     PacketIdBindings((
       0x00 -> ByteCodec.summonPair[SpawnObject],
       0x01 -> ByteCodec.summonPair[SpawnExperienceOrb],
       0x02 -> ByteCodec.summonPair[SpawnGlobalEntity],
-      0x03 -> ByteCodec.summonPair[SpawnMob_u8],
+      0x03 -> ByteCodec.summonPair[SpawnMob_WithMeta],
       0x04 -> ByteCodec.summonPair[SpawnPainting_String],
       0x05 -> ByteCodec.summonPair[SpawnPlayer_f64],
       0x06 -> ByteCodec.summonPair[Animation],
@@ -120,10 +120,10 @@ object v1_10_2 {
       0x42 -> ByteCodec.summonPair[UpdateScore],
       0x43 -> ByteCodec.summonPair[SpawnPosition],
       0x44 -> ByteCodec.summonPair[TimeUpdate],
-      0x45 -> ByteCodec.summonPair[Title_notext],
+      0x45 -> ByteCodec.summonPair[Title],
       0x46 -> ByteCodec.summonPair[SoundEffect],
       0x47 -> ByteCodec.summonPair[PlayerListHeaderFooter],
-      0x48 -> ByteCodec.summonPair[CollectItem_nocount],
+      0x48 -> ByteCodec.summonPair[CollectItem],
       0x49 -> ByteCodec.summonPair[EntityTeleport_f64],
       0x4a -> ByteCodec.summonPair[EntityProperties],
       0x4b -> ByteCodec.summonPair[EntityEffect],

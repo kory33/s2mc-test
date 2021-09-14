@@ -1,5 +1,5 @@
 package com.github.kory33.s2mctest
-package connection.protocol.data
+package impl.protocol.packets
 
 import connection.protocol.macros.NoGenByteDecode
 import connection.protocol.typeclass.IntLike

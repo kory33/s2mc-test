@@ -3,16 +3,16 @@ package com.github.kory33.s2mctest.connection.protocol.versions
 
 import connection.protocol.{Protocol, PacketIdBindings}
 import connection.protocol.codec.ByteCodec
-import connection.protocol.packets.PacketIntent
-import connection.protocol.packets.PacketIntent.Handshaking.ServerBound.*
-import connection.protocol.packets.PacketIntent.Login.ClientBound.*
-import connection.protocol.packets.PacketIntent.Login.ServerBound.*
-import connection.protocol.packets.PacketIntent.Play.ClientBound.*
-import connection.protocol.packets.PacketIntent.Play.ServerBound.*
-import connection.protocol.packets.PacketIntent.Status.ClientBound.*
-import connection.protocol.packets.PacketIntent.Status.ServerBound.*
+import impl.protocol.packets.PacketIntent
+import impl.protocol.packets.PacketIntent.Handshaking.ServerBound.*
+import impl.protocol.packets.PacketIntent.Login.ClientBound.*
+import impl.protocol.packets.PacketIntent.Login.ServerBound.*
+import impl.protocol.packets.PacketIntent.Play.ClientBound.*
+import impl.protocol.packets.PacketIntent.Play.ServerBound.*
+import impl.protocol.packets.PacketIntent.Status.ClientBound.*
+import impl.protocol.packets.PacketIntent.Status.ServerBound.*
 
-object v1_14_1 {
+object v1_14_4 {
   import connection.protocol.codec.ByteCodecs.Common.given
   import connection.protocol.codec.ByteCodecs.PositionCodec.given
   import connection.protocol.macros.GenByteDecode.given
@@ -106,7 +106,7 @@ object v1_14_1 {
       0x24 -> ByteCodec.summonPair[UpdateLight_NoTrust],
       0x25 -> ByteCodec.summonPair[JoinGame_i32_ViewDistance],
       0x26 -> ByteCodec.summonPair[Maps],
-      0x27 -> ByteCodec.summonPair[TradeList_WithoutRestock],
+      0x27 -> ByteCodec.summonPair[TradeList_WithRestock],
       0x28 -> ByteCodec.summonPair[EntityMove_i16],
       0x29 -> ByteCodec.summonPair[EntityLookAndMove_i16],
       0x2a -> ByteCodec.summonPair[EntityLook_VarInt],
@@ -159,6 +159,7 @@ object v1_14_1 {
       0x59 -> ByteCodec.summonPair[EntityEffect],
       0x5a -> ByteCodec.summonPair[DeclareRecipes],
       0x5b -> ByteCodec.summonPair[TagsWithEntities],
+      0x5c -> ByteCodec.summonPair[AcknowledgePlayerDigging],
     ))
   )
 
