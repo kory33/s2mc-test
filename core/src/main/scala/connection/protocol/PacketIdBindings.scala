@@ -30,7 +30,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
     packetIds.size == packetIds.toSet.size
   }, "bindings must not contain duplicate packet IDs")
 
-  def decoderFor(id: PacketId): Option[DecodeScopedBytes[UnionBindingTypes[BindingTup]]] =
+  def decoderFor(id: PacketId): DecodeScopedBytes[UnionBindingTypes[BindingTup]] = {
     // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
     import conversions.AutoWidenFunctor.given
     import scala.language.implicitConversions
@@ -43,19 +43,9 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
     )
       .find { case (i, _) => i == id }
       .map { case (_, decoder) => decoder }
-
-  def parsePacket: DecodeScopedBytes[UnionBindingTypes[BindingTup]] = {
-    import cats.implicits.given
-    import data.PacketDataPrimitives.VarInt
-    import codec.ByteCodecs.Common.VarNumCodecs.given
-
-    for {
-      packetIdVarInt <- ByteCodec[VarInt].decode
-      decodeOption = decoderFor(packetIdVarInt.raw)
-      result <- decodeOption.getOrElse {
-        DecodeScopedBytes.giveupParsingScope(s"Packet of ID ${packetIdVarInt.raw} is unknown")
+      .getOrElse {
+        DecodeScopedBytes.giveupParsingScope(s"Packet id binding for id ${id} could not be found.")
       }
-    } yield result
   }
 
   /**
