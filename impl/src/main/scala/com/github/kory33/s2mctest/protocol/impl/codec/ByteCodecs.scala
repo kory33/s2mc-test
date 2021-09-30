@@ -1,14 +1,12 @@
 package com.github.kory33.s2mctest.protocol.impl.codec
 
 import cats.Monad
-import com.github.kory33.s2mctest.connection.protocol.codec.DecodeScopedBytes.{giveupParsingScope, readByteBlock}
-import com.github.kory33.s2mctest.connection.protocol.codec.ByteCodec
-import com.github.kory33.s2mctest.typenbtio.{ReadNBT, WriteNBT}
-import com.github.kory33.s2mctest.conversions
-import com.github.kory33.s2mctest.algebra.ReadBytes
-import com.github.kory33.s2mctest.connection.protocol.codec.{ByteCodec, ByteEncode, DecodeScopedBytes}
-import com.github.kory33.s2mctest.connection.protocol.macros.GenByteDecode
-import com.github.kory33.s2mctest.connection.protocol.typeclass.IntLike
+import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes.{giveupParsingScope, readByteBlock}
+import com.github.kory33.s2mctest.core.algebra.ReadBytes
+import com.github.kory33.s2mctest.core.connection.protocol.codec.{ByteCodec, ByteEncode, DecodeScopedBytes}
+import com.github.kory33.s2mctest.core.connection.protocol.macros.GenByteDecode
+import com.github.kory33.s2mctest.core.connection.protocol.typeclass.IntLike
+import com.github.kory33.s2mctest.core.typenbtio.{ReadNBT, WriteNBT}
 import fs2.Chunk
 import net.katsstuff.typenbt.NBTCompound
 import shapeless3.deriving.K0
@@ -22,9 +20,9 @@ object ByteCodecs {
 
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketDataPrimitives.*
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketDataCompoundTypes.*
-  import com.github.kory33.s2mctest.connection.protocol.codec.DecodeScopedBytes.*
+  import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes.*
   import cats.implicits.given
-  import conversions.AutoWidenFunctor.given
+  import com.github.kory33.s2mctest.core.conversions.AutoWidenFunctor.given
 
   import scala.language.implicitConversions
 
@@ -201,7 +199,7 @@ object ByteCodecs {
 
     /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Entity_Equipment for details */
     given ByteCodec[EntityEquipments] = {
-      import com.github.kory33.s2mctest.extensions.MonadValueExt.repeatWhileM
+      import com.github.kory33.s2mctest.core.extensions.MonadValueExt.repeatWhileM
 
       ByteCodec[EntityEquipments](
         ByteCodec[EntityEquipment].decode.repeatWhileM { case EntityEquipment(slot, _) =>

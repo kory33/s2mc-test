@@ -1,19 +1,16 @@
 package com.github.kory33.s2mctest.protocol.impl.versions
 
-import com.github.kory33.s2mctest.connection.protocol.Protocol
-import com.github.kory33.s2mctest.connection.protocol.PacketIdBindings
-import com.github.kory33.s2mctest.connection.protocol.codec.ByteCodec
+import com.github.kory33.s2mctest.core.connection.protocol.{PacketIdBindings, Protocol}
+import com.github.kory33.s2mctest.core.connection.protocol.codec.ByteCodec
 
 
 object v15w39c {
+  import com.github.kory33.s2mctest.core.connection.protocol.macros.GenByteDecode.given
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Play.ClientBound.*
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Play.ServerBound.*
-
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Login.ClientBound.*
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Login.ServerBound.*
-
   import com.github.kory33.s2mctest.protocol.impl.codec.ByteCodecs.Common.given
-  import com.github.kory33.s2mctest.connection.protocol.macros.GenByteDecode.given
   import com.github.kory33.s2mctest.protocol.impl.codec.ByteCodecs.PositionCodecBefore1_14.given
 
   val playProtocol = Protocol(

@@ -7,9 +7,9 @@ import fs2.Chunk
  * A collection of decoding operations parameterized over effect types.
  */
 object GenericDecode {
-  import com.github.kory33.s2mctest.typeclass.RaiseThrowable
-  import com.github.kory33.s2mctest.algebra.ReadBytes
   import cats.implicits.given
+  import com.github.kory33.s2mctest.core.algebra.ReadBytes
+  import com.github.kory33.s2mctest.core.typeclass.RaiseThrowable
 
   /**
    * Decode variable-length integer which has maximum bits of [[maxBits]].

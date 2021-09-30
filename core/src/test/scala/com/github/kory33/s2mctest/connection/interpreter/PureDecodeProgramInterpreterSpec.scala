@@ -1,6 +1,7 @@
 package com.github.kory33.s2mctest.connection.interpreter
 
-import com.github.kory33.s2mctest.connection.protocol.codec.DecodeScopedBytes
+import com.github.kory33.s2mctest.core.connection.interpreter.DecodeProgramInterpreter
+import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes
 import fs2.Chunk
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
