@@ -1,15 +1,16 @@
 package impl.protocol.codec
 
 import cats.Monad
-import com.github.kory33.s2mctest.algebra.ReadBytes
 import com.github.kory33.s2mctest.connection.protocol.codec.DecodeScopedBytes.{giveupParsingScope, readByteBlock}
-import com.github.kory33.s2mctest.connection.protocol.codec.{ByteCodec, ByteEncode, DecodeScopedBytes}
+import com.github.kory33.s2mctest.connection.protocol.codec.ByteCodec
 import impl.protocol.packets.PacketDataCompoundTypes.*
 import impl.protocol.packets.PacketDataPrimitives.*
-import com.github.kory33.s2mctest.connection.protocol.macros.GenByteDecode
-import com.github.kory33.s2mctest.connection.protocol.typeclass.IntLike
 import com.github.kory33.s2mctest.typenbtio.{ReadNBT, WriteNBT}
 import com.github.kory33.s2mctest.{conversions, extensions, generic}
+import com.github.kory33.s2mctest.algebra.ReadBytes
+import com.github.kory33.s2mctest.connection.protocol.codec.{ByteCodec, ByteEncode, DecodeScopedBytes}
+import com.github.kory33.s2mctest.connection.protocol.macros.GenByteDecode
+import com.github.kory33.s2mctest.connection.protocol.typeclass.IntLike
 import fs2.Chunk
 import net.katsstuff.typenbt.NBTCompound
 import shapeless3.deriving.K0
@@ -21,7 +22,7 @@ object ByteCodecs {
 
   // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
 
-  import DecodeScopedBytes.*
+  import com.github.kory33.s2mctest.connection.protocol.codec.DecodeScopedBytes.*
   import cats.implicits
   import conversions.AutoWidenFunctor
 
@@ -200,7 +201,7 @@ object ByteCodecs {
 
     /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Entity_Equipment for details */
     given ByteCodec[EntityEquipments] = {
-      import extensions.MonadValueExt.repeatWhileM
+      import com.github.kory33.s2mctest.extensions.MonadValueExt.repeatWhileM
 
       ByteCodec[EntityEquipments](
         ByteCodec[EntityEquipment].decode.repeatWhileM { case EntityEquipment(slot, _) =>

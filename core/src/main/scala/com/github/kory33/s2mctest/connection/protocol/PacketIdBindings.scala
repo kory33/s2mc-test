@@ -1,10 +1,9 @@
-package com.github.kory33.s2mctest
-package connection.protocol
+package com.github.kory33.s2mctest.connection.protocol
 
-import connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
-import generic.compiletime.*
-
+import com.github.kory33.s2mctest.connection.protocol.codec.ByteCodec
+import com.github.kory33.s2mctest.generic.compiletime.*
 import cats.Monad
+import com.github.kory33.s2mctest.connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
 
 import scala.collection.immutable.Queue
 
@@ -32,7 +31,8 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
 
   def decoderFor(id: PacketId): DecodeScopedBytes[UnionBindingTypes[BindingTup]] = {
     // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
-    import conversions.AutoWidenFunctor.given
+    import com.github.kory33.s2mctest.conversions.AutoWidenFunctor.given
+
     import scala.language.implicitConversions
 
     type PacketTuple = Tuple.InverseMap[BindingTup, CodecBinding]

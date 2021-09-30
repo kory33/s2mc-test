@@ -1,5 +1,4 @@
-package com.github.kory33.s2mctest
-package algebra
+package com.github.kory33.s2mctest.algebra
 
 import fs2.Chunk
 

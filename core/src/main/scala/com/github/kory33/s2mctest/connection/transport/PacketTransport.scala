@@ -1,7 +1,6 @@
-package com.github.kory33.s2mctest
-package connection.transport
+package com.github.kory33.s2mctest.connection.transport
 
-import connection.protocol.PacketId
+import com.github.kory33.s2mctest.connection.protocol.PacketId
 
 /**
  * The interface providing read/write operations on serialized packet data.

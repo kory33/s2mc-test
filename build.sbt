@@ -18,7 +18,7 @@ ThisBuild / libraryDependencies ++= Seq(
   // our protocol implementation will use typenbt as a foundation to deal with NBTs
   ("net.katsstuff" %% "typenbt" % "0.5.1").cross(CrossVersion.for3Use2_13),
 
-  // to make datatype-generic programming easier
+  // to make datatype-com.github.kory33.stmctest.generic programming easier
   "org.typelevel" %% "shapeless3-deriving" % "3.0.2",
 
   // to easily deal with byte/bit vectors
@@ -30,8 +30,6 @@ ThisBuild / libraryDependencies ++= Seq(
 )
 
 ThisBuild / scalacOptions ++= Seq("-Yretain-trees", "-Xcheck-macros", "-Ykind-projector:underscores")
-
-ThisBuild / idePackagePrefix := Some("com.github.kory33.s2mctest")
 
 lazy val core = project
   .in(file("core"))

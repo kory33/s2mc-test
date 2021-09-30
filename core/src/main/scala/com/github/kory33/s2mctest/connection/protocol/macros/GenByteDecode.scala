@@ -1,7 +1,6 @@
-package com.github.kory33.s2mctest
-package connection.protocol.macros
+package com.github.kory33.s2mctest.connection.protocol.macros
 
-import connection.protocol.codec.DecodeScopedBytes
+import com.github.kory33.s2mctest.connection.protocol.codec.DecodeScopedBytes
 
 import scala.annotation.{StaticAnnotation, tailrec}
 import scala.collection.immutable.Queue

@@ -1,9 +1,6 @@
 package com.github.kory33.s2mctest
 package impl.protocol.packets
 
-import connection.protocol.macros.NoGenByteDecode
-import connection.protocol.typeclass.IntLike
-
 import net.katsstuff.typenbt.NBTCompound
 
 import java.util.UUID

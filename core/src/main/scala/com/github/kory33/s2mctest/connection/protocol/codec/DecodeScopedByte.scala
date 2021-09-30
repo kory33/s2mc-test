@@ -1,5 +1,5 @@
-package com.github.kory33.s2mctest
-package connection.protocol.codec
+package com.github.kory33.s2mctest.connection.protocol.codec
+
 import cats.{Functor, Monad, StackSafeMonad}
 import fs2.Chunk
 
@@ -65,10 +65,9 @@ opaque type DecodeScopedBytes[T] = Free[DecodeScopedBytesInstruction, T]
  * Companion object of DSL type that provides combinators.
  */
 object DecodeScopedBytes {
-  import algebra.ReadBytes
   import DecodeScopedBytesInstruction.*
-
   import cats.~>
+  import com.github.kory33.s2mctest.algebra.ReadBytes
 
   def asFreeK: DecodeScopedBytes ~> ([t] =>> Free[DecodeScopedBytesInstruction, t]) =
     new (DecodeScopedBytes ~> ([t] =>> Free[DecodeScopedBytesInstruction, t])) {

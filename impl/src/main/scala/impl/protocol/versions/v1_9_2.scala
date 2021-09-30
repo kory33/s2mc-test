@@ -1,10 +1,8 @@
 package com.github.kory33.s2mctest
 package com.github.kory33.s2mctest.connection.protocol.versions
 
-import connection.protocol.{Protocol, PacketIdBindings}
-import connection.protocol.codec.ByteCodec
+import connection.protocol.{PacketIdBindings, Protocol}
 import impl.protocol.packets.PacketIntent
-
 import PacketIntent.Handshaking.ServerBound.*
 import PacketIntent.Play.ServerBound.*
 import PacketIntent.Play.ClientBound.*
@@ -14,9 +12,8 @@ import PacketIntent.Status.ClientBound.*
 import PacketIntent.Status.ServerBound.*
 
 object v1_9_2 {
-  import connection.protocol.codec.ByteCodecs.Common.given
-  import connection.protocol.codec.ByteCodecs.PositionCodecBefore1_14.given
-  import connection.protocol.macros.GenByteDecode.given
+  import connection.protocol.codec.ByteCodecs.Common
+  import connection.protocol.codec.ByteCodecs.PositionCodecBefore1_14
 
   val playProtocol = Protocol(
     PacketIdBindings((

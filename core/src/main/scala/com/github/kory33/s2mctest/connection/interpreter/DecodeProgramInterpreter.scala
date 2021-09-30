@@ -1,20 +1,17 @@
-package com.github.kory33.s2mctest
-package connection.interpreter
-
-import algebra.ReadBytes
-import connection.interpreter.ParseResult
-import connection.protocol.codec.DecodeScopedBytes
-import connection.protocol.codec.DecodeScopedBytesInstruction
+package com.github.kory33.s2mctest.connection.interpreter
 
 import cats.{Applicative, Monad}
 import cats.~>
-import cats.mtl.{Stateful, Raise}
+import cats.mtl.{Raise, Stateful}
+import com.github.kory33.s2mctest.algebra.ReadBytes
+import com.github.kory33.s2mctest.connection.interpreter.ParseResult
+import com.github.kory33.s2mctest.connection.protocol.codec.{DecodeScopedBytes, DecodeScopedBytesInstruction}
 import fs2.Chunk
 
 object DecodeProgramInterpreter {
 
   import cats.implicits.given
-  import conversions.FunctionKAndPolyFunction.toFunctionK
+  import com.github.kory33.s2mctest.conversions.FunctionKAndPolyFunction.toFunctionK
 
   type WithRemainingByteChunk[F[_]] = cats.mtl.Stateful[F, fs2.Chunk[Byte]]
   object WithRemainingByteChunk {

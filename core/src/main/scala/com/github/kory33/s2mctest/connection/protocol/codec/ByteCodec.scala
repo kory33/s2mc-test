@@ -1,5 +1,4 @@
-package com.github.kory33.s2mctest
-package connection.protocol.codec
+package com.github.kory33.s2mctest.connection.protocol.codec
 
 import cats.Invariant
 import fs2.Chunk

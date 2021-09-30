@@ -1,7 +1,6 @@
-package com.github.kory33.s2mctest
-package connection.protocol
+package com.github.kory33.s2mctest.connection.protocol
 
-import connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
+import com.github.kory33.s2mctest.connection.protocol.codec.ByteCodec
 
 case class Protocol[
   ServerBoundBindings <: Tuple,

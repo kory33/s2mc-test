@@ -1,9 +1,8 @@
 package com.github.kory33.s2mctest
 package typenbtio
 
-import algebra.ReadBytes
+import com.github.kory33.s2mctest.algebra.ReadBytes
 import typeclass.RaiseThrowable
-
 import cats.{Monad, MonadThrow}
 import net.katsstuff.typenbt.{NBTByte, NBTByteArray, NBTCompound, NBTDouble, NBTFloat, NBTInt, NBTIntArray, NBTList, NBTListType, NBTLong, NBTLongArray, NBTShort, NBTString, NBTTag, NBTType, unsafe}
 

@@ -1,5 +1,4 @@
-package com.github.kory33.s2mctest
-package extensions
+package com.github.kory33.s2mctest.extensions
 
 object MonadValueExt {
 

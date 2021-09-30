@@ -8,10 +8,8 @@ import fs2.Chunk
  * A collection of decoding operations parameterized over effect types.
  */
 object GenericDecode {
-  import algebra.ReadBytes
   import typeclass.RaiseThrowable
-
-  import cats.implicits.given
+  import cats.implicits
 
   /**
    * Decode variable-length integer which has maximum bits of [[maxBits]].

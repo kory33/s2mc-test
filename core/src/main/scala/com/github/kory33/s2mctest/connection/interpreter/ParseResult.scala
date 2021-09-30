@@ -1,7 +1,6 @@
-package com.github.kory33.s2mctest
-package connection.interpreter
+package com.github.kory33.s2mctest.connection.interpreter
 
-import connection.protocol.UnionBindingTypes
+import com.github.kory33.s2mctest.connection.protocol.UnionBindingTypes
 
 enum ParseInterruption:
   case RanOutOfBytes

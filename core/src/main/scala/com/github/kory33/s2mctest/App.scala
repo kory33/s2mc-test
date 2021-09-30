@@ -1,4 +1,4 @@
-package com.github.kory33
+package com.github.kory33.s2mctest
 
 import cats.effect.{ExitCode, IO, IOApp}
 
