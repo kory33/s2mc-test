@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.connection.interpreter
+package com.github.kory33.s2mctest.core.connection.interpreter
 
 import com.github.kory33.s2mctest.core.connection.interpreter.DecodeProgramInterpreter
 import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes
