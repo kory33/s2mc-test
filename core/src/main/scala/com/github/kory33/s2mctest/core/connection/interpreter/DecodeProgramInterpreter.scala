@@ -9,7 +9,7 @@ import fs2.Chunk
 
 object DecodeProgramInterpreter {
 
-  import cats.implicits
+  import cats.implicits.given
   import com.github.kory33.s2mctest.core.generic.conversions.FunctionKAndPolyFunction.toFunctionK
 
   type WithRemainingByteChunk[F[_]] = cats.mtl.Stateful[F, fs2.Chunk[Byte]]

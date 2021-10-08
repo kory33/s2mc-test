@@ -32,7 +32,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
   def decoderFor(id: PacketId): DecodeScopedBytes[UnionBindingTypes[BindingTup]] = {
     // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
 
-    import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor
+    import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor.widenFunctor
 
     import scala.language.implicitConversions
 
