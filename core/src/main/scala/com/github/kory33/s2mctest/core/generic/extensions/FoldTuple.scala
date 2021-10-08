@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.generic
+package com.github.kory33.s2mctest.core.generic.extensions
 
 import scala.collection.immutable.Queue
 

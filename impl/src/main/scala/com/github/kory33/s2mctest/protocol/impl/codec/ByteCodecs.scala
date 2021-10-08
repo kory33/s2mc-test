@@ -22,7 +22,7 @@ object ByteCodecs {
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketDataCompoundTypes.*
   import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes.*
   import cats.implicits.given
-  import com.github.kory33.s2mctest.core.conversions.AutoWidenFunctor.given
+  import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor.given
 
   import scala.language.implicitConversions
 
@@ -199,7 +199,7 @@ object ByteCodecs {
 
     /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Entity_Equipment for details */
     given ByteCodec[EntityEquipments] = {
-      import com.github.kory33.s2mctest.core.extensions.MonadValueExt.repeatWhileM
+      import com.github.kory33.s2mctest.core.generic.extensions.MonadValueExt.repeatWhileM
 
       ByteCodec[EntityEquipments](
         ByteCodec[EntityEquipment].decode.repeatWhileM { case EntityEquipment(slot, _) =>

@@ -1,17 +1,16 @@
 package com.github.kory33.s2mctest.core.connection.interpreter
 
-import cats.{Applicative, Monad}
-import cats.~>
 import cats.mtl.{Raise, Stateful}
-import com.github.kory33.s2mctest.core.connection.interpreter.ParseResult
+import cats.{Applicative, Monad, ~>}
 import com.github.kory33.s2mctest.core.algebra.ReadBytes
+import com.github.kory33.s2mctest.core.connection.interpreter.ParseResult
 import com.github.kory33.s2mctest.core.connection.protocol.codec.{DecodeScopedBytes, DecodeScopedBytesInstruction}
 import fs2.Chunk
 
 object DecodeProgramInterpreter {
 
-  import cats.implicits.given
-  import com.github.kory33.s2mctest.core.conversions.FunctionKAndPolyFunction.toFunctionK
+  import cats.implicits
+  import com.github.kory33.s2mctest.core.generic.conversions.FunctionKAndPolyFunction.toFunctionK
 
   type WithRemainingByteChunk[F[_]] = cats.mtl.Stateful[F, fs2.Chunk[Byte]]
   object WithRemainingByteChunk {
@@ -61,7 +60,7 @@ object DecodeProgramInterpreter {
     }
 
   import cats.Id
-  import cats.data.{StateT, EitherT}
+  import cats.data.{EitherT, StateT}
 
   private def readBytesForChunkContext[F[_]: WithRemainingByteChunk: RaiseParseError]: ReadBytes[F] =
     new ReadBytes[F] {

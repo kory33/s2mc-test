@@ -2,7 +2,7 @@ package com.github.kory33.s2mctest.core.connection.protocol
 
 import cats.Monad
 import com.github.kory33.s2mctest.core.connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
-import com.github.kory33.s2mctest.core.generic.FoldTuple.foldToList
+import com.github.kory33.s2mctest.core.generic.extensions.FoldTuple.foldToList
 import com.github.kory33.s2mctest.generic.compiletime.*
 
 import scala.collection.immutable.Queue
@@ -32,7 +32,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)
   def decoderFor(id: PacketId): DecodeScopedBytes[UnionBindingTypes[BindingTup]] = {
     // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
 
-    import com.github.kory33.s2mctest.core.conversions.AutoWidenFunctor
+    import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor
 
     import scala.language.implicitConversions
 

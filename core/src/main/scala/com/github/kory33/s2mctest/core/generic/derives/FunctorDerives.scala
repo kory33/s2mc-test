@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.generic
+package com.github.kory33.s2mctest.core.generic.derives
 
 import cats.Functor
 import shapeless3.deriving.K1

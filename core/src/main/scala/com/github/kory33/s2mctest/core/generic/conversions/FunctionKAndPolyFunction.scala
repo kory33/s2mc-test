@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.conversions
+package com.github.kory33.s2mctest.core.generic.conversions
 
 import cats.arrow.FunctionK
 import cats.~>
