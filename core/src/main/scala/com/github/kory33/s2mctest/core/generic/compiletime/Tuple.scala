@@ -1,8 +1,6 @@
 package com.github.kory33.s2mctest
 package generic.compiletime
 
-import scala.annotation.implicitNotFound
-import scala.collection.immutable.Queue
 import scala.compiletime.ops.boolean.*
 import scala.compiletime.ops.int.*
 
@@ -33,26 +31,27 @@ type ContainsDistinctLockedT[T <: Tuple] <: Boolean =
 
 type LockTuple[T <: Tuple] = Tuple.Map[T, Lock]
 
+/**
+ * A type-level boolean indicating if [[A]] appears in [[T]].
+ *
+ * Takes O(|T|) to compute.
+ */
 type IncludedInT[T <: Tuple, A] = IncludedInLockedT[LockTuple[T], A]
 
+/**
+ * A type-level boolean indicating if [[T]] only contains distinct types.
+ *
+ * Takes O(|T|^2) to compute.
+ */
 type ContainsDistinctT[T <: Tuple] = ContainsDistinctLockedT[LockTuple[T]]
 
+/**
+ * The index of [[A]] in a tuple [[T]].
+ *
+ * Takes O(|T|) to compute.
+ */
 type IndexOfT[A, T <: Tuple] <: Int =
   Tuple.Map[T, Lock] match {
     case Lock[A] *: ? => 0
     case ? *: tail    => S[IndexOfT[A, Tuple.InverseMap[tail, Lock]]]
   }
-
-extension [F[_], BaseTuple <: Tuple](tuple: Tuple.Map[BaseTuple, F])
-
-  def foldLeft[Z](init: Z)(f: [t <: Tuple.Union[BaseTuple]] => (Z, F[t]) => Z): Z =
-    tuple.toList.foldLeft
-      (init)
-      // This unchecked cast is safe, because f can handle (Z, F[t]) for any t <: Tuple.Union[BaseTuple]
-      // and any element in tuple has type F[u] for some u that is a subtype of Tuple.Union[BaseTuple]
-      (f.asInstanceOf[(Z, Tuple.Union[tuple.type]) => Z])
-
-  def foldToList[Z](f: [t <: Tuple.Union[BaseTuple]] => F[t] => Z): List[Z] =
-    foldLeft[Queue[Z]](Queue.empty)([t <: Tuple.Union[BaseTuple]] => (acc: Queue[Z], next: F[t]) =>
-      acc.appended(f(next))
-    ).toList
