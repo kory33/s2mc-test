@@ -4,9 +4,9 @@ import cats.Monad
 import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes.{giveupParsingScope, readByteBlock}
 import com.github.kory33.s2mctest.core.algebra.ReadBytes
 import com.github.kory33.s2mctest.core.connection.protocol.codec.{ByteCodec, ByteEncode, DecodeScopedBytes}
-import com.github.kory33.s2mctest.core.typenbtio.{ReadNBT, WriteNBT}
 import com.github.kory33.s2mctest.protocol.impl.macros.GenByteDecode
 import com.github.kory33.s2mctest.protocol.impl.typeclass.IntLike
+import com.github.kory33.s2mctest.protocol.impl.typenbtio.{ReadNBT, WriteNBT}
 import fs2.Chunk
 import net.katsstuff.typenbt.NBTCompound
 import shapeless3.deriving.K0

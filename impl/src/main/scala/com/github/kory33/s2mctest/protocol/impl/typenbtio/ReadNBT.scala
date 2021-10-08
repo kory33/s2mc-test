@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.typenbtio
+package com.github.kory33.s2mctest.protocol.impl.typenbtio
 
 import cats.{Monad, MonadThrow}
 import com.github.kory33.s2mctest.core.algebra.ReadBytes
