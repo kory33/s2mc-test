@@ -5,13 +5,13 @@ import com.github.kory33.s2mctest.core.connection.protocol.codec.ByteCodec
 
 
 object v1_16_4 {
-  import com.github.kory33.s2mctest.core.connection.protocol.macros.GenByteDecode.given
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Play.ClientBound.*
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Play.ServerBound.*
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Login.ClientBound.*
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Login.ServerBound.*
   import com.github.kory33.s2mctest.protocol.impl.codec.ByteCodecs.Common.given
   import com.github.kory33.s2mctest.protocol.impl.codec.ByteCodecs.PositionCodec.given
+  import com.github.kory33.s2mctest.protocol.impl.macros.GenByteDecode.given
 
   val playProtocol = Protocol(
     PacketIdBindings((

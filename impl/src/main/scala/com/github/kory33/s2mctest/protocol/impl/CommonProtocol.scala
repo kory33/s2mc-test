@@ -5,8 +5,8 @@ import com.github.kory33.s2mctest.core.connection.protocol.codec.ByteCodec
 
 object CommonProtocol {
 
-  import com.github.kory33.s2mctest.core.connection.protocol.macros.GenByteDecode.given
   import com.github.kory33.s2mctest.protocol.impl.codec.ByteCodecs.Common.given
+  import com.github.kory33.s2mctest.protocol.impl.macros.GenByteDecode.given
 
   object common {
     import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Handshaking.ServerBound.*

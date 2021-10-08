@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.connection.protocol.typeclass
+package com.github.kory33.s2mctest.protocol.impl.typeclass
 
 /**
  * An object that allows coercing conversion between [[Int]].

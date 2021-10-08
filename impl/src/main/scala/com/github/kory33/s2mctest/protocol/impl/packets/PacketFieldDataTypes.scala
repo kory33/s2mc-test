@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest.protocol.impl.packets
 
-import com.github.kory33.s2mctest.core.connection.protocol.macros.NoGenByteDecode
-import com.github.kory33.s2mctest.core.connection.protocol.typeclass.IntLike
+import com.github.kory33.s2mctest.protocol.impl.macros.NoGenByteDecode
+import com.github.kory33.s2mctest.protocol.impl.typeclass.IntLike
 import net.katsstuff.typenbt.NBTCompound
 
 import java.util.UUID

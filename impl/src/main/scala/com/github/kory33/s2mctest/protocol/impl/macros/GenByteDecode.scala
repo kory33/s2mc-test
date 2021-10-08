@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.connection.protocol.macros
+package com.github.kory33.s2mctest.protocol.impl.macros
 
 import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes
 
