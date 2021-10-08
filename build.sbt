@@ -4,6 +4,10 @@ ThisBuild / version := "0.1.0"
 ThisBuild / name := "s2mc"
 
 ThisBuild / resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/"
+
+ThisBuild / semanticdbEnabled := true
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
+
 ThisBuild / libraryDependencies ++= Seq(
   "org.scala-lang" %% "scala3-tasty-inspector" % scalaVersion.value,
 
