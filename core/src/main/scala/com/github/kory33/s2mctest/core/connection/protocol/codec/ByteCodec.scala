@@ -18,6 +18,7 @@ object ByteCodec {
 
   def apply[A: ByteCodec]: ByteCodec[A] = summon
 
-  def summonPair[A](using decode: DecodeScopedBytes[A], encode: ByteEncode[A]): ByteCodec[A] = ByteCodec(decode, encode)
+  def summonPair[A](using decode: DecodeScopedBytes[A], encode: ByteEncode[A]): ByteCodec[A] =
+    ByteCodec(decode, encode)
 
 }

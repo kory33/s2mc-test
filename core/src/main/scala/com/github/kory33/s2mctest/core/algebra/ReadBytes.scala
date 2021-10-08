@@ -5,8 +5,8 @@ import fs2.Chunk
 import java.nio.charset.StandardCharsets
 
 /**
- * A final-encoded algebra of the form `Int => F[Chunk[Byte]]`,
- * abstracting away the process of reading byte sequences.
+ * A final-encoded algebra of the form `Int => F[Chunk[Byte]]`, abstracting away the process of
+ * reading byte sequences.
  */
 trait ReadBytes[F[_]] {
 
@@ -15,11 +15,13 @@ trait ReadBytes[F[_]] {
   /**
    * An effect to obtain a chunk of [[Byte]] of size `n`.
    *
-   * The resulting [[fs2.Chunk]] in the returned action will always have size of `n`.
-   * If that requirement cannot be filled, the action must (within the context of the action) throw
-   * without reading any byte in the first place (so the Atomicity is ensured in vocabulary of ACID).
+   * The resulting [[fs2.Chunk]] in the returned action will always have size of `n`. If that
+   * requirement cannot be filled, the action must (within the context of the action) throw
+   * without reading any byte in the first place (so the Atomicity is ensured in vocabulary of
+   * ACID).
    *
-   * @param n size of byte chunk to read, must be nonnegative.
+   * @param n
+   *   size of byte chunk to read, must be nonnegative.
    */
   def ofSize(n: Int): F[fs2.Chunk[Byte]]
 
@@ -38,7 +40,9 @@ trait ReadBytes[F[_]] {
 
   def forDouble(using F: cats.Functor[F]): F[Double] = byteBufferOfSize(8).map(_.getDouble)
 
-  def forUTF8String(using F: cats.Monad[F], FRaise: cats.mtl.Raise[F, Throwable])(length: Int): F[String] =
+  def forUTF8String(using F: cats.Monad[F], FRaise: cats.mtl.Raise[F, Throwable])(
+    length: Int
+  ): F[String] =
     for {
       bytes <- ofSize(length)
       result <- FRaise.catchNonFatal(String(bytes.toArray, StandardCharsets.UTF_8))(identity)
@@ -67,6 +71,9 @@ object ReadBytes {
 
   import cats.mtl.MonadPartialOrder
 
-  given readBytesForPartialOrder[F[_], G[_]](using MonadPartialOrder[F, G], ReadBytes[F]): ReadBytes[G] =
+  given readBytesForPartialOrder[F[_], G[_]](
+    using MonadPartialOrder[F, G],
+    ReadBytes[F]
+  ): ReadBytes[G] =
     ReadBytes[F].mapK(MonadPartialOrder[F, G])
 }

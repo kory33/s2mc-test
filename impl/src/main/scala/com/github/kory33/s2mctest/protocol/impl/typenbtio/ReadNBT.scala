@@ -3,7 +3,7 @@ package com.github.kory33.s2mctest.protocol.impl.typenbtio
 import cats.{Monad, MonadThrow}
 import com.github.kory33.s2mctest.core.algebra.ReadBytes
 import com.github.kory33.s2mctest.core.typeclass.RaiseThrowable
-import net.katsstuff.typenbt.{NBTByte, NBTByteArray, NBTCompound, NBTDouble, NBTFloat, NBTInt, NBTIntArray, NBTList, NBTListType, NBTLong, NBTLongArray, NBTShort, NBTString, NBTTag, NBTType, unsafe}
+import net.katsstuff.typenbt._
 
 import java.io.IOException
 
@@ -12,20 +12,20 @@ import java.io.IOException
  *
  * Copyright (c) 2018 Katrix
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
- * associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
- * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 object ReadNBT {
@@ -35,14 +35,13 @@ object ReadNBT {
   /**
    * Reads an [[net.katsstuff.typenbt.NBTCompound]] in the context [[F]].
    *
-   * @return a computation resulting in a tuple of [[NBTCompound]] and its root name.
+   * @return
+   *   a computation resulting in a tuple of [[NBTCompound]] and its root name.
    */
   def read[F[_]: Monad: RaiseThrowable: ReadBytes]: F[(String, NBTCompound)] =
     readType[F].flatMap { tpe =>
-      if tpe == NBTType.TagCompound then
-        Monad[F].product(readString[F], readCompound)
-      else
-        RaiseThrowable[F].raise(IOException("Wrong starting type for NBT"))
+      if tpe == NBTType.TagCompound then Monad[F].product(readString[F], readCompound)
+      else RaiseThrowable[F].raise(IOException("Wrong starting type for NBT"))
     }
 
   private def readCompound[F[_]: Monad: RaiseThrowable: ReadBytes]: F[NBTCompound] =
@@ -89,22 +88,30 @@ object ReadNBT {
       }(identity)
     } yield result
 
-  private def readTag[F[_]: Monad: RaiseThrowable: ReadBytes, A](nbtType: NBTType.CovarObj[A]): F[NBTTag.Aux[A]] =
+  private def readTag[F[_]: Monad: RaiseThrowable: ReadBytes, A](
+    nbtType: NBTType.CovarObj[A]
+  ): F[NBTTag.Aux[A]] =
     nbtType match {
-      case NBTType.TagByte      => ReadBytes[F].forByte.map(NBTByte(_).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagShort     => ReadBytes[F].forShort.map(NBTShort(_).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagInt       => ReadBytes[F].forInt.map(NBTInt(_).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagLong      => ReadBytes[F].forLong.map(NBTLong(_).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagFloat     => ReadBytes[F].forFloat.map(NBTFloat(_).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagDouble    => ReadBytes[F].forDouble.map(NBTDouble(_).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagByteArray => readByteArray[F].map(a => NBTByteArray(a.toIndexedSeq).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagString    => readString[F].map(NBTString(_).asInstanceOf[NBTTag.Aux[A]])
-      case unsafe.TagList       => readList.asInstanceOf[F[NBTTag.Aux[A]]]
-      case NBTType.TagCompound  => readCompound.asInstanceOf[F[NBTTag.Aux[A]]]
-      case NBTType.TagIntArray  => readIntArray.map(a => NBTIntArray(a.toIndexedSeq).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagLongArray => readLongArray.map(a => NBTLongArray(a.toIndexedSeq).asInstanceOf[NBTTag.Aux[A]])
-      case NBTType.TagEnd       => RaiseThrowable[F].raise(IOException("Unexpected end tag"))
-      case _                    => RaiseThrowable[F].raise(IOException("Unexpected tag type"))
+      case NBTType.TagByte => ReadBytes[F].forByte.map(NBTByte(_).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagShort =>
+        ReadBytes[F].forShort.map(NBTShort(_).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagInt  => ReadBytes[F].forInt.map(NBTInt(_).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagLong => ReadBytes[F].forLong.map(NBTLong(_).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagFloat =>
+        ReadBytes[F].forFloat.map(NBTFloat(_).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagDouble =>
+        ReadBytes[F].forDouble.map(NBTDouble(_).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagByteArray =>
+        readByteArray[F].map(a => NBTByteArray(a.toIndexedSeq).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagString   => readString[F].map(NBTString(_).asInstanceOf[NBTTag.Aux[A]])
+      case unsafe.TagList      => readList.asInstanceOf[F[NBTTag.Aux[A]]]
+      case NBTType.TagCompound => readCompound.asInstanceOf[F[NBTTag.Aux[A]]]
+      case NBTType.TagIntArray =>
+        readIntArray.map(a => NBTIntArray(a.toIndexedSeq).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagLongArray =>
+        readLongArray.map(a => NBTLongArray(a.toIndexedSeq).asInstanceOf[NBTTag.Aux[A]])
+      case NBTType.TagEnd => RaiseThrowable[F].raise(IOException("Unexpected end tag"))
+      case _              => RaiseThrowable[F].raise(IOException("Unexpected tag type"))
     }
 
 }

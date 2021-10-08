@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest.protocol.impl
 
-import com.github.kory33.s2mctest.core.connection.protocol.{PacketIdBindings, Protocol}
 import com.github.kory33.s2mctest.core.connection.protocol.codec.ByteCodec
+import com.github.kory33.s2mctest.core.connection.protocol.{PacketIdBindings, Protocol}
 
 object CommonProtocol {
 

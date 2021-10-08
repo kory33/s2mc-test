@@ -25,7 +25,7 @@ type IncludedInLockedT[T <: Tuple, A] <: Boolean =
 type ContainsDistinctLockedT[T <: Tuple] <: Boolean =
   T match {
     case Lock[head] *: tail => ![IncludedInLockedT[tail, head]] && ContainsDistinctLockedT[tail]
-    case EmptyTuple => true
+    case EmptyTuple         => true
   }
 
 type LockTuple[T <: Tuple] = Tuple.Map[T, Lock]

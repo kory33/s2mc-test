@@ -12,48 +12,56 @@ import scala.util.Success
  * whose length is known to the DSL interpreter but not to the programmer writing the DSL.
  *
  * Parsing of a scope fails whenever:
- *  - we encounter [[DecodeScopedBytesInstruction.ReadFromScope]] that tries to read more bytes than provided by the scope
- *  - we encounter [[DecodeScopedBytesInstruction.RaiseError]] or [[DecodeScopedBytesInstruction.GiveUp]]
- *  - the program leaves some bytes in the scope unread
+ *   - we encounter [[DecodeScopedBytesInstruction.ReadFromScope]] that tries to read more bytes
+ *     than provided by the scope
+ *   - we encounter [[DecodeScopedBytesInstruction.RaiseError]] or
+ *     [[DecodeScopedBytesInstruction.GiveUp]]
+ *   - the program leaves some bytes in the scope unread
  *
- * Conversely, parsing of a binary stream suceeds if the interpretation finishes without any leftover bytes.
+ * Conversely, parsing of a binary stream suceeds if the interpretation finishes without any
+ * leftover bytes.
  */
 enum DecodeScopedBytesInstruction[+T]:
   /**
    * An instruction to read a byte chunk of size `size` from the current scope.
    *
-   * Interpreter fails if number of [[Byte]] obtainable in the current scope is less than `size`.
+   * Interpreter fails if number of [[Byte]] obtainable in the current scope is less than
+   * `size`.
    */
   case ReadFromScope(size: Int) extends DecodeScopedBytesInstruction[fs2.Chunk[Byte]]
 
-  /** An instruction to read all bytes in the current scope. */
+  /**
+   * An instruction to read all bytes in the current scope.
+   */
   case ReadEntireScope extends DecodeScopedBytesInstruction[fs2.Chunk[Byte]]
 
   /**
-   * A control-flow expression that reads [[A]] using `expr` precisely from `chunk`.
-   * This expression does not read any input from the current scope.
+   * A control-flow expression that reads [[A]] using `expr` precisely from `chunk`. This
+   * expression does not read any input from the current scope.
    *
-   * The word `precise` here means that a value of [[A]] should be recoverable solely from [[Byte]],
-   * and that no [[Byte]] in `chunk` will be left unused.
+   * The word `precise` here means that a value of [[A]] should be recoverable solely from
+   * [[Byte]], and that no [[Byte]] in `chunk` will be left unused.
    */
-  case PreciseScope[A](chunk: fs2.Chunk[Byte], program: DecodeScopedBytes[A]) extends DecodeScopedBytesInstruction[A]
+  case PreciseScope[A](chunk: fs2.Chunk[Byte], program: DecodeScopedBytes[A])
+      extends DecodeScopedBytesInstruction[A]
 
   /**
-   * An instruction that signals an encounter with invalid input data, causing the interpreter to
-   * escape the current interpretation scope.
+   * An instruction that signals an encounter with invalid input data, causing the interpreter
+   * to escape the current interpretation scope.
    *
    * This instruction does not read any input.
    */
   case RaiseError(error: Throwable) extends DecodeScopedBytesInstruction[Nothing]
 
   /**
-   * A control expression to give up parsing current scope for not knowning how to parse additional data.
+   * A control expression to give up parsing current scope for not knowning how to parse
+   * additional data.
    *
    * This instruction does not read any input.
    *
-   * This is semantically different from [[SignalInvalidData]], because
-   * [[SignalInvalidData]] says that input data is known to be invalid
-   * while [[Giveup]] says that the data is in an unknown format.
+   * This is semantically different from [[SignalInvalidData]], because [[SignalInvalidData]]
+   * says that input data is known to be invalid while [[Giveup]] says that the data is in an
+   * unknown format.
    */
   case Giveup(reason: String) extends DecodeScopedBytesInstruction[Nothing]
 
@@ -71,7 +79,8 @@ object DecodeScopedBytes {
 
   def asFreeK: DecodeScopedBytes ~> ([t] =>> Free[DecodeScopedBytesInstruction, t]) =
     new (DecodeScopedBytes ~> ([t] =>> Free[DecodeScopedBytesInstruction, t])) {
-      override def apply[A](fa: DecodeScopedBytes[A]): Free[DecodeScopedBytesInstruction, A] = fa
+      override def apply[A](fa: DecodeScopedBytes[A]): Free[DecodeScopedBytesInstruction, A] =
+        fa
     }
 
   given ReadBytes[DecodeScopedBytes] with
@@ -85,7 +94,8 @@ object DecodeScopedBytes {
 
   given Monad[DecodeScopedBytes] = Free.catsFreeMonadForFree[DecodeScopedBytesInstruction]
 
-  def readByteBlock(n: Int): DecodeScopedBytes[fs2.Chunk[Byte]] = ReadBytes[DecodeScopedBytes].ofSize(n)
+  def readByteBlock(n: Int): DecodeScopedBytes[fs2.Chunk[Byte]] =
+    ReadBytes[DecodeScopedBytes].ofSize(n)
 
   def readByte: DecodeScopedBytes[Byte] = ReadBytes[DecodeScopedBytes].forByte
 

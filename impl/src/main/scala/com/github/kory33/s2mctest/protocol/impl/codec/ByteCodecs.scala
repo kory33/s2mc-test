@@ -1,8 +1,8 @@
 package com.github.kory33.s2mctest.protocol.impl.codec
 
 import cats.Monad
-import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes.{giveupParsingScope, readByteBlock}
 import com.github.kory33.s2mctest.core.algebra.ReadBytes
+import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes.{giveupParsingScope, readByteBlock}
 import com.github.kory33.s2mctest.core.connection.protocol.codec.{ByteCodec, ByteEncode, DecodeScopedBytes}
 import com.github.kory33.s2mctest.protocol.impl.macros.GenByteDecode
 import com.github.kory33.s2mctest.protocol.impl.typeclass.IntLike

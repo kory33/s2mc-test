@@ -1,14 +1,14 @@
 package com.github.kory33.s2mctest.protocol.impl.packets
 
-import PacketDataPrimitives.*
-import PacketDataCompoundTypes.*
-
 import cats.Monad
 import cats.instances.map
 import fs2.Chunk
 import net.katsstuff.typenbt.NBTCompound
 
 import java.util.UUID
+
+import PacketDataPrimitives.*
+import PacketDataCompoundTypes.*
 
 /**
  * -- from Stevenarella(https://github.com/iceiix/stevenarella),
