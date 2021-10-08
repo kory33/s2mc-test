@@ -3,7 +3,7 @@ package com.github.kory33.s2mctest.core.connection.protocol
 import cats.Monad
 import com.github.kory33.s2mctest.core.connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
 import com.github.kory33.s2mctest.core.generic.extensions.FoldTuple.foldToList
-import com.github.kory33.s2mctest.generic.compiletime.*
+import com.github.kory33.s2mctest.core.generic.compiletime.*
 
 import scala.collection.immutable.Queue
 

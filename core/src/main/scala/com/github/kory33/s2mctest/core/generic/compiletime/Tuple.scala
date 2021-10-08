@@ -1,5 +1,4 @@
-package com.github.kory33.s2mctest
-package generic.compiletime
+package com.github.kory33.s2mctest.core.generic.compiletime
 
 import scala.compiletime.ops.boolean.*
 import scala.compiletime.ops.int.*
