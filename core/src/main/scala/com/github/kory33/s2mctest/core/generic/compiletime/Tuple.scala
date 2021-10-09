@@ -4,7 +4,7 @@ import scala.compiletime.ops.boolean.*
 import scala.compiletime.ops.int.*
 
 /**
- * A type-level boolean indicating if Lock[A] is contained in T.
+ * INTERNAL. A type-level boolean indicating if Lock[A] is contained in T.
  *
  * Takes O(|T|) to compute.
  */
@@ -18,7 +18,7 @@ type IncludedInLockedT[T <: Tuple, A] <: Boolean =
   }
 
 /**
- * A type-level boolean indicating if T, mapped with [[Lock]], contains no duplicate types.
+ * INTERNAL. A type-level boolean indicating if T, mapped with [[Lock]], contains no duplicate types.
  *
  * Takes O(|T|^2) to compute.
  */
@@ -28,6 +28,9 @@ type ContainsDistinctLockedT[T <: Tuple] <: Boolean =
     case EmptyTuple         => true
   }
 
+/**
+ * INTERNAL. Lock tuple [[T]] using [[Lock]] constructor.
+ */
 type LockTuple[T <: Tuple] = Tuple.Map[T, Lock]
 
 /**
