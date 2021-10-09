@@ -18,7 +18,8 @@ type IncludedInLockedT[T <: Tuple, A] <: Boolean =
   }
 
 /**
- * INTERNAL. A type-level boolean indicating if T, mapped with [[Lock]], contains no duplicate types.
+ * INTERNAL. A type-level boolean indicating if T, mapped with [[Lock]], contains no duplicate
+ * types.
  *
  * Takes O(|T|^2) to compute.
  */

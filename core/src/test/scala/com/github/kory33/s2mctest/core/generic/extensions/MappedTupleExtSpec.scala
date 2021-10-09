@@ -3,10 +3,10 @@ package com.github.kory33.s2mctest.core.generic.extensions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
-class FoldTupleSpec extends AnyFlatSpec with should.Matchers {
+class MappedTupleExtSpec extends AnyFlatSpec with should.Matchers {
   type Pair = [a] =>> (a, a)
 
-  import FoldTuple.*
+  import MappedTupleExt.*
 
   "foldLeft" should "fold a tuple to a value" in {
     def foldToString[F[_], BaseTuple <: Tuple](tuple: Tuple.Map[BaseTuple, F]): String =
@@ -18,9 +18,9 @@ class FoldTupleSpec extends AnyFlatSpec with should.Matchers {
     )
   }
 
-  "foldToList" should "accumulate a tuple into a list" in {
+  "mapToList" should "accumulate a tuple into a list" in {
     assert {
-      foldToList[Pair, (Int, 42, String)]((1, 3), (42, 42), ("ab", "cd"))([t] => (next: Pair[t]) => next: Any) ==
+      mapToList[Pair, (Int, 42, String)]((1, 3), (42, 42), ("ab", "cd"))([t] => (next: Pair[t]) => next: Any) ==
         List((1, 3), (42, 42), ("ab", "cd"))
     }
   }

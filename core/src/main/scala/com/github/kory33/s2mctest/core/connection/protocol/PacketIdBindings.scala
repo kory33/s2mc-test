@@ -3,7 +3,7 @@ package com.github.kory33.s2mctest.core.connection.protocol
 import cats.Monad
 import com.github.kory33.s2mctest.core.connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
 import com.github.kory33.s2mctest.core.generic.compiletime.*
-import com.github.kory33.s2mctest.core.generic.extensions.FoldTuple.foldToList
+import com.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
 
 import scala.collection.immutable.Queue
 
@@ -23,7 +23,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
   require(
     {
       val packetIds =
-        foldToList[CodecBinding, Tuple.InverseMap[BindingTup, CodecBinding]](ev(bindings))(
+        mapToList[CodecBinding, Tuple.InverseMap[BindingTup, CodecBinding]](ev(bindings))(
           [t] => (binding: CodecBinding[t]) => binding._1
         )
 
@@ -42,7 +42,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
     type PacketTuple = Tuple.InverseMap[BindingTup, CodecBinding]
     type Packet = Tuple.Union[PacketTuple]
 
-    foldToList[CodecBinding, PacketTuple](ev(bindings))(
+    mapToList[CodecBinding, PacketTuple](ev(bindings))(
       [t <: Packet] =>
         (pair: CodecBinding[t]) =>
           (pair._1, pair._2.decode): (PacketId, DecodeScopedBytes[Packet])
