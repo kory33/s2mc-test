@@ -2,7 +2,7 @@ package com.github.kory33.s2mctest.protocol.impl.typenbtio
 
 import cats.{Monad, MonadThrow}
 import com.github.kory33.s2mctest.core.algebra.ReadBytes
-import com.github.kory33.s2mctest.core.typeclass.RaiseThrowable
+import com.github.kory33.s2mctest.protocol.impl.typeclass.RaiseThrowable
 import net.katsstuff.typenbt._
 
 import java.io.IOException

@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.typeclass
+package com.github.kory33.s2mctest.protocol.impl.typeclass
 
 type RaiseThrowable[F[_]] = cats.mtl.Raise[F, Throwable]
 object RaiseThrowable {

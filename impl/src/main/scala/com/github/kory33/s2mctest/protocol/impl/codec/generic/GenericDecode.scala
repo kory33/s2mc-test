@@ -9,7 +9,7 @@ import fs2.Chunk
 object GenericDecode {
   import cats.implicits.given
   import com.github.kory33.s2mctest.core.algebra.ReadBytes
-  import com.github.kory33.s2mctest.core.typeclass.RaiseThrowable
+  import com.github.kory33.s2mctest.protocol.impl.typeclass.RaiseThrowable
 
   /**
    * Decode variable-length integer which has maximum bits of [[maxBits]].
