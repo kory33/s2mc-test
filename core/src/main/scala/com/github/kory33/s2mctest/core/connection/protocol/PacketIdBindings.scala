@@ -1,7 +1,8 @@
 package com.github.kory33.s2mctest.core.connection.protocol
 
 import cats.Monad
-import com.github.kory33.s2mctest.core.connection.protocol.codec.{ByteCodec, DecodeScopedBytes}
+import com.github.kory33.s2mctest.core.connection.codecdsl.DecodeScopedBytes
+import com.github.kory33.s2mctest.core.connection.protocol.codec.ByteCodec
 import com.github.kory33.s2mctest.core.generic.compiletime.*
 import com.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
 

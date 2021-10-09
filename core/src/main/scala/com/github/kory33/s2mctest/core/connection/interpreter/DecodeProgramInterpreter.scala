@@ -2,12 +2,12 @@ package com.github.kory33.s2mctest.core.connection.interpreter
 
 import cats.mtl.{Raise, Stateful}
 import cats.{Applicative, Monad, ~>}
-import com.github.kory33.s2mctest.core.algebra.ReadBytes
-import com.github.kory33.s2mctest.core.connection.interpreter.ParseResult
-import com.github.kory33.s2mctest.core.connection.protocol.codec.{
+import com.github.kory33.s2mctest.core.connection.codecdsl.{
   DecodeScopedBytes,
-  DecodeScopedBytesInstruction
+  DecodeScopedBytesInstruction,
+  ReadBytes
 }
+import com.github.kory33.s2mctest.core.connection.interpreter.ParseResult
 import fs2.Chunk
 
 object DecodeProgramInterpreter {
@@ -38,7 +38,7 @@ object DecodeProgramInterpreter {
       [A] =>
         (instruction: DecodeScopedBytesInstruction[A]) =>
           {
-            import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytesInstruction.*
+            import com.github.kory33.s2mctest.core.connection.codecdsl.DecodeScopedBytesInstruction.*
 
             def readChunkSafely(length: Int): M[Chunk[Byte]] =
               for {

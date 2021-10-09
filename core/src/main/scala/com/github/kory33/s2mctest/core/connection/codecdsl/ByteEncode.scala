@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.connection.protocol.codec
+package com.github.kory33.s2mctest.core.connection.codecdsl
 
 import cats.Contravariant
 import fs2.Chunk

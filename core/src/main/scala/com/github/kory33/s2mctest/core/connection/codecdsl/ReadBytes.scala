@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.algebra
+package com.github.kory33.s2mctest.core.connection.codecdsl
 
 import fs2.Chunk
 

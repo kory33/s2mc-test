@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest.core.connection.interpreter
 
+import com.github.kory33.s2mctest.core.connection.codecdsl.DecodeScopedBytes
 import com.github.kory33.s2mctest.core.connection.interpreter.DecodeProgramInterpreter
-import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes
 import fs2.Chunk
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
@@ -15,27 +15,27 @@ class PureDecodeProgramInterpreterSpec extends AnyFlatSpec with should.Matchers 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readByteBlock(5)
-    ) should be (scala.Right(chunk))
+    ) should be(scala.Right(chunk))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readByteBlock(2) >> DecodeScopedBytes.readByteBlock(3)
-    ) should be (scala.Right(chunk.drop(2)))
+    ) should be(scala.Right(chunk.drop(2)))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readByteBlock(2) <* DecodeScopedBytes.readByteBlock(3)
-    ) should be (scala.Right(chunk.take(2)))
+    ) should be(scala.Right(chunk.take(2)))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readByteBlock(4)
-    ) should be (scala.Left(ParseInterruption.ExcessBytes))
+    ) should be(scala.Left(ParseInterruption.ExcessBytes))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readByteBlock(6)
-    ) should be (scala.Left(ParseInterruption.RanOutOfBytes))
+    ) should be(scala.Left(ParseInterruption.RanOutOfBytes))
   }
 
   it should "read the entire scope with readUntilScopeEnd" in {
@@ -45,7 +45,7 @@ class PureDecodeProgramInterpreterSpec extends AnyFlatSpec with should.Matchers 
       DecodeProgramInterpreter.interpretOnChunk(
         chunk,
         DecodeScopedBytes.readByteBlock(readOff) >> DecodeScopedBytes.readUntilScopeEnd
-      ) should be (scala.Right(chunk.drop(readOff)))
+      ) should be(scala.Right(chunk.drop(readOff)))
     }
   }
 
@@ -55,11 +55,8 @@ class PureDecodeProgramInterpreterSpec extends AnyFlatSpec with should.Matchers 
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk1,
-      DecodeScopedBytes.readPrecise(
-        chunk2,
-        DecodeScopedBytes.readUntilScopeEnd
-      )
-    ) should be (scala.Left(ParseInterruption.ExcessBytes))
+      DecodeScopedBytes.readPrecise(chunk2, DecodeScopedBytes.readUntilScopeEnd)
+    ) should be(scala.Left(ParseInterruption.ExcessBytes))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk1,
@@ -67,7 +64,7 @@ class PureDecodeProgramInterpreterSpec extends AnyFlatSpec with should.Matchers 
         chunk2,
         DecodeScopedBytes.readUntilScopeEnd
       ) >> DecodeScopedBytes.readUntilScopeEnd
-    ) should be (scala.Right(chunk1))
+    ) should be(scala.Right(chunk1))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk1,
@@ -75,7 +72,7 @@ class PureDecodeProgramInterpreterSpec extends AnyFlatSpec with should.Matchers 
         chunk2,
         DecodeScopedBytes.readUntilScopeEnd
       ) <* DecodeScopedBytes.readUntilScopeEnd
-    ) should be (scala.Right(chunk2))
+    ) should be(scala.Right(chunk2))
   }
 
   it should "convey any exception raised while parsing" in {
@@ -84,19 +81,21 @@ class PureDecodeProgramInterpreterSpec extends AnyFlatSpec with should.Matchers 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.giveupParsingScope("giving_up...")
-    ) should be (scala.Left(ParseInterruption.Gaveup("giving_up...")))
+    ) should be(scala.Left(ParseInterruption.Gaveup("giving_up...")))
 
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
-      DecodeScopedBytes.readUntilScopeEnd >> DecodeScopedBytes.giveupParsingScope("giving_up...")
-    ) should be (scala.Left(ParseInterruption.Gaveup("giving_up...")))
+      DecodeScopedBytes.readUntilScopeEnd >> DecodeScopedBytes.giveupParsingScope(
+        "giving_up..."
+      )
+    ) should be(scala.Left(ParseInterruption.Gaveup("giving_up...")))
 
     // RanOutOfBytes thrown before giving up
     DecodeProgramInterpreter.interpretOnChunk(
       chunk,
       DecodeScopedBytes.readUntilScopeEnd >>
-      DecodeScopedBytes.readByteBlock(1) >>
-      DecodeScopedBytes.giveupParsingScope("giving_up...")
-    ) should be (scala.Left(ParseInterruption.RanOutOfBytes))
+        DecodeScopedBytes.readByteBlock(1) >>
+        DecodeScopedBytes.giveupParsingScope("giving_up...")
+    ) should be(scala.Left(ParseInterruption.RanOutOfBytes))
   }
 }

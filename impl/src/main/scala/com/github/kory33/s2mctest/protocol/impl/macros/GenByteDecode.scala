@@ -1,6 +1,6 @@
 package com.github.kory33.s2mctest.protocol.impl.macros
 
-import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes
+import com.github.kory33.s2mctest.core.connection.codecdsl.DecodeScopedBytes
 
 import scala.annotation.{StaticAnnotation, tailrec}
 import scala.collection.immutable.Queue
@@ -208,10 +208,12 @@ object GenByteDecode {
                           // ut is a type such that Option[ut] =:= ft
                           case '[ut] =>
                             '{
-                              if (${
+                              if (
+                                ${
                                   replaceFieldReferencesWithParameters(parametersSoFar)(cond)
-                                })
-                              then ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
+                                }
+                              ) then
+                                ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
                               else ${ byteDecodeMonad }.pure(None)
                             } // Expr of type DecodeScopedBytes[Option[ut]]
                       case RequiredField(_, fieldType) => summonDecoderExpr[ft]
