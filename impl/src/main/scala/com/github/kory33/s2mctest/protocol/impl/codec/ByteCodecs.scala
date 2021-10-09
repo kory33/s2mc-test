@@ -2,8 +2,15 @@ package com.github.kory33.s2mctest.protocol.impl.codec
 
 import cats.Monad
 import com.github.kory33.s2mctest.core.algebra.ReadBytes
-import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes.{giveupParsingScope, readByteBlock}
-import com.github.kory33.s2mctest.core.connection.protocol.codec.{ByteCodec, ByteEncode, DecodeScopedBytes}
+import com.github.kory33.s2mctest.core.connection.protocol.codec.DecodeScopedBytes.{
+  giveupParsingScope,
+  readByteBlock
+}
+import com.github.kory33.s2mctest.core.connection.protocol.codec.{
+  ByteCodec,
+  ByteEncode,
+  DecodeScopedBytes
+}
 import com.github.kory33.s2mctest.protocol.impl.macros.GenByteDecode
 import com.github.kory33.s2mctest.protocol.impl.typeclass.IntLike
 import com.github.kory33.s2mctest.protocol.impl.typenbtio.{ReadNBT, WriteNBT}
@@ -35,21 +42,19 @@ object ByteCodecs {
 
     inline given codecToDecode[A: ByteCodec]: DecodeScopedBytes[A] = ByteCodec[A].decode
 
-    /** Codec of Unit (empty type). */
-    given ByteCodec[Unit] = ByteCodec[Unit](
-      Monad[DecodeScopedBytes].pure(()),
-      (x: Unit) => Chunk.empty[Byte]
-    )
+    /**
+     * Codec of Unit (empty type).
+     */
+    given ByteCodec[Unit] =
+      ByteCodec[Unit](Monad[DecodeScopedBytes].pure(()), (x: Unit) => Chunk.empty[Byte])
 
     given ByteCodec[Boolean] = ByteCodec[Boolean](
       readByteBlock(1).map(_.head.get == (0x01: Byte)),
       (x: Boolean) => Chunk[Byte](if x then 0x01 else 0x00)
     )
 
-    given ByteCodec[Byte] = ByteCodec[Byte](
-      readByteBlock(1).map(_.head.get),
-      (x: Byte) => Chunk(x)
-    )
+    given ByteCodec[Byte] =
+      ByteCodec[Byte](readByteBlock(1).map(_.head.get), (x: Byte) => Chunk(x))
 
     given ByteCodec[Short] = ByteCodec[Short](
       readByteBlock(2).map(c => java.nio.ByteBuffer.wrap(c.toArray).getShort),
@@ -82,24 +87,30 @@ object ByteCodecs {
 
     object VarNumCodecs {
       def encodeVarNum(fixedSizeBigEndianBytes: Chunk[Byte]): Chunk[Byte] = {
-        extension[A] (list: List[A])
-          def dropRightWhile(predicate: A => Boolean): List[A] = list.reverse.dropWhile(predicate).reverse
+        extension [A](list: List[A])
+          def dropRightWhile(predicate: A => Boolean): List[A] =
+            list.reverse.dropWhile(predicate).reverse
           def unconsLast: (List[A], A) = list.reverse match {
             case ::(last, restRev) => (restRev.reverse, last)
             case Nil => throw IllegalArgumentException("unconsLast on an empty list")
           }
 
-        require(fixedSizeBigEndianBytes.nonEmpty, "expected nonempty Chunk[Byte] for encodeVarNum")
+        require(
+          fixedSizeBigEndianBytes.nonEmpty,
+          "expected nonempty Chunk[Byte] for encodeVarNum"
+        )
 
         // for example, let the parameter be 32-bit big endian integer Chunk(00000000, 00000001, 11101010, 10010100).
 
         // bits in fixedSizeBigEndianBytes, with LSB at the beginning and MSB at the tail
         // with the example, this would be BitVector(00101001 01010111 10000000 00000000)
-        val reversedBits = scodec.bits.BitVector.view(fixedSizeBigEndianBytes.toArray).reverseBitOrder
+        val reversedBits =
+          scodec.bits.BitVector.view(fixedSizeBigEndianBytes.toArray).reverseBitOrder
 
         // bits split into 7bits group and then redundant most significant part dropped.
         // with the example, this would be List(BitVector(0010100), BitVector(1010101), BitVector(1110000))
-        val splitInto7Bits = reversedBits.grouped(7).toList.dropRightWhile(_.populationCount == 0)
+        val splitInto7Bits =
+          reversedBits.grouped(7).toList.dropRightWhile(_.populationCount == 0)
 
         // bits split into 7bits, with flag for data continuation appended to each bit group
         // with the example, this would be List(BitVector(00101001), BitVector(10101011), BitVector(11100000))
@@ -109,7 +120,9 @@ object ByteCodecs {
 
         // finally reverse each bit groups and concat them into a Chunk[Byte]
         // with the example, this would be Chunk(10010100 11010101 00000111)
-        Chunk.array(scodec.bits.BitVector.concat(flagsAppended.map(_.reverseBitOrder)).toByteArray)
+        Chunk.array(
+          scodec.bits.BitVector.concat(flagsAppended.map(_.reverseBitOrder)).toByteArray
+        )
       }
 
       given ByteCodec[VarInt] = ByteCodec[VarInt](
@@ -129,12 +142,17 @@ object ByteCodecs {
       val utf8Charset = Charset.forName("UTF-8")
 
       ByteCodec[String](
-        ByteCodec[VarInt].decode.flatMap(length => ReadBytes[DecodeScopedBytes].forUTF8String(length.raw)),
-        (x: String) => ByteCodec[VarInt].encode.write(VarInt(x.length)) ++ Chunk.array(x.getBytes(utf8Charset))
+        ByteCodec[VarInt]
+          .decode
+          .flatMap(length => ReadBytes[DecodeScopedBytes].forUTF8String(length.raw)),
+        (x: String) =>
+          ByteCodec[VarInt].encode.write(VarInt(x.length)) ++ Chunk.array(
+            x.getBytes(utf8Charset)
+          )
       )
     }
 
-    given lenPrefixed[L: IntLike : ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
+    given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
       val decode: DecodeScopedBytes[LenPrefixedSeq[L, A]] = for {
         length <- ByteCodec[L].decode
         intLength = IntLike[L].toInt(length)
@@ -142,16 +160,18 @@ object ByteCodecs {
       } yield LenPrefixedSeq(aList.toVector)
 
       val encode: ByteEncode[LenPrefixedSeq[L, A]] = { (lenSeq: LenPrefixedSeq[L, A]) =>
-        ByteCodec[L].encode.write(lenSeq.lLength) ++ ByteCodec[A].encode.writeSeq(lenSeq.asVector)
+        ByteCodec[L].encode.write(lenSeq.lLength) ++ ByteCodec[A]
+          .encode
+          .writeSeq(lenSeq.asVector)
       }
 
       ByteCodec[LenPrefixedSeq[L, A]](decode, encode)
     }
 
-    given fixedPoint5ForIntegral[A: ByteCodec : Integral]: ByteCodec[FixedPoint5[A]] =
+    given fixedPoint5ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint5[A]] =
       ByteCodec[A].imap(FixedPoint5.fromRaw[A])(_.rawValueFP5)
 
-    given fixedPoint12ForIntegral[A: ByteCodec : Integral]: ByteCodec[FixedPoint12[A]] =
+    given fixedPoint12ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint12[A]] =
       ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValueFP12)
 
     given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](
@@ -197,13 +217,16 @@ object ByteCodecs {
 
     given ByteCodec[EntityEquipment] = autogenerateFor[EntityEquipment]
 
-    /** see https://wiki.vg/index.php?title=Protocol&oldid=16953#Entity_Equipment for details */
+    /**
+     * see https://wiki.vg/index.php?title=Protocol&oldid=16953#Entity_Equipment for details
+     */
     given ByteCodec[EntityEquipments] = {
       import com.github.kory33.s2mctest.core.generic.extensions.MonadValueExt.repeatWhileM
 
       ByteCodec[EntityEquipments](
-        ByteCodec[EntityEquipment].decode.repeatWhileM { case EntityEquipment(slot, _) =>
-          (slot & 0x80) != 0
+        ByteCodec[EntityEquipment].decode.repeatWhileM {
+          case EntityEquipment(slot, _) =>
+            (slot & 0x80) != 0
         },
         ByteCodec[EntityEquipment].encode.writeSeq(_)
       )
@@ -217,61 +240,88 @@ object ByteCodecs {
 
     given ByteCodec[PlayerProperty] = autogenerateFor[PlayerProperty]
 
-    given ByteCodec[PlayerInfoDataRecord.AddPlayer] = autogenerateFor[PlayerInfoDataRecord.AddPlayer]
+    given ByteCodec[PlayerInfoDataRecord.AddPlayer] =
+      autogenerateFor[PlayerInfoDataRecord.AddPlayer]
 
-    given ByteCodec[PlayerInfoDataRecord.UpdateGamemode] = autogenerateFor[PlayerInfoDataRecord.UpdateGamemode]
+    given ByteCodec[PlayerInfoDataRecord.UpdateGamemode] =
+      autogenerateFor[PlayerInfoDataRecord.UpdateGamemode]
 
-    given ByteCodec[PlayerInfoDataRecord.UpdateLatency] = autogenerateFor[PlayerInfoDataRecord.UpdateLatency]
+    given ByteCodec[PlayerInfoDataRecord.UpdateLatency] =
+      autogenerateFor[PlayerInfoDataRecord.UpdateLatency]
 
-    given ByteCodec[PlayerInfoDataRecord.UpdateDisplayName] = autogenerateFor[PlayerInfoDataRecord.UpdateDisplayName]
+    given ByteCodec[PlayerInfoDataRecord.UpdateDisplayName] =
+      autogenerateFor[PlayerInfoDataRecord.UpdateDisplayName]
 
-    given ByteCodec[PlayerInfoDataRecord.RemovePlayer] = autogenerateFor[PlayerInfoDataRecord.RemovePlayer]
+    given ByteCodec[PlayerInfoDataRecord.RemovePlayer] =
+      autogenerateFor[PlayerInfoDataRecord.RemovePlayer]
 
     given ByteCodec[PlayerInfoData] = ByteCodec[PlayerInfoData](
       ByteCodec[VarInt].decode.flatMap { actionVarInt =>
         actionVarInt.raw match {
-          case 0 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer]].decode
-            .map(PlayerInfoData.AddPlayer.apply)
-          case 1 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode]].decode
-            .map(PlayerInfoData.UpdateGamemode.apply)
-          case 2 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency]].decode
-            .map(PlayerInfoData.UpdateLatency.apply)
-          case 3 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName]].decode
-            .map(PlayerInfoData.UpdateDisplayName.apply)
-          case 4 => ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer]].decode
-            .map(PlayerInfoData.RemovePlayer.apply)
+          case 0 =>
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer]]
+              .decode
+              .map(PlayerInfoData.AddPlayer.apply)
+          case 1 =>
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode]]
+              .decode
+              .map(PlayerInfoData.UpdateGamemode.apply)
+          case 2 =>
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency]]
+              .decode
+              .map(PlayerInfoData.UpdateLatency.apply)
+          case 3 =>
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName]]
+              .decode
+              .map(PlayerInfoData.UpdateDisplayName.apply)
+          case 4 =>
+            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer]]
+              .decode
+              .map(PlayerInfoData.RemovePlayer.apply)
         }
       },
-      (playerInfoData: PlayerInfoData) => playerInfoData match {
-        case PlayerInfoData.AddPlayer(players) =>
-          ByteCodec[VarInt].encode.write(VarInt(0)) ++
-            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer]].encode.write(players)
-        case PlayerInfoData.UpdateGamemode(players) =>
-          ByteCodec[VarInt].encode.write(VarInt(1)) ++
-            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode]].encode.write(players)
-        case PlayerInfoData.UpdateLatency(players) =>
-          ByteCodec[VarInt].encode.write(VarInt(2)) ++
-            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency]].encode.write(players)
-        case PlayerInfoData.UpdateDisplayName(players) =>
-          ByteCodec[VarInt].encode.write(VarInt(3)) ++
-            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName]].encode.write(players)
-        case PlayerInfoData.RemovePlayer(players) =>
-          ByteCodec[VarInt].encode.write(VarInt(4)) ++
-            ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer]].encode.write(players)
-      }
+      (playerInfoData: PlayerInfoData) =>
+        playerInfoData match {
+          case PlayerInfoData.AddPlayer(players) =>
+            ByteCodec[VarInt].encode.write(VarInt(0)) ++
+              ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.AddPlayer]]
+                .encode
+                .write(players)
+          case PlayerInfoData.UpdateGamemode(players) =>
+            ByteCodec[VarInt].encode.write(VarInt(1)) ++
+              ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateGamemode]]
+                .encode
+                .write(players)
+          case PlayerInfoData.UpdateLatency(players) =>
+            ByteCodec[VarInt].encode.write(VarInt(2)) ++
+              ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateLatency]]
+                .encode
+                .write(players)
+          case PlayerInfoData.UpdateDisplayName(players) =>
+            ByteCodec[VarInt].encode.write(VarInt(3)) ++
+              ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.UpdateDisplayName]]
+                .encode
+                .write(players)
+          case PlayerInfoData.RemovePlayer(players) =>
+            ByteCodec[VarInt].encode.write(VarInt(4)) ++
+              ByteCodec[LenPrefixedSeq[VarInt, PlayerInfoDataRecord.RemovePlayer]]
+                .encode
+                .write(players)
+        }
     )
 
     def recipeDataTypeString(recipeData: RecipeData): String = recipeData match {
-      case RecipeData.Shapeless(_, _, _) => "crafting_shapeless"
+      case RecipeData.Shapeless(_, _, _)    => "crafting_shapeless"
       case RecipeData.Shaped(_, _, _, _, _) => "crafting_shaped"
-      case RecipeData.Cooking(tpe, _) => tpe match {
-        case CookingDataType.Smelting => "smelting"
-        case CookingDataType.Blasting => "blasting"
-        case CookingDataType.Smoking => "smoking"
-        case CookingDataType.CampfireCooking => "campfire_cooking"
-      }
-      case RecipeData.Stonecutting(_, _, _) => "stonecutting"
-      case RecipeData.Smithing(_, _, _) => "smithing"
+      case RecipeData.Cooking(tpe, _) =>
+        tpe match {
+          case CookingDataType.Smelting        => "smelting"
+          case CookingDataType.Blasting        => "blasting"
+          case CookingDataType.Smoking         => "smoking"
+          case CookingDataType.CampfireCooking => "campfire_cooking"
+        }
+      case RecipeData.Stonecutting(_, _, _)        => "stonecutting"
+      case RecipeData.Smithing(_, _, _)            => "smithing"
       case RecipeData.NoAdditionalData(recipeType) => recipeType
     }
 
@@ -291,27 +341,20 @@ object ByteCodecs {
 
       recipeType match {
         case "crafting_shapeless" => ByteCodec[RecipeData.Shapeless].decode
-        case "crafting_shaped" => ByteCodec[RecipeData.Shaped].decode
-        case "stonecutting" => ByteCodec[RecipeData.Stonecutting].decode
-        case "smithing" => ByteCodec[RecipeData.Smithing].decode
-        case "smelting" => decodeCookingRecipeDataWith(CookingDataType.Smelting)
-        case "blasting" => decodeCookingRecipeDataWith(CookingDataType.Blasting)
-        case "smoking" => decodeCookingRecipeDataWith(CookingDataType.Smoking)
+        case "crafting_shaped"    => ByteCodec[RecipeData.Shaped].decode
+        case "stonecutting"       => ByteCodec[RecipeData.Stonecutting].decode
+        case "smithing"           => ByteCodec[RecipeData.Smithing].decode
+        case "smelting"           => decodeCookingRecipeDataWith(CookingDataType.Smelting)
+        case "blasting"           => decodeCookingRecipeDataWith(CookingDataType.Blasting)
+        case "smoking"            => decodeCookingRecipeDataWith(CookingDataType.Smoking)
         case "campfire_cooking" => decodeCookingRecipeDataWith(CookingDataType.CampfireCooking)
-        case "crafting_special_armordye" |
-             "crafting_special_bookcloning" |
-             "crafting_special_mapcloning" |
-             "crafting_special_mapextending" |
-             "crafting_special_firework_rocket" |
-             "crafting_special_firework_star" |
-             "crafting_special_firework_star_fade" |
-             "crafting_special_repairitem" |
-             "crafting_special_tippedarrow" |
-             "crafting_special_bannerduplicate" |
-             "crafting_special_banneraddpattern" |
-             "crafting_special_shielddecoration" |
-             "crafting_special_shulkerboxcoloring" |
-             "crafting_special_suspiciousstew" =>
+        case "crafting_special_armordye" | "crafting_special_bookcloning" |
+            "crafting_special_mapcloning" | "crafting_special_mapextending" |
+            "crafting_special_firework_rocket" | "crafting_special_firework_star" |
+            "crafting_special_firework_star_fade" | "crafting_special_repairitem" |
+            "crafting_special_tippedarrow" | "crafting_special_bannerduplicate" |
+            "crafting_special_banneraddpattern" | "crafting_special_shielddecoration" |
+            "crafting_special_shulkerboxcoloring" | "crafting_special_suspiciousstew" =>
           Monad[DecodeScopedBytes].pure(RecipeData.NoAdditionalData(recipeType))
         case _ =>
           giveupParsingScope(s"The recipe type ${recipeType} is unknown to the parser.")
@@ -320,14 +363,19 @@ object ByteCodecs {
 
     // encoder for RecipeData. This encoder does not write out the type of the recipe.
     // for details, see https://wiki.vg/index.php?title=Protocol&oldid=16953#Declare_Recipes
-    lazy val encodeRecipeData: ByteEncode[RecipeData] = (recipeData: RecipeData) => recipeData match {
-      case recipeData: RecipeData.Shapeless => ByteCodec[RecipeData.Shapeless].encode.write(recipeData)
-      case recipeData: RecipeData.Shaped => ByteCodec[RecipeData.Shaped].encode.write(recipeData)
-      case recipeData: RecipeData.Stonecutting => ByteCodec[RecipeData.Stonecutting].encode.write(recipeData)
-      case recipeData: RecipeData.Smithing => ByteCodec[RecipeData.Smithing].encode.write(recipeData)
-      case RecipeData.Cooking(_, data) => ByteCodec[CookingRecipeData].encode.write(data)
-      case RecipeData.NoAdditionalData(_) => Chunk.empty[Byte]
-    }
+    lazy val encodeRecipeData: ByteEncode[RecipeData] = (recipeData: RecipeData) =>
+      recipeData match {
+        case recipeData: RecipeData.Shapeless =>
+          ByteCodec[RecipeData.Shapeless].encode.write(recipeData)
+        case recipeData: RecipeData.Shaped =>
+          ByteCodec[RecipeData.Shaped].encode.write(recipeData)
+        case recipeData: RecipeData.Stonecutting =>
+          ByteCodec[RecipeData.Stonecutting].encode.write(recipeData)
+        case recipeData: RecipeData.Smithing =>
+          ByteCodec[RecipeData.Smithing].encode.write(recipeData)
+        case RecipeData.Cooking(_, data)    => ByteCodec[CookingRecipeData].encode.write(data)
+        case RecipeData.NoAdditionalData(_) => Chunk.empty[Byte]
+      }
 
     given ByteCodec[Recipe] = {
       val decode: DecodeScopedBytes[Recipe] =
@@ -359,95 +407,75 @@ object ByteCodecs {
 
     given ByteCodec[CommandArgument.EntityA] = autogenerateFor[CommandArgument.EntityA]
 
-    given ByteCodec[CommandArgument.ScoreHolderA] = autogenerateFor[CommandArgument.ScoreHolderA]
+    given ByteCodec[CommandArgument.ScoreHolderA] =
+      autogenerateFor[CommandArgument.ScoreHolderA]
 
     given ByteCodec[CommandArgument.RangeA] = autogenerateFor[CommandArgument.RangeA]
 
-    def decodeCommandArgumentFor(typeIdentifier: String): DecodeScopedBytes[CommandArgument] = typeIdentifier match {
-      case "brigadier:double" => ByteCodec[CommandArgument.DoubleA].decode
-      case "brigadier:float" => ByteCodec[CommandArgument.FloatA].decode
-      case "brigadier:integer" => ByteCodec[CommandArgument.IntegerA].decode
-      case "brigadier:long" => ByteCodec[CommandArgument.LongA].decode
-      case "brigadier:string" => ByteCodec[CommandArgument.StringA].decode
-      case "brigadier:entity" => ByteCodec[CommandArgument.EntityA].decode
-      case "brigadier:score_holder" => ByteCodec[CommandArgument.ScoreHolderA].decode
-      case "brigadier:range" => ByteCodec[CommandArgument.RangeA].decode
-      case "brigadier:bool" |
-           "minecraft:game_profile" |
-           "minecraft:block_pos" |
-           "minecraft:column_pos" |
-           "minecraft:vec3" |
-           "minecraft:vec2" |
-           "minecraft:block_state" |
-           "minecraft:block_predicate" |
-           "minecraft:item_stack" |
-           "minecraft:item_predicate" |
-           "minecraft:color" |
-           "minecraft:component" |
-           "minecraft:message" |
-           "minecraft:nbt" |
-           "minecraft:nbt_path" |
-           "minecraft:objective" |
-           "minecraft:objective_criteria" |
-           "minecraft:operation" |
-           "minecraft:particle" |
-           "minecraft:rotation" |
-           "minecraft:angle" |
-           "minecraft:scoreboard_slot" |
-           "minecraft:swizzle" |
-           "minecraft:team" |
-           "minecraft:item_slot" |
-           "minecraft:resource_location" |
-           "minecraft:mob_effect" |
-           "minecraft:function" |
-           "minecraft:entity_anchor" |
-           "minecraft:int_range" |
-           "minecraft:float_range" |
-           "minecraft:item_enchantment" |
-           "minecraft:entity_summon" |
-           "minecraft:dimension" |
-           "minecraft:uuid" |
-           "minecraft:nbt_tag" |
-           "minecraft:nbt_compound_tag" |
-           "minecraft:time" |
-           "forge:modid" |
-           "forge:enum" => Monad[DecodeScopedBytes].pure(CommandArgument.ArgumentWithoutProperties(typeIdentifier))
-      case _ => giveupParsingScope(s"command argument type $typeIdentifier is unknown")
-    }
+    def decodeCommandArgumentFor(typeIdentifier: String): DecodeScopedBytes[CommandArgument] =
+      typeIdentifier match {
+        case "brigadier:double"       => ByteCodec[CommandArgument.DoubleA].decode
+        case "brigadier:float"        => ByteCodec[CommandArgument.FloatA].decode
+        case "brigadier:integer"      => ByteCodec[CommandArgument.IntegerA].decode
+        case "brigadier:long"         => ByteCodec[CommandArgument.LongA].decode
+        case "brigadier:string"       => ByteCodec[CommandArgument.StringA].decode
+        case "brigadier:entity"       => ByteCodec[CommandArgument.EntityA].decode
+        case "brigadier:score_holder" => ByteCodec[CommandArgument.ScoreHolderA].decode
+        case "brigadier:range"        => ByteCodec[CommandArgument.RangeA].decode
+        case "brigadier:bool" | "minecraft:game_profile" | "minecraft:block_pos" |
+            "minecraft:column_pos" | "minecraft:vec3" | "minecraft:vec2" |
+            "minecraft:block_state" | "minecraft:block_predicate" | "minecraft:item_stack" |
+            "minecraft:item_predicate" | "minecraft:color" | "minecraft:component" |
+            "minecraft:message" | "minecraft:nbt" | "minecraft:nbt_path" |
+            "minecraft:objective" | "minecraft:objective_criteria" | "minecraft:operation" |
+            "minecraft:particle" | "minecraft:rotation" | "minecraft:angle" |
+            "minecraft:scoreboard_slot" | "minecraft:swizzle" | "minecraft:team" |
+            "minecraft:item_slot" | "minecraft:resource_location" | "minecraft:mob_effect" |
+            "minecraft:function" | "minecraft:entity_anchor" | "minecraft:int_range" |
+            "minecraft:float_range" | "minecraft:item_enchantment" | "minecraft:entity_summon" |
+            "minecraft:dimension" | "minecraft:uuid" | "minecraft:nbt_tag" |
+            "minecraft:nbt_compound_tag" | "minecraft:time" | "forge:modid" | "forge:enum" =>
+          Monad[DecodeScopedBytes].pure(
+            CommandArgument.ArgumentWithoutProperties(typeIdentifier)
+          )
+        case _ => giveupParsingScope(s"command argument type $typeIdentifier is unknown")
+      }
 
     /**
-     * a CommandArgument is encoded as a pair of parser specifier (String) and parser property (varying type).
-     * see https://wiki.vg/Command_Data for details */
+     * a CommandArgument is encoded as a pair of parser specifier (String) and parser property
+     * (varying type). see https://wiki.vg/Command_Data for details
+     */
     given ByteCodec[CommandArgument] = ByteCodec[CommandArgument](
       ByteCodec[String].decode.flatMap(decodeCommandArgumentFor),
-      (argInfo: CommandArgument) => argInfo match {
-        case argInfo: CommandArgument.DoubleA =>
-          ByteCodec[String].encode.write("brigadier:double") ++
-            ByteCodec[CommandArgument.DoubleA].encode.write(argInfo)
-        case argInfo: CommandArgument.FloatA =>
-          ByteCodec[String].encode.write("brigadier:float") ++
-            ByteCodec[CommandArgument.FloatA].encode.write(argInfo)
-        case argInfo: CommandArgument.IntegerA =>
-          ByteCodec[String].encode.write("brigadier:integer") ++
-            ByteCodec[CommandArgument.IntegerA].encode.write(argInfo)
-        case argInfo: CommandArgument.LongA =>
-          ByteCodec[String].encode.write("brigadier:long") ++
-            ByteCodec[CommandArgument.LongA].encode.write(argInfo)
-        case argInfo: CommandArgument.StringA =>
-          ByteCodec[String].encode.write("brigadier:string") ++
-            ByteCodec[CommandArgument.StringA].encode.write(argInfo)
-        case argInfo: CommandArgument.EntityA =>
-          ByteCodec[String].encode.write("brigadier:entity") ++
-            ByteCodec[CommandArgument.EntityA].encode.write(argInfo)
-        case argInfo: CommandArgument.ScoreHolderA =>
-          ByteCodec[String].encode.write("brigadier:score_holder") ++
-            ByteCodec[CommandArgument.ScoreHolderA].encode.write(argInfo)
-        case argInfo: CommandArgument.RangeA =>
-          ByteCodec[String].encode.write("brigadier:range") ++
-            ByteCodec[CommandArgument.RangeA].encode.write(argInfo)
-        case argInfo: CommandArgument.ArgumentWithoutProperties =>
-          ByteCodec[String].encode.write(argInfo.typeIdentifier)
-      }
+      (argInfo: CommandArgument) =>
+        argInfo match {
+          case argInfo: CommandArgument.DoubleA =>
+            ByteCodec[String].encode.write("brigadier:double") ++
+              ByteCodec[CommandArgument.DoubleA].encode.write(argInfo)
+          case argInfo: CommandArgument.FloatA =>
+            ByteCodec[String].encode.write("brigadier:float") ++
+              ByteCodec[CommandArgument.FloatA].encode.write(argInfo)
+          case argInfo: CommandArgument.IntegerA =>
+            ByteCodec[String].encode.write("brigadier:integer") ++
+              ByteCodec[CommandArgument.IntegerA].encode.write(argInfo)
+          case argInfo: CommandArgument.LongA =>
+            ByteCodec[String].encode.write("brigadier:long") ++
+              ByteCodec[CommandArgument.LongA].encode.write(argInfo)
+          case argInfo: CommandArgument.StringA =>
+            ByteCodec[String].encode.write("brigadier:string") ++
+              ByteCodec[CommandArgument.StringA].encode.write(argInfo)
+          case argInfo: CommandArgument.EntityA =>
+            ByteCodec[String].encode.write("brigadier:entity") ++
+              ByteCodec[CommandArgument.EntityA].encode.write(argInfo)
+          case argInfo: CommandArgument.ScoreHolderA =>
+            ByteCodec[String].encode.write("brigadier:score_holder") ++
+              ByteCodec[CommandArgument.ScoreHolderA].encode.write(argInfo)
+          case argInfo: CommandArgument.RangeA =>
+            ByteCodec[String].encode.write("brigadier:range") ++
+              ByteCodec[CommandArgument.RangeA].encode.write(argInfo)
+          case argInfo: CommandArgument.ArgumentWithoutProperties =>
+            ByteCodec[String].encode.write(argInfo.typeIdentifier)
+        }
     )
 
     given ByteCodec[CommandNode] = {
@@ -472,9 +500,10 @@ object ByteCodecs {
 
     given ByteCodec[Position] =
       ByteCodec[Long].imap { long =>
-        Position((long >> 38).toInt, (long & 0xFFF).toShort, ((long << 26) >> 38).toInt)
-      } { case Position(x, y, z) =>
-        ((x & 0x3FFFFFF).toLong << 38) | ((z & 0x3FFFFFF).toLong << 12) | (y & 0xFFF).toLong
+        Position((long >> 38).toInt, (long & 0xfff).toShort, ((long << 26) >> 38).toInt)
+      } {
+        case Position(x, y, z) =>
+          ((x & 0x3ffffff).toLong << 38) | ((z & 0x3ffffff).toLong << 12) | (y & 0xfff).toLong
       }
   }
 
@@ -487,9 +516,10 @@ object ByteCodecs {
 
     given ByteCodec[Position] =
       ByteCodec[Long].imap { long =>
-        Position((long >> 38).toInt, ((long >> 26) & 0xFFF).toShort, ((long << 38) >> 38).toInt)
-      } { case Position(x, y, z) =>
-        ((x & 0x03FFFFFF).toLong << 38) | ((y & 0x00000FFF).toLong << 26) | (z & 0x03FFFFFF).toLong
+        Position((long >> 38).toInt, ((long >> 26) & 0xfff).toShort, ((long << 38) >> 38).toInt)
+      } {
+        case Position(x, y, z) =>
+          ((x & 0x03ffffff).toLong << 38) | ((y & 0x00000fff).toLong << 26) | (z & 0x03ffffff).toLong
       }
   }
 

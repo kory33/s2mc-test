@@ -12,6 +12,7 @@ object v1_16_1 {
   import com.github.kory33.s2mctest.protocol.impl.codec.ByteCodecs.PositionCodec.given
   import com.github.kory33.s2mctest.protocol.impl.macros.GenByteDecode.given
 
+  // format: off
   val playProtocol = Protocol(
     PacketIdBindings((
       0x00 -> ByteCodec.summonPair[TeleportConfirm],
@@ -157,7 +158,9 @@ object v1_16_1 {
       0x5b -> ByteCodec.summonPair[TagsWithEntities],
     ))
   )
+  // format: on
 
+  // format: off
   val loginProtocol = Protocol(
     PacketIdBindings((
       0x00 -> ByteCodec.summonPair[LoginStart],
@@ -172,4 +175,5 @@ object v1_16_1 {
       0x04 -> ByteCodec.summonPair[LoginPluginRequest],
     ))
   )
+  // format: on
 }

@@ -13,13 +13,16 @@ object CommonProtocol {
     import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Status.ClientBound.*
     import com.github.kory33.s2mctest.protocol.impl.packets.PacketIntent.Status.ServerBound.*
 
+    // format: off
     val handshakeProtocol = Protocol(
       PacketIdBindings(Tuple(
         0x00 -> ByteCodec.summonPair[Handshake],
       )),
       PacketIdBindings(Tuple())
     )
+    // format: on
 
+    // format: off
     val statusProtocol = Protocol(
       PacketIdBindings((
         0x00 -> ByteCodec.summonPair[StatusRequest],
@@ -30,5 +33,6 @@ object CommonProtocol {
         0x01 -> ByteCodec.summonPair[StatusPong],
       ))
     )
+    // format: on
   }
 }
