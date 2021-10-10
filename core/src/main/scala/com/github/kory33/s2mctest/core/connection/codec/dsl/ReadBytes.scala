@@ -1,5 +1,6 @@
-package com.github.kory33.s2mctest.core.connection.codecdsl
+package com.github.kory33.s2mctest.core.connection.codec.dsl
 
+import com.github.kory33.s2mctest.core.connection.codec.dsl.ReadBytes
 import fs2.Chunk
 
 import java.nio.charset.StandardCharsets

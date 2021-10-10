@@ -1,6 +1,7 @@
-package com.github.kory33.s2mctest.core.connection.codecdsl
+package com.github.kory33.s2mctest.core.connection.codec.dsl
 
 import cats.{Functor, Monad, StackSafeMonad}
+import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytesInstruction
 import fs2.Chunk
 
 import scala.util.Success
@@ -75,7 +76,6 @@ opaque type DecodeScopedBytes[T] = Free[DecodeScopedBytesInstruction, T]
 object DecodeScopedBytes {
   import DecodeScopedBytesInstruction.*
   import cats.~>
-  import com.github.kory33.s2mctest.core.connection.codecdsl.ReadBytes
 
   def asFreeK: DecodeScopedBytes ~> ([t] =>> Free[DecodeScopedBytesInstruction, t]) =
     new (DecodeScopedBytes ~> ([t] =>> Free[DecodeScopedBytesInstruction, t])) {

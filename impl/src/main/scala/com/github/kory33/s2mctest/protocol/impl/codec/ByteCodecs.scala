@@ -1,16 +1,16 @@
 package com.github.kory33.s2mctest.protocol.impl.codec
 
 import cats.Monad
-import com.github.kory33.s2mctest.core.connection.codecdsl.{
+import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
+import com.github.kory33.s2mctest.core.connection.codec.dsl.{
   ByteEncode,
   DecodeScopedBytes,
   ReadBytes
 }
-import com.github.kory33.s2mctest.core.connection.codecdsl.DecodeScopedBytes.{
+import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes.{
   giveupParsingScope,
   readByteBlock
 }
-import com.github.kory33.s2mctest.core.connection.protocol.codec.ByteCodec
 import com.github.kory33.s2mctest.protocol.impl.macros.GenByteDecode
 import com.github.kory33.s2mctest.protocol.impl.typeclass.IntLike
 import com.github.kory33.s2mctest.protocol.impl.typenbtio.{ReadNBT, WriteNBT}
@@ -27,7 +27,7 @@ object ByteCodecs {
 
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketDataPrimitives.*
   import com.github.kory33.s2mctest.protocol.impl.packets.PacketDataCompoundTypes.*
-  import com.github.kory33.s2mctest.core.connection.codecdsl.DecodeScopedBytes.*
+  import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes.*
   import cats.implicits.given
   import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor.given
 

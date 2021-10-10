@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.core.connection.interpreter
+package com.github.kory33.s2mctest.core.connection.codec.interpreters
 
 import com.github.kory33.s2mctest.core.connection.protocol.UnionBindingTypes
 

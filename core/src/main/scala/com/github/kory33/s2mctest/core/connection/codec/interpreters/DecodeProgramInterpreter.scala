@@ -1,13 +1,13 @@
-package com.github.kory33.s2mctest.core.connection.interpreter
+package com.github.kory33.s2mctest.core.connection.codec.interpreters
 
-import cats.mtl.{Raise, Stateful}
-import cats.{Applicative, Monad, ~>}
-import com.github.kory33.s2mctest.core.connection.codecdsl.{
+import cats.~>
+import cats.mtl.Raise
+import cats.{Applicative, Monad}
+import com.github.kory33.s2mctest.core.connection.codec.dsl.{
   DecodeScopedBytes,
   DecodeScopedBytesInstruction,
   ReadBytes
 }
-import com.github.kory33.s2mctest.core.connection.interpreter.ParseResult
 import fs2.Chunk
 
 object DecodeProgramInterpreter {
@@ -16,16 +16,19 @@ object DecodeProgramInterpreter {
   import com.github.kory33.s2mctest.core.generic.conversions.FunctionKAndPolyFunction.toFunctionK
 
   type WithRemainingByteChunk[F[_]] = cats.mtl.Stateful[F, fs2.Chunk[Byte]]
+
   object WithRemainingByteChunk {
     def apply[F[_]](using ev: WithRemainingByteChunk[F]): WithRemainingByteChunk[F] = ev
   }
 
   type HasRemainingByteCount[F[_]] = cats.mtl.Stateful[F, Int]
+
   object HasRemainingByteCount {
     def apply[F[_]](using ev: HasRemainingByteCount[F]): HasRemainingByteCount[F] = ev
   }
 
   type RaiseParseError[F[_]] = Raise[F, ParseInterruption]
+
   object RaiseParseError {
     def apply[F[_]](using ev: RaiseParseError[F]): RaiseParseError[F] = ev
   }
@@ -38,7 +41,7 @@ object DecodeProgramInterpreter {
       [A] =>
         (instruction: DecodeScopedBytesInstruction[A]) =>
           {
-            import com.github.kory33.s2mctest.core.connection.codecdsl.DecodeScopedBytesInstruction.*
+            import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytesInstruction.*
 
             def readChunkSafely(length: Int): M[Chunk[Byte]] =
               for {
@@ -129,6 +132,7 @@ object DecodeProgramInterpreter {
     type Execution[A] = EitherT[StateT[Id, Chunk[Byte], _], ParseInterruption, A]
 
     given Monad[Id] = cats.catsInstancesForId
+
     given ReadBytes[Execution] = readBytesForChunkContext[Execution]
 
     val output = interpretWithSize[Execution, A](chunk.size, program).value.run(chunk)

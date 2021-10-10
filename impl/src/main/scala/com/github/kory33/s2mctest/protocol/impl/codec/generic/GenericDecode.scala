@@ -8,7 +8,7 @@ import fs2.Chunk
  */
 object GenericDecode {
   import cats.implicits.given
-  import com.github.kory33.s2mctest.core.connection.codecdsl.ReadBytes
+  import com.github.kory33.s2mctest.core.connection.codec.dsl.ReadBytes
   import com.github.kory33.s2mctest.protocol.impl.typeclass.RaiseThrowable
 
   /**

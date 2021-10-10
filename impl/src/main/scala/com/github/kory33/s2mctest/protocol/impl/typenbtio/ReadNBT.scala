@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest.protocol.impl.typenbtio
 
 import cats.{Monad, MonadThrow}
-import com.github.kory33.s2mctest.core.connection.codecdsl.ReadBytes
+import com.github.kory33.s2mctest.core.connection.codec.dsl.ReadBytes
 import com.github.kory33.s2mctest.protocol.impl.typeclass.RaiseThrowable
 import net.katsstuff.typenbt.*
 

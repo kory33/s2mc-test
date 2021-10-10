@@ -1,6 +1,6 @@
 package com.github.kory33.s2mctest.core.connection.protocol
 
-import com.github.kory33.s2mctest.core.connection.protocol.codec.ByteCodec
+import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
 
 /**
  * The protocol, between the "client" and "server" of Minecraft, that decides what packet ID is
