@@ -2,7 +2,7 @@ package com.github.kory33.s2mctest.core.connection.transport
 
 import cats.Functor
 import com.github.kory33.s2mctest.core.connection.protocol.ProtocolView
-import com.github.kory33.s2mctest.core.connection.protocol.CodecBinding
+import com.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, PacketIn}
 
 // format: off
 case class ProtocolBasedTransport[
@@ -13,8 +13,6 @@ case class ProtocolBasedTransport[
   protocolView: ProtocolView[SelfBoundBindings, PeerBoundBindings]
 ) {
 // format: on
-
-  type PacketIn[T <: Tuple] = Tuple.Union[Tuple.InverseMap[T, CodecBinding]]
 
   def nextPacket: F[PacketIn[SelfBoundBindings]] = ???
 

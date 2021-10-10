@@ -10,6 +10,8 @@ import scala.collection.immutable.Queue
 
 type PacketId = Int
 type CodecBinding[A] = (PacketId, ByteCodec[A])
+type PacketTupleFor[BindingTup <: Tuple] = Tuple.InverseMap[BindingTup, CodecBinding]
+type PacketIn[BindingTup <: Tuple] = Tuple.Union[PacketTupleFor[BindingTup]]
 
 /**
  * An object that associates packet IDs with corresponding datatypes' codec.
@@ -33,20 +35,16 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
     "bindings must not contain duplicate packet IDs"
   )
 
-  def decoderFor(id: PacketId): DecodeScopedBytes[UnionBindingTypes[BindingTup]] = {
+  def decoderFor(id: PacketId): DecodeScopedBytes[PacketIn[BindingTup]] = {
     // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
-
     import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor.widenFunctor
 
     import scala.language.implicitConversions
 
-    type PacketTuple = Tuple.InverseMap[BindingTup, CodecBinding]
-    type Packet = Tuple.Union[PacketTuple]
-
-    mapToList[CodecBinding, PacketTuple](ev(bindings))(
-      [t <: Packet] =>
+    mapToList[CodecBinding, PacketTupleFor[BindingTup]](ev(bindings))(
+      [t <: PacketIn[BindingTup]] =>
         (pair: CodecBinding[t]) =>
-          (pair._1, pair._2.decode): (PacketId, DecodeScopedBytes[Packet])
+          (pair._1, pair._2.decode): (PacketId, DecodeScopedBytes[PacketIn[BindingTup]])
     ).find { case (i, _) => i == id }.map { case (_, decoder) => decoder }.getOrElse {
       DecodeScopedBytes
         .giveupParsingScope(s"Packet id binding for id ${id} could not be found.")
