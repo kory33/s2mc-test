@@ -1,7 +1,7 @@
-package com.github.kory33.s2mctest.core.connection.codec.dsl
+package com.github.kory33.s2mctest.core.connection.codec
 
 import cats.Contravariant
-import com.github.kory33.s2mctest.core.connection.codec.dsl.ByteEncode
+import com.github.kory33.s2mctest.core.connection.codec.ByteEncode
 import fs2.Chunk
 import shapeless3.deriving.K0
 

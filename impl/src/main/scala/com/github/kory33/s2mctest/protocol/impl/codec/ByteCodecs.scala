@@ -1,12 +1,8 @@
 package com.github.kory33.s2mctest.protocol.impl.codec
 
 import cats.Monad
-import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
-import com.github.kory33.s2mctest.core.connection.codec.dsl.{
-  ByteEncode,
-  DecodeScopedBytes,
-  ReadBytes
-}
+import com.github.kory33.s2mctest.core.connection.codec.{ByteCodec, ByteEncode}
+import com.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeScopedBytes, ReadBytes}
 import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes.{
   giveupParsingScope,
   readByteBlock

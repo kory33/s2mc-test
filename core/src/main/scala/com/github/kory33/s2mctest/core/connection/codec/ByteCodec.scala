@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest.core.connection.codec
 
 import cats.Invariant
-import com.github.kory33.s2mctest.core.connection.codec.dsl.{ByteEncode, DecodeScopedBytes}
+import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes
 import fs2.Chunk
 
 /**
