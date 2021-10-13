@@ -1,16 +1,16 @@
-package com.github.kory33.s2mctest.impl.connection.versions
+package com.github.kory33.s2mctest.impl.connection.protocol.versions
 
 import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
 import com.github.kory33.s2mctest.core.connection.protocol.{PacketIdBindings, Protocol}
 
-object v1_14_4 {
+object v1_14_3 {
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.*
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.*
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.*
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ServerBound.*
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.Common.given
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.PositionCodec.given
-  import com.github.kory33.s2mctest.impl.connection.macros.GenByteDecode.given
+  import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode.given
 
   // format: off
   val playProtocol = Protocol(
@@ -155,7 +155,6 @@ object v1_14_4 {
       0x59 -> ByteCodec.summonPair[EntityEffect],
       0x5a -> ByteCodec.summonPair[DeclareRecipes],
       0x5b -> ByteCodec.summonPair[TagsWithEntities],
-      0x5c -> ByteCodec.summonPair[AcknowledgePlayerDigging],
     ))
   )
   // format: on

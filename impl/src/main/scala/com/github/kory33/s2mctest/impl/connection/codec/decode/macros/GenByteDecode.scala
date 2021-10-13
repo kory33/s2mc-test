@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.impl.connection.macros
+package com.github.kory33.s2mctest.impl.connection.codec.decode.macros
 
 import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 
@@ -6,11 +6,6 @@ import scala.annotation.{StaticAnnotation, tailrec}
 import scala.collection.immutable.Queue
 import scala.quoted.Expr
 import scala.quoted.runtime.impl.printers.{SourceCode, SyntaxHighlight}
-
-/**
- * An annotation that can be added to a case class `A` that makes `GenByteDecode.gen[A]` fail.
- */
-final class NoGenByteDecode extends StaticAnnotation
 
 object GenByteDecode {
   import scala.quoted.*

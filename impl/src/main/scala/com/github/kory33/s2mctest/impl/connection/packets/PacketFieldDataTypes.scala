@@ -1,6 +1,6 @@
 package com.github.kory33.s2mctest.impl.connection.packets
 
-import com.github.kory33.s2mctest.impl.connection.macros.NoGenByteDecode
+import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.NoGenByteDecode
 import com.github.kory33.s2mctest.impl.connection.typeclass.IntLike
 import net.katsstuff.typenbt.NBTCompound
 

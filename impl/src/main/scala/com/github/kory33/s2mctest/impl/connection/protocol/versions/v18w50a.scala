@@ -1,16 +1,16 @@
-package com.github.kory33.s2mctest.impl.connection.versions
+package com.github.kory33.s2mctest.impl.connection.protocol.versions
 
 import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
 import com.github.kory33.s2mctest.core.connection.protocol.{PacketIdBindings, Protocol}
 
-object v1_13_2 {
+object v18w50a {
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.*
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.*
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.*
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ServerBound.*
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.Common.given
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.PositionCodecBefore1_14.given
-  import com.github.kory33.s2mctest.impl.connection.macros.GenByteDecode.given
+  import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode.given
 
   // format: off
   val playProtocol = Protocol(
@@ -64,7 +64,7 @@ object v1_13_2 {
       0x01 -> ByteCodec.summonPair[SpawnExperienceOrb],
       0x02 -> ByteCodec.summonPair[SpawnGlobalEntity],
       0x03 -> ByteCodec.summonPair[SpawnMob_WithMeta],
-      0x04 -> ByteCodec.summonPair[SpawnPainting_VarInt],
+      0x04 -> ByteCodec.summonPair[SpawnPainting_String],
       0x05 -> ByteCodec.summonPair[SpawnPlayer_f64],
       0x06 -> ByteCodec.summonPair[Animation],
       0x07 -> ByteCodec.summonPair[Statistics],
@@ -94,9 +94,9 @@ object v1_13_2 {
       0x1f -> ByteCodec.summonPair[ChunkUnload],
       0x20 -> ByteCodec.summonPair[ChangeGameState],
       0x21 -> ByteCodec.summonPair[KeepAliveClientbound_i64],
-      0x22 -> ByteCodec.summonPair[ChunkData],
+      0x22 -> ByteCodec.summonPair[ChunkData_HeightMap],
       0x23 -> ByteCodec.summonPair[Effect],
-      0x24 -> ByteCodec.summonPair[Particle_Data13],
+      0x24 -> ByteCodec.summonPair[Particle_VarIntArray],
       0x25 -> ByteCodec.summonPair[JoinGame_i32],
       0x26 -> ByteCodec.summonPair[Maps_NoLocked],
       0x27 -> ByteCodec.summonPair[Entity],
@@ -104,47 +104,50 @@ object v1_13_2 {
       0x29 -> ByteCodec.summonPair[EntityLookAndMove_i16],
       0x2a -> ByteCodec.summonPair[EntityLook_VarInt],
       0x2b -> ByteCodec.summonPair[VehicleTeleport],
-      0x2c -> ByteCodec.summonPair[SignEditorOpen],
-      0x2d -> ByteCodec.summonPair[CraftRecipeResponse],
-      0x2e -> ByteCodec.summonPair[PlayerAbilities],
-      0x2f -> ByteCodec.summonPair[CombatEvent],
-      0x30 -> ByteCodec.summonPair[PlayerInfo],
-      0x31 -> ByteCodec.summonPair[FacePlayer],
-      0x32 -> ByteCodec.summonPair[TeleportPlayer_WithConfirm],
-      0x33 -> ByteCodec.summonPair[EntityUsedBed],
-      0x34 -> ByteCodec.summonPair[UnlockRecipes_WithSmelting],
-      0x35 -> ByteCodec.summonPair[EntityDestroy],
-      0x36 -> ByteCodec.summonPair[EntityRemoveEffect],
-      0x37 -> ByteCodec.summonPair[ResourcePackSend],
-      0x38 -> ByteCodec.summonPair[Respawn_Gamemode],
-      0x39 -> ByteCodec.summonPair[EntityHeadLook],
-      0x3a -> ByteCodec.summonPair[SelectAdvancementTab],
-      0x3b -> ByteCodec.summonPair[WorldBorder],
-      0x3c -> ByteCodec.summonPair[Camera],
-      0x3d -> ByteCodec.summonPair[SetCurrentHotbarSlot],
-      0x3e -> ByteCodec.summonPair[ScoreboardDisplay],
-      0x3f -> ByteCodec.summonPair[EntityMetadata],
-      0x40 -> ByteCodec.summonPair[EntityAttach],
-      0x41 -> ByteCodec.summonPair[EntityVelocity],
-      0x42 -> ByteCodec.summonPair[EntityEquipment_VarInt],
-      0x43 -> ByteCodec.summonPair[SetExperience],
-      0x44 -> ByteCodec.summonPair[UpdateHealth],
-      0x45 -> ByteCodec.summonPair[ScoreboardObjective],
-      0x46 -> ByteCodec.summonPair[SetPassengers],
-      0x47 -> ByteCodec.summonPair[Teams_VarInt],
-      0x48 -> ByteCodec.summonPair[UpdateScore],
-      0x49 -> ByteCodec.summonPair[SpawnPosition],
-      0x4a -> ByteCodec.summonPair[TimeUpdate],
-      0x4c -> ByteCodec.summonPair[StopSound],
-      0x4d -> ByteCodec.summonPair[SoundEffect],
-      0x4e -> ByteCodec.summonPair[PlayerListHeaderFooter],
-      0x4f -> ByteCodec.summonPair[CollectItem],
-      0x50 -> ByteCodec.summonPair[EntityTeleport_f64],
-      0x51 -> ByteCodec.summonPair[Advancements],
-      0x52 -> ByteCodec.summonPair[EntityProperties],
-      0x53 -> ByteCodec.summonPair[EntityEffect],
-      0x54 -> ByteCodec.summonPair[DeclareRecipes],
-      0x55 -> ByteCodec.summonPair[Tags],
+      0x2c -> ByteCodec.summonPair[OpenBook],
+      0x2d -> ByteCodec.summonPair[SignEditorOpen],
+      0x2e -> ByteCodec.summonPair[CraftRecipeResponse],
+      0x2f -> ByteCodec.summonPair[PlayerAbilities],
+      0x30 -> ByteCodec.summonPair[CombatEvent],
+      0x31 -> ByteCodec.summonPair[PlayerInfo],
+      0x32 -> ByteCodec.summonPair[FacePlayer],
+      0x33 -> ByteCodec.summonPair[TeleportPlayer_WithConfirm],
+      0x34 -> ByteCodec.summonPair[EntityUsedBed],
+      0x35 -> ByteCodec.summonPair[UnlockRecipes_WithSmelting],
+      0x36 -> ByteCodec.summonPair[EntityDestroy],
+      0x37 -> ByteCodec.summonPair[EntityRemoveEffect],
+      0x38 -> ByteCodec.summonPair[ResourcePackSend],
+      0x39 -> ByteCodec.summonPair[Respawn_Gamemode],
+      0x3a -> ByteCodec.summonPair[EntityHeadLook],
+      0x3b -> ByteCodec.summonPair[SelectAdvancementTab],
+      0x3c -> ByteCodec.summonPair[WorldBorder],
+      0x3d -> ByteCodec.summonPair[Camera],
+      0x3e -> ByteCodec.summonPair[SetCurrentHotbarSlot],
+      0x3f -> ByteCodec.summonPair[ScoreboardDisplay],
+      0x40 -> ByteCodec.summonPair[EntityMetadata],
+      0x41 -> ByteCodec.summonPair[EntityAttach],
+      0x42 -> ByteCodec.summonPair[EntityVelocity],
+      0x43 -> ByteCodec.summonPair[EntityEquipment_VarInt],
+      0x44 -> ByteCodec.summonPair[SetExperience],
+      0x45 -> ByteCodec.summonPair[UpdateHealth],
+      0x46 -> ByteCodec.summonPair[ScoreboardObjective],
+      0x47 -> ByteCodec.summonPair[SetPassengers],
+      0x48 -> ByteCodec.summonPair[Teams_u8],
+      0x49 -> ByteCodec.summonPair[UpdateScore],
+      0x4a -> ByteCodec.summonPair[SpawnPosition],
+      0x4b -> ByteCodec.summonPair[TimeUpdate],
+      0x4d -> ByteCodec.summonPair[StopSound],
+      0x4e -> ByteCodec.summonPair[SoundEffect],
+      0x4f -> ByteCodec.summonPair[EntitySoundEffect],
+      0x50 -> ByteCodec.summonPair[PlayerListHeaderFooter],
+      0x51 -> ByteCodec.summonPair[CollectItem],
+      0x52 -> ByteCodec.summonPair[EntityTeleport_f64],
+      0x53 -> ByteCodec.summonPair[Advancements],
+      0x54 -> ByteCodec.summonPair[EntityProperties],
+      0x55 -> ByteCodec.summonPair[EntityEffect],
+      0x56 -> ByteCodec.summonPair[DeclareRecipes],
+      0x57 -> ByteCodec.summonPair[TagsWithEntities],
+      0x58 -> ByteCodec.summonPair[UpdateLight_NoTrust],
     ))
   )
   // format: on

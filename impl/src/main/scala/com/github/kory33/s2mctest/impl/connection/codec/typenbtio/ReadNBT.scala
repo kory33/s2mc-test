@@ -1,9 +1,8 @@
-package com.github.kory33.s2mctest.impl.connection.typenbtio
+package com.github.kory33.s2mctest.impl.connection.codec.typenbtio
 
 import cats.{Monad, MonadThrow}
 import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeBytes
 import com.github.kory33.s2mctest.impl.connection.codec.decode.PrimitiveDecodes
-import com.github.kory33.s2mctest.impl.connection.typeclass.RaiseThrowable
 import net.katsstuff.typenbt.*
 
 import java.io.IOException

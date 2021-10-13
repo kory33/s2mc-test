@@ -1,4 +1,4 @@
-package com.github.kory33.s2mctest.impl.connection.typenbtio
+package com.github.kory33.s2mctest.impl.connection.codec.typenbtio
 
 import net.katsstuff.typenbt.{IONBT, NBTCompound}
 

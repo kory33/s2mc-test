@@ -8,11 +8,11 @@ import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes.{
   readByteBlock
 }
 import com.github.kory33.s2mctest.impl.connection.codec
+import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode
 import com.github.kory33.s2mctest.impl.connection.codec.encode.{PrimitiveEncodes, VarNumEncodes}
 import com.github.kory33.s2mctest.impl.connection.codec.decode.{PrimitiveDecodes, VarNumDecodes}
-import com.github.kory33.s2mctest.impl.connection.macros.GenByteDecode
+import com.github.kory33.s2mctest.impl.connection.codec.typenbtio.{ReadNBT, WriteNBT}
 import com.github.kory33.s2mctest.impl.connection.typeclass.IntLike
-import com.github.kory33.s2mctest.impl.connection.typenbtio.{ReadNBT, WriteNBT}
 import fs2.Chunk
 import net.katsstuff.typenbt.NBTCompound
 import shapeless3.deriving.K0
