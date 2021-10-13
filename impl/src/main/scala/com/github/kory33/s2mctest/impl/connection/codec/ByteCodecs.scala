@@ -3,11 +3,6 @@ package com.github.kory33.s2mctest.impl.connection.codec
 import cats.Monad
 import com.github.kory33.s2mctest.core.connection.codec.{ByteCodec, ByteEncode}
 import com.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeBytes, DecodeFiniteBytes}
-import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes.{
-  giveupParsingScope,
-  readByteBlock
-}
-import com.github.kory33.s2mctest.impl.connection.codec
 import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode
 import com.github.kory33.s2mctest.impl.connection.codec.encode.{PrimitiveEncodes, VarNumEncodes}
 import com.github.kory33.s2mctest.impl.connection.codec.decode.{PrimitiveDecodes, VarNumDecodes}
@@ -27,10 +22,9 @@ object ByteCodecs {
 
   import com.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.*
   import com.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes.*
-  import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes.*
   import cats.implicits.given
 
-  // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
+  // because DecodeFiniteBytes is invariant but we would like it to behave like a covariant ADT...
   import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor.given
 
   import scala.language.implicitConversions
