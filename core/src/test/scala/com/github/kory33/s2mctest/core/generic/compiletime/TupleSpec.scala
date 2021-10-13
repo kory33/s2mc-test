@@ -34,6 +34,10 @@ class TupleSpec extends AnyFlatSpec with should.Matchers {
     summon[IndexOfT[Int, (String, Int)] =:= 1]
     summon[IndexOfT[42, (String, Int, 42)] =:= 2]
     summon[IndexOfT[Int, (String | Int, Double, Int)] =:= 2]
+
+    "summon[IndexOfT[42, (0, 0)] =:= 0]" shouldNot compile
+    "summon[IndexOfT[42, (0, 0)] =:= 1]" shouldNot compile
+    "summon[IndexOfT[42, (0, 0)] =:= Int]" shouldNot compile
   }
 
   it should "extract the index of the first occurence of a given type" in {
