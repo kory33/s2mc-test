@@ -1,12 +1,9 @@
 package com.github.kory33.s2mctest.core.connection.protocol
 
-import cats.Monad
 import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
 import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import com.github.kory33.s2mctest.core.generic.compiletime.*
 import com.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
-
-import scala.collection.immutable.Queue
 
 type PacketId = Int
 type CodecBinding[A] = (PacketId, ByteCodec[A])
@@ -35,6 +32,10 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
     "bindings must not contain duplicate packet IDs"
   )
 
+  /**
+   * Dynamically resolve the decoder program for a datatype with an associated packet ID of
+   * [[id]].
+   */
   def decoderFor(id: PacketId): DecodeFiniteBytes[PacketIn[BindingTup]] = {
     // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
     import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor.widenFunctor
@@ -51,22 +52,16 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
   }
 
   /**
-   * Statically resolve the codec associated with type [[O]].
+   * Encode the object [[obj]] to its binary form and pair the result up with packet id
+   * specifying the datatype [[O]]. This function requires a parameter [[idx]], the index at
+   * which [[BindingTup]] contains [[CodecBinding]] for [[O]].
    */
-  inline def getBindingOf[O](
-    using Require[IncludedInT[BindingTup, CodecBinding[O]]]
-  ): CodecBinding[O] =
-    inlineRefineTo[CodecBinding[O]](
-      inlineRefineTo[BindingTup & NonEmptyTuple](bindings)
-        .apply(scala.compiletime.constValue[IndexOfT[CodecBinding[O], BindingTup]])
-    )
-
-  /**
-   * Statically encode a packet object using [[bindings]] provided.
-   */
-  inline def encodeKnown[O](obj: O)(
-    using Require[IncludedInT[BindingTup, CodecBinding[O]]]
+  def encodeWithBindingIndex[O](obj: O, idx: Int)(
+    using ev: Tuple.Elem[BindingTup & NonEmptyTuple, idx.type] =:= CodecBinding[O]
   ): (PacketId, fs2.Chunk[Byte]) =
-    val (id, codec) = getBindingOf[O]
-    (id, codec.encode.write(obj))
+    val binding: CodecBinding[O] = ev(
+      // the cast is safe because ev witnesses that BindingTup is nonempty
+      bindings.asInstanceOf[BindingTup & NonEmptyTuple].apply(idx)
+    )
+    (binding._1, binding._2.encode.write(obj))
 }

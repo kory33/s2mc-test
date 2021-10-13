@@ -1,6 +1,10 @@
 package com.github.kory33.s2mctest.core.connection.transport
 
 import cats.Functor
+import com.github.kory33.s2mctest.core.connection.codec.interpreters.{
+  DecodeFiniteBytesInterpreter,
+  ParseResult
+}
 import com.github.kory33.s2mctest.core.connection.protocol.{
   CodecBinding,
   PacketIn,
@@ -17,16 +21,49 @@ case class ProtocolBasedTransport[
 ) {
 // format: on
 
-  def nextPacket: F[PacketIn[SelfBoundBindings]] = ???
+  /**
+   * Read next packet from the transport and parse the id-chunk pair so obtained. The result is
+   * given as a [[ParseResult]], which may or may not contain successfully parsed packet data.
+   */
+  def nextPacket: F[ParseResult[PacketIn[SelfBoundBindings]]] =
+    Functor[F].map(transport.readOnePacket) {
+      case (packetId, chunk) =>
+        val decoderProgram = protocolView.selfBound.decoderFor(packetId)
+
+        DecodeFiniteBytesInterpreter.runProgramOnChunk(chunk, decoderProgram)
+    }
+
+  /**
+   * NOTE: this is a low-level API, end users should use [[writePacket]].
+   *
+   * This is an action to write a packet object to the transport. This version of write function
+   * requires an additional parameter [[idx]], the index at which [[BindingTup]] contains
+   * [[CodecBinding]] for [[O]].
+   *
+   * [[writePacket]], on the other hand, lets the Scala 3 compiler resolve [[idx]] parameter at
+   * compile time and pass it to this function.
+   */
+  def writePacketWithBindingsIndex[P](peerBoundPacket: P, idx: Int)(
+    using Tuple.Elem[PeerBoundBindings & NonEmptyTuple, idx.type] =:= CodecBinding[P]
+  ): F[Unit] = {
+    val (id, chunk) = protocolView.peerBound.encodeWithBindingIndex(peerBoundPacket, idx)
+    transport.write(id, chunk)
+  }
 
   import com.github.kory33.s2mctest.core.generic.compiletime.*
 
-  def writePacketWithBindingsIndex[P, Idx <: Int](peerBoundPacket: P, idx: Idx)(
-    using Tuple.Elem[PeerBoundBindings, Idx] =:= CodecBinding[P]
-  ): F[Unit] = ???
-
+  /**
+   * An action to write a packet object [[peerBoundPacket]] to the transport.
+   *
+   * This is an inline function, and can only be invoked when [[P]] and [[PeerBoundBindings]]
+   * are both concrete at the call site.
+   */
   inline def writePacket[P](peerBoundPacket: P)(
+    // this constraint will ensure that idx is materialized at compile time
     using IncludedInT[PeerBoundBindings, P]
-  ): F[Unit] = ???
+  ): F[Unit] =
+    type Idx = IndexOfT[P, PeerBoundBindings]
+    val idx: Idx = scala.compiletime.constValue[Idx]
+    writePacketWithBindingsIndex(peerBoundPacket, idx)(using scala.compiletime.summonInline)
 
 }

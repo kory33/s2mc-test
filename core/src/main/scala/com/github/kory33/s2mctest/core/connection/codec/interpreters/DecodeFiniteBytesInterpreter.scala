@@ -7,7 +7,7 @@ import com.github.kory33.s2mctest.core.connection.codec.dsl.{
 import cats.data.{EitherT, State}
 import com.github.kory33.s2mctest.core.generic.extra.EitherKExtra
 
-class DecodeFiniteBytesInterpreter {
+object DecodeFiniteBytesInterpreter {
 
   import com.github.kory33.s2mctest.core.generic.conversions.FunctionKAndPolyFunction.toFunctionK
 

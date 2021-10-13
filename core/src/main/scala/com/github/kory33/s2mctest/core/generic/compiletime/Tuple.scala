@@ -60,7 +60,7 @@ type IndexOfTInLocked[A, T <: Tuple] <: Int =
   }
 
 /**
- * The index of [[A]] in a tuple [[T]].
+ * The least index of [[A]] in a tuple [[T]].
  *
  * Takes O(|T|) to compute.
  */

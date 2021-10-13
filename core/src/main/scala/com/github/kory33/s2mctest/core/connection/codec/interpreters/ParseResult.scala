@@ -9,7 +9,7 @@ enum ParseError:
   case GaveUp(reason: String)
 
 /**
- * The result of parsing a block of
+ * The result of parsing a meaningful block (e.g. a packet body) of binary data.
  */
 enum ParseResult[+A]:
   case Just(a: A) extends ParseResult[A]
