@@ -2,7 +2,7 @@ package com.github.kory33.s2mctest.core.connection.protocol
 
 import cats.Monad
 import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
-import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes
+import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import com.github.kory33.s2mctest.core.generic.compiletime.*
 import com.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
 
@@ -35,7 +35,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
     "bindings must not contain duplicate packet IDs"
   )
 
-  def decoderFor(id: PacketId): DecodeScopedBytes[PacketIn[BindingTup]] = {
+  def decoderFor(id: PacketId): DecodeFiniteBytes[PacketIn[BindingTup]] = {
     // because DecodeScopedBytes is invariant but we would like to behave it like a covariant ADT...
     import com.github.kory33.s2mctest.core.generic.conversions.AutoWidenFunctor.widenFunctor
 
@@ -44,10 +44,9 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
     mapToList[CodecBinding, PacketTupleFor[BindingTup]](ev(bindings))(
       [t <: PacketIn[BindingTup]] =>
         (pair: CodecBinding[t]) =>
-          (pair._1, pair._2.decode): (PacketId, DecodeScopedBytes[PacketIn[BindingTup]])
+          (pair._1, pair._2.decode): (PacketId, DecodeFiniteBytes[PacketIn[BindingTup]])
     ).find { case (i, _) => i == id }.map { case (_, decoder) => decoder }.getOrElse {
-      DecodeScopedBytes
-        .giveupParsingScope(s"Packet id binding for id ${id} could not be found.")
+      DecodeFiniteBytes.giveUp(s"Packet id binding for id ${id} could not be found.")
     }
   }
 

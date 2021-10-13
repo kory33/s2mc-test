@@ -1,13 +1,13 @@
 package com.github.kory33.s2mctest.core.connection.codec
 
 import cats.Invariant
-import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes
+import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import fs2.Chunk
 
 /**
  * An object that has capability to encode or decode values of type [[A]].
  */
-case class ByteCodec[A](decode: DecodeScopedBytes[A], encode: ByteEncode[A])
+case class ByteCodec[A](decode: DecodeFiniteBytes[A], encode: ByteEncode[A])
 
 object ByteCodec {
 
@@ -19,7 +19,7 @@ object ByteCodec {
 
   def apply[A: ByteCodec]: ByteCodec[A] = summon
 
-  def summonPair[A](using decode: DecodeScopedBytes[A], encode: ByteEncode[A]): ByteCodec[A] =
+  def summonPair[A](using decode: DecodeFiniteBytes[A], encode: ByteEncode[A]): ByteCodec[A] =
     ByteCodec(decode, encode)
 
 }
