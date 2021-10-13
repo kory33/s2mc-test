@@ -52,6 +52,8 @@ type DecodeBytes[A] = Free[ReadBytesInstruction, A]
 object DecodeBytes:
   import cats.implicits.given
 
+  def pure[A](a: A): DecodeBytes[A] = Free.pure(a)
+
   def read(n: Int): DecodeBytes[fs2.Chunk[Byte]] =
     Free.liftF(ReadBytesInstruction.ReadWithSize(n))
 
@@ -60,3 +62,7 @@ object DecodeBytes:
 
   def giveUp[A](reason: String): DecodeBytes[A] =
     Free.liftF(ReadBytesInstruction.GiveUp(reason)).widen
+
+  def catchThrowableIn[A](a: => A): DecodeBytes[A] =
+    try pure(a)
+    catch (e: Throwable) => raiseError(e)

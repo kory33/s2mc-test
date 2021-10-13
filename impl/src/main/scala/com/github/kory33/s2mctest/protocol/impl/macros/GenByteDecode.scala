@@ -1,6 +1,6 @@
 package com.github.kory33.s2mctest.protocol.impl.macros
 
-import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeScopedBytes
+import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 
 import scala.annotation.{StaticAnnotation, tailrec}
 import scala.collection.immutable.Queue
@@ -16,7 +16,7 @@ object GenByteDecode {
   import scala.quoted.*
   import scala.tasty.inspector.*
 
-  inline given gen[A]: DecodeScopedBytes[A] =
+  inline given gen[A]: DecodeFiniteBytes[A] =
     ${ genImpl[A] }
 
   private[this] case class OptionalFieldCondition(fieldName: String, condition: Expr[Boolean])
@@ -77,20 +77,20 @@ object GenByteDecode {
 
   private def summonDecoderExpr[T: Type](using quotes: Quotes) =
     import quotes.reflect.*
-    Expr.summon[DecodeScopedBytes[T]] match {
+    Expr.summon[DecodeFiniteBytes[T]] match {
       case Some(d) => d
       case _ =>
         report.throwError(
-          s"\tAttemped to summon DecodeScopedBytes[${TypeRepr.of[T].show}] but could not be resolved.\n"
+          s"\tAttemped to summon DecodeFiniteBytes[${TypeRepr.of[T].show}] but could not be resolved.\n"
         )
     }
 
-  private def genImpl[A: Type](using quotes: Quotes): Expr[DecodeScopedBytes[A]] = {
+  private def genImpl[A: Type](using quotes: Quotes): Expr[DecodeFiniteBytes[A]] = {
     import quotes.reflect.*
 
-    // this instance is provided in `DecodeScopedBytes`'s companion
-    val byteDecodeMonad: Expr[cats.Monad[DecodeScopedBytes]] =
-      Expr.summon[cats.Monad[DecodeScopedBytes]].get
+    // this instance is provided in `DecodeFiniteBytes`'s companion
+    val byteDecodeMonad: Expr[cats.Monad[DecodeFiniteBytes]] =
+      Expr.summon[cats.Monad[DecodeFiniteBytes]].get
 
     sealed trait ClassField {
       val fieldType: TypeRepr
@@ -182,7 +182,7 @@ object GenByteDecode {
 
         def mapConstructorParamsToPureDecoder(
           constructorParameters: Queue[Term]
-        ): Expr[DecodeScopedBytes[A]] =
+        ): Expr[DecodeFiniteBytes[A]] =
           '{
             ${ byteDecodeMonad }.pure {
               ${
@@ -196,12 +196,12 @@ object GenByteDecode {
           currentOwner: Symbol,
           parametersSoFar: Queue[Term],
           remainingFields: List[ClassField]
-        ): Expr[DecodeScopedBytes[A]] =
+        ): Expr[DecodeFiniteBytes[A]] =
           remainingFields match {
             case (next :: rest) =>
               next.fieldType.asType match
                 case '[ft] =>
-                  val fieldDecoder: Expr[DecodeScopedBytes[ft]] = {
+                  val fieldDecoder: Expr[DecodeFiniteBytes[ft]] = {
                     next match {
                       case OptionalField(_, uType, cond) =>
                         uType.asType match
@@ -215,17 +215,17 @@ object GenByteDecode {
                                 )
                               then ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
                               else ${ byteDecodeMonad }.pure(None)
-                            } // Expr of type DecodeScopedBytes[Option[ut]]
+                            } // Expr of type DecodeFiniteBytes[Option[ut]]
                       case RequiredField(_, fieldType) => summonDecoderExpr[ft]
                     }
-                  }.asExprOf[DecodeScopedBytes[ft]]
+                  }.asExprOf[DecodeFiniteBytes[ft]]
 
-                  val continuation: Expr[ft => DecodeScopedBytes[A]] =
+                  val continuation: Expr[ft => DecodeFiniteBytes[A]] =
                     Lambda(
                       currentOwner,
                       MethodType(List(next.fieldName))(
                         _ => List(next.fieldType),
-                        _ => TypeRepr.of[DecodeScopedBytes[A]]
+                        _ => TypeRepr.of[DecodeFiniteBytes[A]]
                       ),
                       (innerOwner, params) =>
                         params.head match {
@@ -238,7 +238,7 @@ object GenByteDecode {
                           case p =>
                             report.throwError(s"Expected an identifier, got unexpected $p")
                         }
-                    ).asExprOf[ft => DecodeScopedBytes[A]]
+                    ).asExprOf[ft => DecodeFiniteBytes[A]]
 
                   '{ ${ byteDecodeMonad }.flatMap(${ fieldDecoder })(${ continuation }) }
             case Nil => mapConstructorParamsToPureDecoder(parametersSoFar)

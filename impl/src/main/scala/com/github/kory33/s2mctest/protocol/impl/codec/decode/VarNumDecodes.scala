@@ -1,15 +1,10 @@
-package com.github.kory33.s2mctest.protocol.impl.codec.generic
+package com.github.kory33.s2mctest.protocol.impl.codec.decode
 
 import cats.Monad
+import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeBytes
 import fs2.Chunk
 
-/**
- * A collection of decoding operations parameterized over effect types.
- */
-object GenericDecode {
-  import cats.implicits.given
-  import com.github.kory33.s2mctest.core.connection.codec.dsl.ReadBytes
-  import com.github.kory33.s2mctest.protocol.impl.typeclass.RaiseThrowable
+object VarNumDecodes {
 
   /**
    * Decode variable-length integer which has maximum bits of [[maxBits]].
@@ -39,7 +34,7 @@ object GenericDecode {
    *
    * <pre> 00000000 00011110 00001010 10001001 </pre>
    */
-  def decodeVarNumF[F[_]: Monad: ReadBytes: RaiseThrowable](maxBits: Int): F[Chunk[Byte]] = {
+  def decodeBigEndianVarNum(maxBits: Int): DecodeBytes[Chunk[Byte]] = {
     require(maxBits % 8 == 0)
 
     import scodec.bits.{BitVector, ByteVector}
@@ -49,10 +44,10 @@ object GenericDecode {
 
     case class State(remainingBits: Int, accum: BitVector)
 
-    type LoopIterResult = F[Either[State, Chunk[Byte]]]
+    type LoopIterResult = DecodeBytes[Either[State, Chunk[Byte]]]
 
     def concludeLoopWith(result: BitVector): LoopIterResult =
-      Monad[F].pure(Right {
+      DecodeBytes.pure(Right {
         val totalBytes = maxBits / 8
         val lower = Chunk.array(result.reverseBitOrder.toByteArray)
 
@@ -63,20 +58,20 @@ object GenericDecode {
       })
 
     def nextIterationWith(state: State): LoopIterResult =
-      Monad[F].pure(Left(state))
+      DecodeBytes.pure(Left(state))
 
     def concludeLoopWithError(latestState: State, nextByte: Byte): LoopIterResult =
-      RaiseThrowable[F].raise {
+      DecodeBytes.raiseError {
         java.io.IOException {
           s"encountered excess bytes while reading variable-length integer.\n" +
             s"maxBits was ${maxBits}, but the state reached is: st = $latestState, nextByte = $nextByte"
         }
       }
 
-    Monad[F].tailRecM(State(maxBits, BitVector.empty)) {
+    Monad[DecodeBytes].tailRecM(State(maxBits, BitVector.empty)) {
       case st @ State(remainingBits, accum) =>
         if remainingBits > 0 then
-          ReadBytes[F].forByte.flatMap { nextByte =>
+          PrimitiveDecodes.decodeByte.flatMap { nextByte =>
             val nextBits = BitVector.fromByte(nextByte, 7).reverseBitOrder
             val continuationFlag = (nextByte & 0x80) != 0
             val totalAccum = accum.appendedAll(nextBits)
@@ -90,10 +85,16 @@ object GenericDecode {
     }
   }
 
-  def decodeVarIntF[F[_]: Monad: ReadBytes: RaiseThrowable]: F[Int] =
-    Monad[F].map(decodeVarNumF(32))(chunk => java.nio.ByteBuffer.wrap(chunk.toArray).getInt)
+  /**
+   * A decoder that reads a VarInt data and output the value as an Int.
+   */
+  val decodeVarIntAsInt: DecodeBytes[Int] =
+    decodeBigEndianVarNum(32).map(chunk => java.nio.ByteBuffer.wrap(chunk.toArray).getInt)
 
-  def decodeVarLongF[F[_]: Monad: ReadBytes: RaiseThrowable]: F[Long] =
-    Monad[F].map(decodeVarNumF(64))(chunk => java.nio.ByteBuffer.wrap(chunk.toArray).getLong)
+  /**
+   * A decoder that reads a VarLong data and output the value as an Long.
+   */
+  def decodeVarLongAsLong: DecodeBytes[Long] =
+    decodeBigEndianVarNum(64).map(chunk => java.nio.ByteBuffer.wrap(chunk.toArray).getLong)
 
 }

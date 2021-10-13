@@ -38,6 +38,8 @@ type DecodeFiniteBytes[A] = Free[DecodeFiniteBytesInstructions, A]
 object DecodeFiniteBytes:
   import cats.implicits.given
 
+  def pure[A](a: A): DecodeFiniteBytes[A] = Free.pure(a)
+
   def read(n: Int): DecodeFiniteBytes[fs2.Chunk[Byte]] =
     DecodeBytes.read(n).inject
 
