@@ -1,12 +1,17 @@
 package com.github.kory33.s2mctest.core.connection.codec.interpreters
 
-import com.github.kory33.s2mctest.core.connection.protocol.PacketIn
-
-enum ParseInterruption:
+/**
+ * Errors that could be encountered while parsing a binary data source.
+ */
+enum ParseError:
   case RanOutOfBytes
-  case ExcessBytes
   case Raised(error: Throwable)
-  case Gaveup(reason: String)
+  case GaveUp(reason: String)
 
-type ParseResult[+A] = Either[ParseInterruption, A]
-type ParseResultForBindings[BindingTup <: Tuple] = ParseResult[PacketIn[BindingTup]]
+/**
+ * The result of parsing a block of
+ */
+enum ParseResult[+A]:
+  case Just(a: A) extends ParseResult[A]
+  case WithExcessBytes(a: A, excess: fs2.Chunk[Byte]) extends ParseResult[A]
+  case Errored(error: ParseError) extends ParseResult[Nothing]

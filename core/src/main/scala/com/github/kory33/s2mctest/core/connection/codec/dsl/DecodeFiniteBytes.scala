@@ -7,18 +7,18 @@ import cats.free.Free
  * The instructions present in [[DecodeFiniteBytes]], except those already present in
  * [[ReadBytesInstruction]].
  */
-enum ReadFiniteDataInstruction[T]:
+enum ReadFiniteBytesInstruction[T]:
   /**
    * An instruction to read all bytes until the end of the data source.
    */
-  case ReadUntilTheEnd extends ReadFiniteDataInstruction[fs2.Chunk[Byte]]
+  case ReadUntilTheEnd extends ReadFiniteBytesInstruction[fs2.Chunk[Byte]]
 
 /**
  * The instruction set for an embedded domain specific language (eDSL) to read bytes from a
  * *finite* sequence of bytes.
  */
 type DecodeFiniteBytesInstructions[A] =
-  EitherK[ReadBytesInstruction, ReadFiniteDataInstruction, A]
+  EitherK[ReadBytesInstruction, ReadFiniteBytesInstruction, A]
 
 /**
  * Programs of ReadDelimitedBytes DSL.
@@ -43,11 +43,11 @@ object DecodeFiniteBytes:
   def read(n: Int): DecodeFiniteBytes[fs2.Chunk[Byte]] =
     DecodeBytes.read(n).inject
 
-  val readUntilNextMark: DecodeFiniteBytes[fs2.Chunk[Byte]] =
-    Free.liftInject(ReadFiniteDataInstruction.ReadUntilTheEnd)
-
   def raiseError(error: Throwable): DecodeFiniteBytes[Nothing] =
-    Free.liftInject(ReadBytesInstruction.RaiseError(error))
+    DecodeBytes.raiseError(error).inject
 
   def giveUp(reason: String): DecodeFiniteBytes[Nothing] =
-    Free.liftInject(ReadBytesInstruction.GiveUp(reason))
+    DecodeBytes.giveUp(reason).inject
+
+  val readUntilNextMark: DecodeFiniteBytes[fs2.Chunk[Byte]] =
+    Free.liftInject(ReadFiniteBytesInstruction.ReadUntilTheEnd)
