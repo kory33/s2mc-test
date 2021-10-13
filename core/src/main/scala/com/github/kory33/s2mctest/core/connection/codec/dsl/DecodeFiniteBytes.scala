@@ -44,8 +44,8 @@ object DecodeFiniteBytes:
   val readUntilNextMark: DecodeFiniteBytes[fs2.Chunk[Byte]] =
     Free.liftInject(ReadFiniteDataInstruction.ReadUntilTheEnd)
 
-  def raiseError(error: Throwable): DecodeBytes[Nothing] =
-    Free.liftF(ReadBytesInstruction.RaiseError(error))
+  def raiseError(error: Throwable): DecodeFiniteBytes[Nothing] =
+    Free.liftInject(ReadBytesInstruction.RaiseError(error))
 
-  def giveUp(reason: String): DecodeBytes[Nothing] =
-    Free.liftF(ReadBytesInstruction.GiveUp(reason))
+  def giveUp(reason: String): DecodeFiniteBytes[Nothing] =
+    Free.liftInject(ReadBytesInstruction.GiveUp(reason))
