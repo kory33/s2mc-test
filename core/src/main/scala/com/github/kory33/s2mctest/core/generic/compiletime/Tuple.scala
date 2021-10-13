@@ -49,12 +49,19 @@ type IncludedInT[T <: Tuple, A] = IncludedInLockedT[LockTuple[T], A]
 type ContainsDistinctT[T <: Tuple] = ContainsDistinctLockedT[LockTuple[T]]
 
 /**
+ * INTERNAL. The index of [[A]] in a tuple [[T]] mapped with [[Lock]].
+ *
+ * Takes O(|T|) to compute.
+ */
+type IndexOfTInLocked[A, T <: Tuple] <: Int =
+  T match {
+    case Lock[A] *: ? => 0
+    case ? *: tail    => S[IndexOfTInLocked[A, tail]]
+  }
+
+/**
  * The index of [[A]] in a tuple [[T]].
  *
  * Takes O(|T|) to compute.
  */
-type IndexOfT[A, T <: Tuple] <: Int =
-  Tuple.Map[T, Lock] match {
-    case Lock[A] *: ? => 0
-    case ? *: tail    => S[IndexOfT[A, Tuple.InverseMap[tail, Lock]]]
-  }
+type IndexOfT[A, T <: Tuple] = IndexOfTInLocked[A, LockTuple[T]]
