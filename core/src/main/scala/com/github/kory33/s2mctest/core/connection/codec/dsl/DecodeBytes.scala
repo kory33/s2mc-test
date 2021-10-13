@@ -50,11 +50,13 @@ enum ReadBytesInstruction[R]:
 type DecodeBytes[A] = Free[ReadBytesInstruction, A]
 
 object DecodeBytes:
+  import cats.implicits.given
+
   def read(n: Int): DecodeBytes[fs2.Chunk[Byte]] =
     Free.liftF(ReadBytesInstruction.ReadWithSize(n))
 
-  def raiseError(error: Throwable): DecodeBytes[Nothing] =
-    Free.liftF(ReadBytesInstruction.RaiseError(error))
+  def raiseError[A](error: Throwable): DecodeBytes[A] =
+    Free.liftF(ReadBytesInstruction.RaiseError(error)).widen
 
-  def giveUp(reason: String): DecodeBytes[Nothing] =
-    Free.liftF(ReadBytesInstruction.GiveUp(reason))
+  def giveUp[A](reason: String): DecodeBytes[A] =
+    Free.liftF(ReadBytesInstruction.GiveUp(reason)).widen
