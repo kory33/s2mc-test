@@ -1,11 +1,11 @@
 package com.github.kory33.s2mctest.impl.connection.codec
 
 import cats.Monad
-import com.github.kory33.s2mctest.core.connection.codec.{ByteCodec, ByteEncode}
 import com.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeBytes, DecodeFiniteBytes}
+import com.github.kory33.s2mctest.core.connection.codec.{ByteCodec, ByteEncode}
 import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode
-import com.github.kory33.s2mctest.impl.connection.codec.encode.{PrimitiveEncodes, VarNumEncodes}
 import com.github.kory33.s2mctest.impl.connection.codec.decode.{PrimitiveDecodes, VarNumDecodes}
+import com.github.kory33.s2mctest.impl.connection.codec.encode.{PrimitiveEncodes, VarNumEncodes}
 import com.github.kory33.s2mctest.impl.connection.codec.typenbtio.{ReadNBT, WriteNBT}
 import com.github.kory33.s2mctest.impl.connection.typeclass.IntLike
 import fs2.Chunk

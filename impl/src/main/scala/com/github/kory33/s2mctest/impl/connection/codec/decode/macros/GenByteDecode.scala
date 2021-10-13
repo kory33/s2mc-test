@@ -204,11 +204,11 @@ object GenByteDecode {
                           case '[ut] =>
                             '{
                               if (
-                                ${
-                                  replaceFieldReferencesWithParameters(parametersSoFar)(cond)
-                                }
-                              ) then
-                                ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
+                                  ${
+                                    replaceFieldReferencesWithParameters(parametersSoFar)(cond)
+                                  }
+                                )
+                              then ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
                               else ${ byteDecodeMonad }.pure(None)
                             } // Expr of type DecodeFiniteBytes[Option[ut]]
                       case RequiredField(_, fieldType) => summonDecoderExpr[ft]
