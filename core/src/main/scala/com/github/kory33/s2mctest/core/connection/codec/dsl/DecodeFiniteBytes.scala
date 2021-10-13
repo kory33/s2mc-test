@@ -29,7 +29,7 @@ type DecodeFiniteBytesInstructions[A] =
  *   read(0) <==> pure(fs2.Chunk.empty[Byte]); // (read(0)-idempotent)
  *
  *   readUntilTheEnd << readUntilTheEnd <==> readUntilTheEnd // (readUntilTheEnd-<<-idempotent)
- *   readUntilTheEnd >> read(n) <==> readUntilTheEnd >> read(0) // (readUntilTheEnd-read)
+ *   readUntilTheEnd >> read(n) >> fa <==> readUntilTheEnd >> read(n).as(a) // for every fa: F[A], a: A (readUntilTheEnd-read-fail)
  * }}}
  * where `<==>` denotes a semantic equivalence.
  */
