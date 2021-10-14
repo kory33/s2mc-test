@@ -4,8 +4,8 @@ import cats.data.Writer
 import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
 import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import com.github.kory33.s2mctest.core.connection.protocol.{
-  PacketId,
   CodecBinding,
+  PacketId,
   PacketIdBindings,
   Protocol
 }
@@ -13,7 +13,11 @@ import fs2.Chunk
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
+import scala.compiletime.ops.int.S
+
 class ProtocolBasedTransportSpec extends AnyFlatSpec with should.Matchers {
+  import cats.implicits.given
+
   val mockedProtocol: Protocol[(CodecBinding[Unit], CodecBinding[Int]), EmptyTuple] =
     new Protocol(
       PacketIdBindings(
@@ -29,16 +33,17 @@ class ProtocolBasedTransportSpec extends AnyFlatSpec with should.Matchers {
         Writer.value((1, Chunk.empty)) // some meaningless value
 
       override def write(id: PacketId, data: Chunk[Byte]): Writer[Chunk[Byte], Unit] =
-        Writer.tell(data)
+        // write id then data
+        Writer.tell(Chunk[Byte](id.toByte)) >> Writer.tell(data)
     }
 
   "ProtocolBasedTransportSpec.writePacket" should "allow writing stuff in binding tuple" in {
     val protocolBasedTransport =
       ProtocolBasedTransport(writeOnlyTransport, mockedProtocol.asViewedFromClient)
 
-    protocolBasedTransport.writePacket(0).run._1 should equal(Chunk(0: Byte))
-    protocolBasedTransport.writePacket(10).run._1 should equal(Chunk(10: Byte))
-    protocolBasedTransport.writePacket(()).run._1 should equal(Chunk.empty[Byte])
+    protocolBasedTransport.writePacket(0).run._1 should equal(Chunk(42: Byte, 0: Byte))
+    protocolBasedTransport.writePacket(10).run._1 should equal(Chunk(42: Byte, 10: Byte))
+    protocolBasedTransport.writePacket(()).run._1 should equal(Chunk(3: Byte))
   }
 
   "ProtocolBasedTransportSpec.writePacket" should "not allow writing stuff not in binding tuple" in {
