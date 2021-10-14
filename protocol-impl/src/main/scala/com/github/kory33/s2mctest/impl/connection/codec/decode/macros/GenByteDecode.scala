@@ -2,14 +2,12 @@ package com.github.kory33.s2mctest.impl.connection.codec.decode.macros
 
 import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 
-import scala.annotation.{StaticAnnotation, tailrec}
+import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 import scala.quoted.Expr
-import scala.quoted.runtime.impl.printers.{SourceCode, SyntaxHighlight}
 
 object GenByteDecode {
   import scala.quoted.*
-  import scala.tasty.inspector.*
 
   inline given gen[A]: DecodeFiniteBytes[A] =
     ${ genImpl[A] }
@@ -204,11 +202,11 @@ object GenByteDecode {
                           case '[ut] =>
                             '{
                               if (
-                                  ${
-                                    replaceFieldReferencesWithParameters(parametersSoFar)(cond)
-                                  }
-                                )
-                              then ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
+                                ${
+                                  replaceFieldReferencesWithParameters(parametersSoFar)(cond)
+                                }
+                              ) then
+                                ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
                               else ${ byteDecodeMonad }.pure(None)
                             } // Expr of type DecodeFiniteBytes[Option[ut]]
                       case RequiredField(_, fieldType) => summonDecoderExpr[ft]

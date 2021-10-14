@@ -9,37 +9,43 @@ ThisBuild / semanticdbEnabled := true
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
 
 ThisBuild / libraryDependencies ++= Seq(
-  "org.scala-lang" %% "scala3-tasty-inspector" % scalaVersion.value,
-
+  // cats libraries
   "org.typelevel" %% "cats-mtl" % "1.2.1",
   "org.typelevel" %% "cats-free" % "2.6.1",
 
   // effect libraries
   "org.typelevel" %% "cats-effect" % "3.2.2",
+  // fs2.Chunk is used on core too
   "co.fs2" %% "fs2-core" % "3.1.0",
-  "co.fs2" %% "fs2-io" % "3.1.0",
 
-  // our protocol implementation will use typenbt as a foundation to deal with NBTs
-  ("net.katsstuff" %% "typenbt" % "0.5.1").cross(CrossVersion.for3Use2_13),
-
-  // to make datatype-com.github.kory33.stmctest.generic programming easier
+  // to make datatype-generic programming easier
   "org.typelevel" %% "shapeless3-deriving" % "3.0.2",
 
-  // to easily deal with byte/bit vectors
-  "org.scodec" %% "scodec-bits" % "1.1.28",
-
   // test libraries
-  "org.scalactic" %% "scalactic" % "3.2.9",
-  "org.scalatest" %% "scalatest" % "3.2.9" % "test",
+  "org.scalatest" %% "scalatest" % "3.2.9" % "test"
 )
 
-ThisBuild / scalacOptions ++= Seq("-Yretain-trees", "-Xcheck-macros", "-Ykind-projector:underscores")
+ThisBuild / scalacOptions ++= Seq(
+  "-Yretain-trees",
+  "-Xcheck-macros",
+  "-Ykind-projector:underscores"
+)
 
-lazy val core = project
-  .in(file("core"))
-  .settings()
+lazy val core = project.in(file("core")).settings(libraryDependencies ++= Seq())
 
-lazy val impl = project
-  .dependsOn(core)
-  .in(file("impl"))
-  .settings()
+lazy val protocol_impl =
+  project
+    .dependsOn(core)
+    .in(file("protocol-impl"))
+    .settings(
+      libraryDependencies ++= Seq(
+        // effect libraries
+        "co.fs2" %% "fs2-io" % "3.1.0",
+
+        // our protocol implementation will use typenbt as a foundation to deal with NBTs
+        ("net.katsstuff" %% "typenbt" % "0.5.1").cross(CrossVersion.for3Use2_13),
+
+        // to easily deal with byte/bit vectors
+        "org.scodec" %% "scodec-bits" % "1.1.28"
+      )
+    )
