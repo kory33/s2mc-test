@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest.core.generic.extra
 
-import cats.~>
 import cats.data.EitherK
+import cats.~>
 import com.github.kory33.s2mctest.core.generic.conversions.FunctionKAndPolyFunction.toFunctionK
 
 object EitherKExtra {

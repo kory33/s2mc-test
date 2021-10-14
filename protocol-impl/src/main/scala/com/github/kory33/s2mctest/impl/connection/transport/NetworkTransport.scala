@@ -14,12 +14,12 @@ import com.github.kory33.s2mctest.core.connection.codec.interpreters.{
   ParseError,
   ParseResult
 }
-import fs2.io.net.Socket
 import com.github.kory33.s2mctest.core.connection.protocol.PacketId
 import com.github.kory33.s2mctest.core.connection.transport.PacketTransport
 import com.github.kory33.s2mctest.impl.connection.codec.decode.VarNumDecodes
 import com.github.kory33.s2mctest.impl.connection.codec.encode.VarNumEncodes
 import fs2.Chunk
+import fs2.io.net.Socket
 
 import java.io.IOException
 

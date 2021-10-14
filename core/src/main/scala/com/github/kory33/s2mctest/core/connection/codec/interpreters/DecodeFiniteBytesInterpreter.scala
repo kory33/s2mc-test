@@ -1,10 +1,10 @@
 package com.github.kory33.s2mctest.core.connection.codec.interpreters
 
+import cats.data.{EitherT, State}
 import com.github.kory33.s2mctest.core.connection.codec.dsl.{
   DecodeFiniteBytes,
   ReadFiniteBytesInstruction
 }
-import cats.data.{EitherT, State}
 import com.github.kory33.s2mctest.core.generic.extra.EitherKExtra
 
 object DecodeFiniteBytesInterpreter {
