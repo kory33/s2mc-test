@@ -1,7 +1,9 @@
 package com.github.kory33.s2mctest.core.connection.codec.interpreters
 
-import com.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeBytes, ReadBytesInstruction}
+import cats.Monad
 import cats.data.{EitherT, State}
+import com.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeBytes, ReadBytesInstruction}
+import com.github.kory33.s2mctest.core.connection.algebra.ReadBytes
 
 object DecodeBytesInterpreter {
 
@@ -37,5 +39,25 @@ object DecodeBytesInterpreter {
 
   def runProgramOnEitherTState[A](program: DecodeBytes[A]): EitherParseErrorTState[A] =
     program.foldMap(runReadBytesInstruction)
+
+  def runInstructionOnReadBytesMonad[F[_]: Monad: ReadBytes]
+    : ReadBytesInstruction ~> EitherT[F, ParseError, _] =
+    toFunctionK {
+      [A] =>
+        (instruction: ReadBytesInstruction[A]) =>
+          instruction match {
+            case ReadBytesInstruction.ReadWithSize(n) =>
+              EitherT.liftF(ReadBytes[F].ofSize(n))
+            case ReadBytesInstruction.RaiseError(error) =>
+              EitherT.leftT(ParseError.Raised(error))
+            case ReadBytesInstruction.GiveUp(message) =>
+              EitherT.leftT(ParseError.GaveUp(message))
+          }: EitherT[F, ParseError, A] // help type inference
+    }
+
+  def runProgramOnReadBytesMonad[F[_]: Monad: ReadBytes, A](
+    program: DecodeBytes[A]
+  ): F[Either[ParseError, A]] =
+    program.foldMap(runInstructionOnReadBytesMonad[F]).value
 
 }
