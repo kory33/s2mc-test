@@ -28,8 +28,8 @@ object NetworkTransport {
   import cats.implicits.given
 
   /**
-   * Wrap a [[Socket]] resource into a [[PacketTransport]] which does not compression or
-   * encryption.
+   * Wrap a [[Socket]] resource into a [[PacketTransport]] which only sends/receives packets
+   * without compression.
    *
    * CAUTION: Given [[socket]] should not be shared among fibers or among multiple
    * [[PacketTransport]]; two concurrent read or write operations on [[PacketTransport]] can
