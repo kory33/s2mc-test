@@ -25,7 +25,7 @@ object DecodeBytesInterpreter {
                   if remainingChunk.size < n then
                     (remainingChunk, Left(ParseError.RanOutOfBytes))
                   else
-                    val (newRemaining, read) = remainingChunk.splitAt(n)
+                    val (read, newRemaining) = remainingChunk.splitAt(n)
                     (newRemaining, Right(read))
                 }
               }
