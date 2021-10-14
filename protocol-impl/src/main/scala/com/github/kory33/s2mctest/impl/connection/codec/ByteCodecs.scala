@@ -153,7 +153,7 @@ object ByteCodecs {
       ByteCodec[A].imap(FixedPoint12.fromRaw[A])(_.rawValueFP12)
 
     given ByteCodec[UnspecifiedLengthByteArray] = ByteCodec[UnspecifiedLengthByteArray](
-      DecodeFiniteBytes.readUntilNextMark.map(c => UnspecifiedLengthByteArray(c.toArray)),
+      DecodeFiniteBytes.readUntilTheEnd.map(c => UnspecifiedLengthByteArray(c.toArray)),
       ulArray => Chunk.array(ulArray.asArray)
     )
 

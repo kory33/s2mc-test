@@ -49,5 +49,5 @@ object DecodeFiniteBytes:
   def giveUp(reason: String): DecodeFiniteBytes[Nothing] =
     DecodeBytes.giveUp(reason).inject
 
-  val readUntilNextMark: DecodeFiniteBytes[fs2.Chunk[Byte]] =
+  val readUntilTheEnd: DecodeFiniteBytes[fs2.Chunk[Byte]] =
     Free.liftInject(ReadFiniteBytesInstruction.ReadUntilTheEnd)
