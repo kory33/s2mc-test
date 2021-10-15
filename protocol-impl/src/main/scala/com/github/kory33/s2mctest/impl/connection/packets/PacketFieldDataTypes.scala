@@ -57,6 +57,8 @@ object PacketDataPrimitives:
       if uShort < 0 then uShort.toInt + (Short.MaxValue.toInt + 1) * 2
       else uShort.toInt
 
+  // for later usage; see the comment at `given Integral[VarInt]`
+  private val integralInt: Integral[Int] = summon[Integral[Int]]
   opaque type VarInt = Int
 
   object VarInt {
@@ -71,14 +73,22 @@ object PacketDataPrimitives:
      *   given Integral[VarInt] = summon[Integral[Int]]
      * }}}
      *
-     * will result in a infinite-recursion by a forward-reference.
+     * will result in a infinite-recursion by a forward-reference. Note that
+     *
+     * {{{
+     *   val integralInt: Integral[Int] = summon[Integral[Int]]
+     *   given Integral[VarInt] = integralInt
+     * }}}
+     *
+     * also results in a forward-reference and exposes `null` as `Integral[VarInt]`.
      */
-    val integralInt: Integral[Int] = summon[Integral[Int]]
     given Integral[VarInt] = integralInt
   }
 
   extension (varInt: VarInt) def raw: Int = varInt
 
+  // for later usage; see the comment at `given Integral[Long]`
+  private val integralLong: Integral[Long] = summon[Integral[Long]]
   opaque type VarLong = Long
 
   object VarLong {
@@ -93,9 +103,15 @@ object PacketDataPrimitives:
      *   given Integral[VarLong] = summon[Integral[Long]]
      * }}}
      *
-     * will result in a infinite-recursion by a forward-reference.
+     * will result in a infinite-recursion by a forward-reference. Note that
+     *
+     * {{{
+     *   val integralLong: Integral[Long] = summon[Integral[Long]]
+     *   given Integral[VarInt] = integralLong
+     * }}}
+     *
+     * also results in a forward-reference and exposes `null` as `Integral[VarLong]`.
      */
-    val integralLong: Integral[Long] = summon[Integral[Long]]
     given Integral[VarLong] = integralLong
   }
 
