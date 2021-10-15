@@ -316,7 +316,7 @@ object ByteCodecs {
       def decodeCookingRecipeDataWith(recipeType: CookingDataType) =
         ByteCodec[CookingRecipeData].decode.map(RecipeData.Cooking(recipeType, _))
 
-      recipeType match {
+      recipeType.stripPrefix("minecraft:") match {
         case "crafting_shapeless" => ByteCodec[RecipeData.Shapeless].decode
         case "crafting_shaped"    => ByteCodec[RecipeData.Shaped].decode
         case "stonecutting"       => ByteCodec[RecipeData.Stonecutting].decode
