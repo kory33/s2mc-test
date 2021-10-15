@@ -62,8 +62,19 @@ object PacketDataPrimitives:
   object VarInt {
     def apply(raw: Int): VarInt = raw
 
-    // runtime representation of VarInt and Int are the same, so the same instance of Integral can be used
-    given Integral[VarInt] = summon[Integral[Int]]
+    /**
+     * Runtime representation of VarInt and Int are the same, so the same instance of Integral
+     * can be used. Note that summoning and declaration of given must be separated: within this
+     * scope VarInt equals Int, hence writing
+     *
+     * {{{
+     *   given Integral[VarInt] = summon[Integral[Int]]
+     * }}}
+     *
+     * will result in a infinite-recursion by a forward-reference.
+     */
+    val integralInt: Integral[Int] = summon[Integral[Int]]
+    given Integral[VarInt] = integralInt
   }
 
   extension (varInt: VarInt) def raw: Int = varInt
@@ -73,8 +84,19 @@ object PacketDataPrimitives:
   object VarLong {
     def apply(raw: Long): VarLong = raw
 
-    // runtime representation of VarLong and Long are the same, so the same instance of Integral can be used
-    given Integral[VarLong] = summon[Integral[Long]]
+    /**
+     * Runtime representation of VarInt and Int are the same, so the same instance of Integral
+     * can be used. Note that summoning and declaration of given must be separated: within this
+     * scope VarLong equals Long, hence writing
+     *
+     * {{{
+     *   given Integral[VarLong] = summon[Integral[Long]]
+     * }}}
+     *
+     * will result in a infinite-recursion by a forward-reference.
+     */
+    val integralLong: Integral[Long] = summon[Integral[Long]]
+    given Integral[VarLong] = integralLong
   }
 
   extension (varLong: VarLong) def raw: Long = varLong
