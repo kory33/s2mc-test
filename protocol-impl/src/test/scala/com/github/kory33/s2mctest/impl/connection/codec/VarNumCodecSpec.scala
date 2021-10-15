@@ -43,6 +43,7 @@ class VarNumCodecSpec
       .runProgramOnChunk(input, decode.VarNumDecodes.decodeVarIntAsInt.inject)
       .toOption
 
+  // examples values taken from https://wiki.vg/index.php?title=Protocol&oldid=17019#VarInt_and_VarLong
   it should "correctly decode VarInts" in {
     val inputToOutputPairs = Seq(
       fs2.Chunk[Short](0x00) -> 0,

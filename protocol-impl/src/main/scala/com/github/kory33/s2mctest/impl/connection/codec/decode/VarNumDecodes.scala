@@ -39,9 +39,10 @@ object VarNumDecodes {
 
     import scodec.bits.{BitVector, ByteVector}
 
-    extension (bv: BitVector)
-      def appendedAll(another: BitVector) = BitVector.concat(Seq(bv, another))
-
+    /**
+     * @param accum
+     *   accumulation of 7-bit blocks with the least significant bit at the head
+     */
     case class State(remainingBits: Int, accum: BitVector)
 
     type LoopIterResult = DecodeBytes[Either[State, Chunk[Byte]]]
@@ -49,7 +50,8 @@ object VarNumDecodes {
     def concludeLoopWith(result: BitVector): LoopIterResult =
       DecodeBytes.pure(Right {
         val totalBytes = maxBits / 8
-        val lower = Chunk.array(result.reverseBitOrder.toByteArray)
+        val zeroPaddedResult = result.toByteVector.toBitVector
+        val lower = Chunk.array(zeroPaddedResult.reverse.toByteArray)
 
         val bytesToFill = totalBytes - lower.size
         val pad = Chunk.vector(Vector.fill(bytesToFill)(0: Byte))
@@ -72,9 +74,9 @@ object VarNumDecodes {
       case st @ State(remainingBits, accum) =>
         if remainingBits > 0 then
           PrimitiveDecodes.decodeByte.flatMap { nextByte =>
-            val nextBits = BitVector.fromByte(nextByte, 7).reverseBitOrder
+            val nextBits = BitVector.fromByte(nextByte, remainingBits min 7).reverse
             val continuationFlag = (nextByte & 0x80) != 0
-            val totalAccum = accum.appendedAll(nextBits)
+            val totalAccum = accum ++ nextBits
 
             if remainingBits <= 7 && continuationFlag then concludeLoopWithError(st, nextByte)
             else if continuationFlag then

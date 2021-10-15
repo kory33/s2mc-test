@@ -18,9 +18,7 @@ object PacketDataPrimitives:
 
     def apply(short: Short): UByte =
       val maxAllowed = (Byte.MaxValue.toShort + 1) * 2 - 1
-      if 0 <= short && short <= maxAllowed then
-        if short < Byte.MaxValue.toShort then short.toByte
-        else (short - Byte.MaxValue).toByte
+      if 0 <= short && short <= maxAllowed then short.toByte
       else
         throw new IllegalArgumentException(
           s"Given Short is out of range: got $short, expected [0, $maxAllowed]."
@@ -46,9 +44,7 @@ object PacketDataPrimitives:
 
     def apply(int: Int): UShort =
       val maxAllowed = (Short.MaxValue.toInt + 1) * 2 - 1
-      if 0 <= int && int <= maxAllowed then
-        if int < Short.MaxValue.toInt then int.toShort
-        else (int - Short.MaxValue).toShort
+      if 0 <= int && int <= maxAllowed then int.toShort
       else
         throw new IllegalArgumentException(
           s"Given Int is out of range: got $int, expected [0, $maxAllowed]."
