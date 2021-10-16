@@ -361,9 +361,9 @@ object ByteCodecs {
         case "brigadier:integer"      => ByteCodec[CommandArgument.IntegerA].decode
         case "brigadier:long"         => ByteCodec[CommandArgument.LongA].decode
         case "brigadier:string"       => ByteCodec[CommandArgument.StringA].decode
-        case "brigadier:entity"       => ByteCodec[CommandArgument.EntityA].decode
-        case "brigadier:score_holder" => ByteCodec[CommandArgument.ScoreHolderA].decode
-        case "brigadier:range"        => ByteCodec[CommandArgument.RangeA].decode
+        case "minecraft:entity"       => ByteCodec[CommandArgument.EntityA].decode
+        case "minecraft:score_holder" => ByteCodec[CommandArgument.ScoreHolderA].decode
+        case "minecraft:range"        => ByteCodec[CommandArgument.RangeA].decode
         case "brigadier:bool" | "minecraft:game_profile" | "minecraft:block_pos" |
             "minecraft:column_pos" | "minecraft:vec3" | "minecraft:vec2" |
             "minecraft:block_state" | "minecraft:block_predicate" | "minecraft:item_stack" |
