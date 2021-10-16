@@ -184,6 +184,10 @@ object PacketDataPrimitives:
     def apply(array: Array[Byte]): UnspecifiedLengthByteArray = array
   }
 
+  enum NBTCompoundOrEnd:
+    case Compound(nbtCompound: NBTCompound)
+    case End
+
 object PacketDataCompoundTypes:
   import PacketDataPrimitives.*
 
@@ -207,7 +211,7 @@ object PacketDataCompoundTypes:
     present: Boolean,
     itemId: Option[VarInt],
     itemCount: Option[Byte],
-    nbt: Option[NBTCompound]
+    nbt: Option[NBTCompoundOrEnd]
   ) {
     require(itemId.nonEmpty == (present))
     require(itemCount.nonEmpty == (present))

@@ -1792,7 +1792,7 @@ object PacketIntent {
       /**
        * EntityUpdateNBT updates the entity named binary tag.
        */
-      case class EntityUpdateNBT(entityId: VarInt, nbt: NBTCompound)
+      case class EntityUpdateNBT(entityId: VarInt, nbt: NBTCompoundOrEnd)
 
       /**
        * Teleports the player's vehicle
@@ -2008,7 +2008,7 @@ object PacketIntent {
 
       case class EntityStatus(entityId: Int, entityStatus: Byte)
 
-      case class NBTQueryResponse(transactionId: VarInt, nbt: NBTCompound)
+      case class NBTQueryResponse(transactionId: VarInt, nbt: NBTCompoundOrEnd)
 
       /**
        * SelectAdvancementTab indicates the client should switch the advancement tab.

@@ -32,6 +32,17 @@ object ReadNBT {
 
   import cats.implicits.given
 
+  val readCompoundOrEnd: DecodeBytes[Option[(String, NBTCompound)]] =
+    readType.flatMap { tpe =>
+      if tpe == NBTType.TagCompound then
+        Monad[DecodeBytes].product(readString, readCompound).map(Some.apply)
+      else if tpe == NBTType.TagEnd then Monad[DecodeBytes].pure(None)
+      else
+        DecodeBytes.raiseError(
+          IOException(s"Wrong starting type for NBT: $tpe, expected TAG_Compound or TAG_End.")
+        )
+    }
+
   /**
    * Reads an [[net.katsstuff.typenbt.NBTCompound]].
    *

@@ -428,6 +428,20 @@ object ByteCodecs {
       (compound: NBTCompound) => WriteNBT.toChunk(compound, rootName = "", gzip = false)
     )
 
+    given ByteCodec[NBTCompoundOrEnd] = ByteCodec[NBTCompoundOrEnd](
+      ReadNBT
+        .readCompoundOrEnd
+        .map {
+          case Some((_, compound)) => NBTCompoundOrEnd.Compound(compound)
+          case None                => NBTCompoundOrEnd.End
+        }
+        .inject,
+      {
+        case NBTCompoundOrEnd.Compound(compound) =>
+          WriteNBT.toChunk(compound, rootName = "", gzip = false)
+        case NBTCompoundOrEnd.End => fs2.Chunk(0x00: Byte)
+      }
+    )
   }
 
   object PositionCodec {
