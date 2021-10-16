@@ -2456,17 +2456,13 @@ object PacketIntent {
 
       case class DeclareRecipes(recipes: LenPrefixedSeq[VarInt, Recipe])
 
-      case class Tags(
-        blockTags: LenPrefixedSeq[VarInt, TagArray],
-        itemTags: LenPrefixedSeq[VarInt, TagArray],
-        fluidTags: LenPrefixedSeq[VarInt, TagArray]
-      )
+      case class Tags(blockTags: TagArray, itemTags: TagArray, fluidTags: TagArray)
 
       case class TagsWithEntities(
-        blockTags: LenPrefixedSeq[VarInt, TagArray],
-        itemTags: LenPrefixedSeq[VarInt, TagArray],
-        fluidTags: LenPrefixedSeq[VarInt, TagArray],
-        entityTags: LenPrefixedSeq[VarInt, TagArray]
+        blockTags: TagArray,
+        itemTags: TagArray,
+        fluidTags: TagArray,
+        entityTags: TagArray
       )
 
       case class AcknowledgePlayerDigging(
