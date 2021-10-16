@@ -37,9 +37,9 @@ object DecodeFiniteBytesInterpreter {
     program: DecodeFiniteBytes[A]
   ): ParseResult[A] =
     runProgramOnEitherTState(program).value.run(chunk).value match {
-      case (_, Left(error)) => ParseResult.Errored(error)
+      case (_, Left(error)) => ParseResult.Errored(error, chunk)
       case (remaining, Right(value)) =>
-        if remaining.nonEmpty then ParseResult.WithExcessBytes(value, remaining)
+        if remaining.nonEmpty then ParseResult.WithExcessBytes(value, remaining, chunk)
         else ParseResult.Just(value)
     }
 

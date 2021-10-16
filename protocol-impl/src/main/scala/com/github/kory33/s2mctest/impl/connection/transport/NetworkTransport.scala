@@ -71,7 +71,7 @@ object NetworkTransport {
           )
           idAndData <- idAndDataResult match {
             case ParseResult.Just(idAndData) => Monad[F].pure(idAndData)
-            case ParseResult.Errored(error) =>
+            case ParseResult.Errored(error, _) =>
               cats.MonadThrow[F].raiseError {
                 error match {
                   case ParseError.Raised(error) => error
@@ -81,7 +81,7 @@ object NetworkTransport {
                     IOException(s"Parsing gave up while reading the packet ID: $reason")
                 }
               }
-            case ParseResult.WithExcessBytes(_, _) =>
+            case ParseResult.WithExcessBytes(_, _, _) =>
               cats.MonadThrow[F].raiseError {
                 RuntimeException(
                   "unreachable (readUntilTheEnd should not leave any excess bytes)"

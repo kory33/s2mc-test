@@ -17,11 +17,12 @@ enum ParseResult[+A]:
    */
   def toOption: Option[A] =
     this match {
-      case Just(a)               => Some(a)
-      case WithExcessBytes(a, _) => Some(a)
-      case Errored(_)            => None
+      case Just(a)                  => Some(a)
+      case WithExcessBytes(a, _, _) => Some(a)
+      case Errored(_, _)            => None
     }
 
   case Just(a: A) extends ParseResult[A]
-  case WithExcessBytes(a: A, excess: fs2.Chunk[Byte]) extends ParseResult[A]
-  case Errored(error: ParseError) extends ParseResult[Nothing]
+  case WithExcessBytes(a: A, excess: fs2.Chunk[Byte], input: fs2.Chunk[Byte])
+      extends ParseResult[A]
+  case Errored(error: ParseError, input: fs2.Chunk[Byte]) extends ParseResult[Nothing]

@@ -419,11 +419,11 @@ object PacketDataCompoundTypes:
       ingredients: LenPrefixedSeq[VarInt, RecipeIngredient],
       result: Slot
     )
-    case Shaped(
+    @NoGenByteDecode case Shaped(
       width: VarInt,
       height: VarInt,
       group: String,
-      ingredients: LenPrefixedSeq[VarInt, RecipeIngredient],
+      ingredients: Vector[RecipeIngredient] /* length is `width * height` */,
       result: Slot
     )
     case Stonecutting(group: String, ingredient: RecipeIngredient, result: Slot)

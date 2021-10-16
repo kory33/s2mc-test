@@ -16,17 +16,19 @@ trait ByteEncode[T]:
    */
   def write(obj: T): Chunk[Byte]
 
-  /**
-   * Converts a sequence of objects into concatenated binary representation.
-   */
-  final def writeSeq(sequence: Seq[T]): Chunk[Byte] =
-    Chunk.concat(sequence.map(write))
-
 object ByteEncode:
+
+  inline def apply[A](using ev: ByteEncode[A]): ByteEncode[A] = ev
 
   given Contravariant[ByteEncode] with
     override def contramap[A, B](fa: ByteEncode[A])(f: B => A): ByteEncode[B] = obj =>
       fa.write(f(obj))
+
+  /**
+   * canonical instance of `ByteEncode` for vectors
+   */
+  given forVector[A: ByteEncode]: ByteEncode[Vector[A]] =
+    (x: Vector[A]) => Chunk.concat(x.map(ByteEncode[A].write))
 
   /**
    * canonical instance of `ByteEncode` for any algebraic data type

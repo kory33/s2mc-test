@@ -64,61 +64,17 @@ object ByteCodecs {
 
     given ByteCodec[UShort] = ByteCodec[Short].imap(UShort.fromRawShort)(_.asRawShort)
 
-    object VarNumCodecs {
-      def encodeVarNum(fixedSizeBigEndianBytes: Chunk[Byte]): Chunk[Byte] = {
-        extension [A](list: List[A])
-          def dropRightWhile(predicate: A => Boolean): List[A] =
-            list.reverse.dropWhile(predicate).reverse
-          def unconsLast: (List[A], A) = list.reverse match {
-            case ::(last, restRev) => (restRev.reverse, last)
-            case Nil => throw IllegalArgumentException("unconsLast on an empty list")
-          }
+    given ByteCodec[VarInt] =
+      ByteCodec[Int](VarNumDecodes.decodeVarIntAsInt.inject, VarNumEncodes.encodeIntAsVarInt)
+        .imap(VarInt.apply)(_.raw)
 
-        require(
-          fixedSizeBigEndianBytes.nonEmpty,
-          "expected nonempty Chunk[Byte] for encodeVarNum"
-        )
-
-        // for example, let the parameter be 32-bit big endian integer Chunk(00000000, 00000001, 11101010, 10010100).
-
-        // bits in fixedSizeBigEndianBytes, with LSB at the beginning and MSB at the tail
-        // with the example, this would be BitVector(00101001 01010111 10000000 00000000)
-        val reversedBits =
-          scodec.bits.BitVector.view(fixedSizeBigEndianBytes.toArray).reverseBitOrder
-
-        // bits split into 7bits group and then redundant most significant part dropped.
-        // with the example, this would be List(BitVector(0010100), BitVector(1010101), BitVector(1110000))
-        val splitInto7Bits =
-          reversedBits.grouped(7).toList.dropRightWhile(_.populationCount == 0)
-
-        // bits split into 7bits, with flag for data continuation appended to each bit group
-        // with the example, this would be List(BitVector(00101001), BitVector(10101011), BitVector(11100000))
-        val flagsAppended = splitInto7Bits.unconsLast match {
-          case (rest, last) => rest.map(_ :+ true).appended(last :+ false)
-        }
-
-        // finally reverse each bit groups and concat them into a Chunk[Byte]
-        // with the example, this would be Chunk(10010100 11010101 00000111)
-        Chunk.array(
-          scodec.bits.BitVector.concat(flagsAppended.map(_.reverseBitOrder)).toByteArray
-        )
-      }
-
-      given ByteCodec[VarInt] =
-        ByteCodec[Int](VarNumDecodes.decodeVarIntAsInt.inject, VarNumEncodes.encodeIntAsVarInt)
-          .imap(VarInt.apply)(_.raw)
-
-      given ByteCodec[VarLong] = ByteCodec[Long](
+    given ByteCodec[VarLong] =
+      ByteCodec[Long](
         VarNumDecodes.decodeVarLongAsLong.inject,
         VarNumEncodes.encodeLongAsVarLong
       ).imap(VarLong.apply)(_.raw)
-    }
 
-    export VarNumCodecs.given
-
-    given ByteCodec[String] = {
-      val utf8Charset = Charset.forName("UTF-8")
-
+    given ByteCodec[String] =
       ByteCodec[String](
         ByteCodec[VarInt]
           .decode
@@ -128,7 +84,6 @@ object ByteCodecs {
             .encodeUTF8String
             .write(x)
       )
-    }
 
     given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
       val decode: DecodeFiniteBytes[LenPrefixedSeq[L, A]] = for {
@@ -138,9 +93,8 @@ object ByteCodecs {
       } yield LenPrefixedSeq(aList.toVector)
 
       val encode: ByteEncode[LenPrefixedSeq[L, A]] = { (lenSeq: LenPrefixedSeq[L, A]) =>
-        ByteCodec[L].encode.write(lenSeq.lLength) ++ ByteCodec[A]
-          .encode
-          .writeSeq(lenSeq.asVector)
+        ByteCodec[L].encode.write(lenSeq.lLength) ++ ByteEncode[Vector[A]]
+          .write(lenSeq.asVector)
       }
 
       ByteCodec[LenPrefixedSeq[L, A]](decode, encode)
@@ -206,14 +160,14 @@ object ByteCodecs {
           case EntityEquipment(slot, _) =>
             (slot & 0x80) != 0
         },
-        ByteCodec[EntityEquipment].encode.writeSeq(_)
+        summon[ByteEncode[Vector[EntityEquipment]]]
       )
     }
 
     given ByteCodec[Biomes3D] =
       ByteCodec[Biomes3D](
         ByteCodec[Int].decode.replicateA(1024).map { intList => Biomes3D(intList.toArray) },
-        biome => ByteCodec[Int].encode.writeSeq(biome.arrayData.toSeq)
+        biome => ByteEncode[Vector[Int]].write(biome.arrayData.toVector)
       )
 
     given ByteCodec[PlayerProperty] = autogenerateFor[PlayerProperty]
@@ -306,7 +260,19 @@ object ByteCodecs {
 
     given ByteCodec[RecipeData.Shapeless] = autogenerateFor[RecipeData.Shapeless]
 
-    given ByteCodec[RecipeData.Shaped] = autogenerateFor[RecipeData.Shaped]
+    given ByteCodec[RecipeData.Shaped] = {
+      val decode: DecodeFiniteBytes[RecipeData.Shaped] =
+        for {
+          width <- summon[DecodeFiniteBytes[VarInt]]
+          height <- summon[DecodeFiniteBytes[VarInt]]
+          group <- summon[DecodeFiniteBytes[String]]
+          ingredients <- summon[DecodeFiniteBytes[RecipeIngredient]]
+            .replicateA(width.raw * height.raw)
+          result <- summon[DecodeFiniteBytes[Slot]]
+        } yield RecipeData.Shaped(width, height, group, ingredients.toVector, result)
+
+      ByteCodec(decode, ByteEncode.forADT[RecipeData.Shaped])
+    }
 
     given ByteCodec[RecipeData.Stonecutting] = autogenerateFor[RecipeData.Stonecutting]
 

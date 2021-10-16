@@ -41,7 +41,7 @@ object ReadNBT {
   val read: DecodeBytes[(String, NBTCompound)] =
     readType.flatMap { tpe =>
       if tpe == NBTType.TagCompound then Monad[DecodeBytes].product(readString, readCompound)
-      else DecodeBytes.raiseError(IOException("Wrong starting type for NBT"))
+      else DecodeBytes.raiseError(IOException(s"Wrong starting type for NBT: $tpe"))
     }
 
   private val readCompound: DecodeBytes[NBTCompound] =
