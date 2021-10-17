@@ -2,6 +2,7 @@ package com.github.kory33.s2mctest.impl.connection.protocol.versions
 
 import com.github.kory33.s2mctest.core.connection.codec.ByteCodec
 import com.github.kory33.s2mctest.core.connection.protocol.{PacketIdBindings, Protocol}
+import com.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.VarInt
 
 object v1_9 {
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.*
@@ -11,6 +12,8 @@ object v1_9 {
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.Common.given
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.PositionCodecBefore1_14.given
   import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode.given
+
+  val protocolVersion: VarInt = VarInt(107)
 
   // noinspection TypeAnnotation
   // format: off
