@@ -11,27 +11,24 @@ import com.github.kory33.s2mctest.core.connection.protocol.{
   ProtocolView
 }
 
-// format: off
-case class ProtocolBasedTransport[
-  F[_]: Functor,
-  SelfBoundBindings <: Tuple, PeerBoundBindings <: Tuple
-](
-  transport: PacketTransport[F],
-  protocolView: ProtocolView[SelfBoundBindings, PeerBoundBindings]
-) {
-// format: on
+/**
+ * The protocol-aware transport interface. This interface provides two primary operations,
+ * [[ProtocolBasedTransport#nextPacket]] and [[ProtocolBasedTransport#writePacket]] that will
+ * proxy read/write requests of packet datatypes to the underlying lower-level
+ * [[PacketTransport]].
+ *
+ * Both of these methods are typesafe in a sense that
+ *   - `nextPacket` will only result in a datatype defined in [[SelfBoundBindings]]
+ *   - `writePacket` will only accept a datatype defined in [[PeerBoundBindings]]
+ */
+trait ProtocolBasedTransport[F[_], SelfBoundBindings <: Tuple, PeerBoundBindings <: Tuple] {
 
   /**
-   * Read next packet from the transport and parse the id-chunk pair so obtained. The result is
-   * given as a [[ParseResult]], which may or may not contain successfully parsed packet data.
+   * Read next packet from the underlying transport and parse the id-chunk pair so obtained. The
+   * result is given as a [[ParseResult]], which may or may not contain successfully parsed
+   * packet data.
    */
-  def nextPacket: F[ParseResult[PacketIn[SelfBoundBindings]]] =
-    Functor[F].map(transport.readOnePacket) {
-      case (packetId, chunk) =>
-        val decoderProgram = protocolView.selfBound.decoderFor(packetId)
-
-        DecodeFiniteBytesInterpreter.runProgramOnChunk(chunk, decoderProgram)
-    }
+  def nextPacket: F[ParseResult[PacketIn[SelfBoundBindings]]]
 
   /**
    * NOTE: this is a low-level API, end users should use [[writePacket]].
@@ -45,10 +42,7 @@ case class ProtocolBasedTransport[
    */
   def writePacketWithBindingsIndex[P](peerBoundPacket: P, idx: Int)(
     using Tuple.Elem[PeerBoundBindings & NonEmptyTuple, idx.type] =:= CodecBinding[P]
-  ): F[Unit] = {
-    val (id, chunk) = protocolView.peerBound.encodeWithBindingIndex(peerBoundPacket, idx)
-    transport.write(id, chunk)
-  }
+  ): F[Unit]
 
   import com.github.kory33.s2mctest.core.generic.compiletime.*
 
@@ -58,7 +52,7 @@ case class ProtocolBasedTransport[
    * This is an inline function, and can only be invoked when [[P]] and [[PeerBoundBindings]]
    * are both concrete at the call site.
    */
-  inline def writePacket[P](peerBoundPacket: P)(
+  final inline def writePacket[P](peerBoundPacket: P)(
     // this constraint will ensure that idx can be materialized at compile time
     using Require[IncludedInT[PeerBoundBindings, CodecBinding[P]]]
   ): F[Unit] =
@@ -83,5 +77,42 @@ case class ProtocolBasedTransport[
       ev.asInstanceOf
 
     writePacketWithBindingsIndex(peerBoundPacket, idx)(using ev1)
+}
 
+object ProtocolBasedTransport {
+
+  import cats.implicits.given
+
+  private def write[F[_], SelfBoundBindings <: Tuple, PeerBoundBindings <: Tuple, P](
+    transport: PacketTransport[F],
+    protocolView: ProtocolView[SelfBoundBindings, PeerBoundBindings],
+    peerBoundPacket: P,
+    idx: Int
+  )(
+    using Tuple.Elem[PeerBoundBindings & NonEmptyTuple, idx.type] =:= CodecBinding[P]
+  ): F[Unit] =
+    transport.write.tupled {
+      protocolView.peerBound.encodeWithBindingIndex(peerBoundPacket, idx)
+    }
+
+  /**
+   * Create a [[ProtocolBasedTransport]] that only proxies read/write requests to [[transport]]
+   * with [[protocolView]] provided.
+   */
+  def apply[F[_], SelfBoundBindings <: Tuple, PeerBoundBindings <: Tuple](
+    transport: PacketTransport[F],
+    protocolView: ProtocolView[SelfBoundBindings, PeerBoundBindings]
+  )(using F: Functor[F]): ProtocolBasedTransport[F, SelfBoundBindings, PeerBoundBindings] =
+    new ProtocolBasedTransport[F, SelfBoundBindings, PeerBoundBindings] {
+      def nextPacket: F[ParseResult[PacketIn[SelfBoundBindings]]] =
+        F.map(transport.readOnePacket) {
+          case (packetId, chunk) =>
+            val decoderProgram = protocolView.selfBound.decoderFor(packetId)
+            DecodeFiniteBytesInterpreter.runProgramOnChunk(chunk, decoderProgram)
+        }
+
+      def writePacketWithBindingsIndex[P](peerBoundPacket: P, idx: Int)(
+        using Tuple.Elem[PeerBoundBindings & NonEmptyTuple, idx.type] =:= CodecBinding[P]
+      ): F[Unit] = write(transport, protocolView, peerBoundPacket, idx)
+    }
 }
