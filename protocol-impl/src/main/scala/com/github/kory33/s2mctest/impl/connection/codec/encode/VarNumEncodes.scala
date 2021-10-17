@@ -2,7 +2,7 @@ package com.github.kory33.s2mctest.impl.connection.codec.encode
 
 import com.github.kory33.s2mctest.core.connection.codec.{ByteCodec, ByteEncode}
 import fs2.Chunk
-import jdk.nashorn.internal.runtime.BitVector
+import scodec.bits.BitVector
 
 import scala.:+
 
@@ -23,7 +23,7 @@ object VarNumEncodes {
     // Bits in fixedSizeBigEndianBytes, with LSB at the beginning and MSB at the tail
     // With the example, this would be BitVector(00101001 01010111 10000000 00000000)
     val reversedBits =
-      scodec.bits.BitVector.view(fixedSizeBigEndianBytes.toArray).reverse
+      BitVector.view(fixedSizeBigEndianBytes.toArray).reverse
 
     // Bits split into 7bits group and then redundant most significant part dropped.
     // With the example, this would be List(BitVector(0010100), BitVector(1010101), BitVector(1110000))
@@ -44,7 +44,7 @@ object VarNumEncodes {
 
     // align into the byte structure and then reverse all bits
     // with the example, this would be Chunk(10010100 11010101 00000111)
-    val aligned = scodec.bits.BitVector.concat(flagsAppended).toByteVector
+    val aligned = BitVector.concat(flagsAppended).toByteVector
     val ordered = aligned.toBitVector.reverseBitOrder
 
     Chunk.array(ordered.toByteArray)
