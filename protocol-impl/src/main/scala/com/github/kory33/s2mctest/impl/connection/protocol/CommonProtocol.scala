@@ -13,6 +13,7 @@ object CommonProtocol {
     import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Status.ClientBound.*
     import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Status.ServerBound.*
 
+    // noinspection TypeAnnotation
     // format: off
     val handshakeProtocol = Protocol(
       PacketIdBindings(Tuple(
@@ -22,6 +23,7 @@ object CommonProtocol {
     )
     // format: on
 
+    // noinspection TypeAnnotation
     // format: off
     val statusProtocol = Protocol(
       PacketIdBindings((

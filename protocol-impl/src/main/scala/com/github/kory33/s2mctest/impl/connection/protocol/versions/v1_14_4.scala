@@ -12,6 +12,7 @@ object v1_14_4 {
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.PositionCodec.given
   import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode.given
 
+  // noinspection TypeAnnotation
   // format: off
   val playProtocol = Protocol(
     PacketIdBindings((
@@ -160,6 +161,7 @@ object v1_14_4 {
   )
   // format: on
 
+  // noinspection TypeAnnotation
   // format: off
   val loginProtocol = Protocol(
     PacketIdBindings((
