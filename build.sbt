@@ -50,3 +50,6 @@ lazy val protocol_impl =
         "org.scodec" %% "scodec-bits" % "1.1.28"
       )
     )
+
+lazy val examples =
+  project.dependsOn(core, protocol_impl).in(file("examples")).settings()
