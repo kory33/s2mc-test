@@ -38,7 +38,7 @@ def simpleClient_1_12_2(): Unit = {
       {
         val transport = ProtocolBasedTransport(
           networkTransport,
-          CommonProtocol.common.handshakeProtocol.asViewedFromClient
+          CommonProtocol.handshakeProtocol.asViewedFromClient
         )
 
         val handshakePacket =
