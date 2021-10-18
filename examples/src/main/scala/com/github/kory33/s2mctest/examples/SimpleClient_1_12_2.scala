@@ -28,12 +28,12 @@ def simpleClient_1_12_2(): Unit = {
   import PacketIntent.Play.ServerBound.TeleportConfirm
 
   val address = SocketAddress.fromString("localhost:25565").get
+  val transportResource =
+    Network[IO].client(address).map { socket => NetworkTransport.noCompression(socket) }
 
   val program = for {
-    _ <- Network[IO].client(address).use { socket =>
-      import com.github.kory33.s2mctest.impl.connection.protocol.versions
-
-      val networkTransport: PacketTransport[IO] = NetworkTransport.noCompression(socket)
+    _ <- transportResource.use { (networkTransport: PacketTransport[IO]) =>
+      import com.github.kory33.s2mctest.impl.connection.protocol.versions.v1_12_2.*
 
       {
         val transport = ProtocolBasedTransport(
@@ -43,7 +43,7 @@ def simpleClient_1_12_2(): Unit = {
 
         val handshakePacket =
           Handshake(
-            versions.v1_12_2.protocolVersion,
+            protocolVersion,
             address.host.toString,
             UShort(address.port.value),
             VarInt(2)
@@ -51,10 +51,8 @@ def simpleClient_1_12_2(): Unit = {
 
         transport.writePacket(handshakePacket)
       } >> {
-        val transport = ProtocolBasedTransport(
-          networkTransport,
-          versions.v1_12_2.loginProtocol.asViewedFromClient
-        )
+        val transport =
+          ProtocolBasedTransport(networkTransport, loginProtocol.asViewedFromClient)
 
         val loginStartPacket = LoginStart("s2mc-client")
 
@@ -69,10 +67,8 @@ def simpleClient_1_12_2(): Unit = {
           }
         }
       } >> {
-        val transport = ProtocolBasedTransport(
-          networkTransport,
-          versions.v1_12_2.playProtocol.asViewedFromClient
-        )
+        val transport =
+          ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
 
         Monad[IO].untilDefinedM {
           transport.nextPacket >>= {
@@ -81,10 +77,11 @@ def simpleClient_1_12_2(): Unit = {
                 case TeleportPlayer_WithConfirm(_, _, _, _, _, _, teleportId) =>
                   IO(println(s"read: $x")) >> transport.writePacket(TeleportConfirm(teleportId))
                 case KeepAliveClientbound_i64(id) =>
-                  IO(println(s"read: $x")) >> transport
-                    .writePacket(KeepAliveServerbound_i64(id))
+                  IO(println(s"read: $x")) >> transport.writePacket(
+                    KeepAliveServerbound_i64(id)
+                  )
                 case _ =>
-                  IO(println(s"read: ${x.getClass.getName}"))
+                  IO(println(s"packet: ${x.getClass.getName}"))
               }) >> IO.pure(None)
             case err =>
               IO {

@@ -14,6 +14,7 @@ import shapeless3.deriving.K0
 
 import java.nio.charset.Charset
 import java.util.UUID
+import scala.util.NotGiven
 
 object ByteCodecs {
 
@@ -85,7 +86,10 @@ object ByteCodecs {
             .write(x)
       )
 
-    given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec]: ByteCodec[LenPrefixedSeq[L, A]] = {
+    given lenPrefixed[L: IntLike: ByteCodec, A: ByteCodec](
+      // we wish to specialise for A =:= Byte using lenPrefixedByteSeq
+      using NotGiven[A =:= Byte]
+    ): ByteCodec[LenPrefixedSeq[L, A]] = {
       val decode: DecodeFiniteBytes[LenPrefixedSeq[L, A]] = for {
         length <- ByteCodec[L].decode
         intLength = IntLike[L].toInt(length)
@@ -98,6 +102,20 @@ object ByteCodecs {
       }
 
       ByteCodec[LenPrefixedSeq[L, A]](decode, encode)
+    }
+
+    given lenPrefixedByteSeq[L: IntLike: ByteCodec]: ByteCodec[LenPrefixedByteSeq[L]] = {
+      val decode: DecodeFiniteBytes[LenPrefixedByteSeq[L]] = for {
+        length <- ByteCodec[L].decode
+        intLength = IntLike[L].toInt(length)
+        resultChunk <- DecodeFiniteBytes.read(intLength)
+      } yield LenPrefixedSeq(resultChunk.toVector)
+
+      val encode: ByteEncode[LenPrefixedByteSeq[L]] = { (lenSeq: LenPrefixedByteSeq[L]) =>
+        ByteCodec[L].encode.write(lenSeq.lLength) ++ fs2.Chunk.vector(lenSeq.asVector)
+      }
+
+      ByteCodec[LenPrefixedByteSeq[L]](decode, encode)
     }
 
     given fixedPoint5ForIntegral[A: ByteCodec: Integral]: ByteCodec[FixedPoint5[A]] =
