@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "3.0.1"
+ThisBuild / scalaVersion := "3.1.1-RC1-bin-20211015-54ff628-NIGHTLY"
 ThisBuild / version := "0.1.0"
 
 ThisBuild / name := "s2mc"

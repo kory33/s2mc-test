@@ -22,6 +22,7 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   import com.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Status.ServerBound.*
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.Common.given
   import com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.autogenerateFor
+  import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode
   import com.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode.given
   
   // format: off
@@ -184,9 +185,18 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[ChunkDataBulk_17] = autogenerateFor[ChunkDataBulk_17]
   given ByteCodec[Effect] = autogenerateFor[Effect]
   given ByteCodec[Effect_u8y] = autogenerateFor[Effect_u8y]
-  given ByteCodec[Particle_f64] = autogenerateFor[Particle_f64]
-  given ByteCodec[Particle_Data] = autogenerateFor[Particle_Data]
-  given ByteCodec[Particle_Data13] = autogenerateFor[Particle_Data13]
+
+  /**
+   * NOTE: Some compiler error relating to https://github.com/lampepfl/dotty/issues/13406
+   * prevents us from calling `autogenerateFor` method with these three types.
+   *
+   * This seems to happen only with a type with more than 15 fields in which at
+   * least one Option field is present.
+   */
+  given ByteCodec[Particle_f64] = ByteCodec(GenByteDecode.gen[Particle_f64], ByteEncode.forADT[Particle_f64])
+  given ByteCodec[Particle_Data] = ByteCodec(GenByteDecode.gen[Particle_Data], ByteEncode.forADT[Particle_Data])
+  given ByteCodec[Particle_Data13] = ByteCodec(GenByteDecode.gen[Particle_Data13], ByteEncode.forADT[Particle_Data13])
+
   given ByteCodec[Particle_VarIntArray] = autogenerateFor[Particle_VarIntArray]
   given ByteCodec[Particle_Named] = autogenerateFor[Particle_Named]
   given ByteCodec[JoinGame_WorldNames_IsHard] = autogenerateFor[JoinGame_WorldNames_IsHard]
