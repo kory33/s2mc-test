@@ -32,11 +32,12 @@ ThisBuild / scalacOptions ++= Seq(
   "-Ykind-projector:underscores"
 )
 
-lazy val core = project.in(file("core")).settings(libraryDependencies ++= Seq())
+lazy val protocol_core =
+  project.in(file("protocol-core")).settings(libraryDependencies ++= Seq())
 
 lazy val protocol_impl =
   project
-    .dependsOn(core)
+    .dependsOn(protocol_core)
     .in(file("protocol-impl"))
     .settings(
       libraryDependencies ++= Seq(
@@ -52,4 +53,4 @@ lazy val protocol_impl =
     )
 
 lazy val examples =
-  project.dependsOn(core, protocol_impl).in(file("examples")).settings()
+  project.dependsOn(protocol_core, protocol_impl).in(file("examples")).settings()
