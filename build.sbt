@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "3.1.1-RC1-bin-20211015-54ff628-NIGHTLY"
+ThisBuild / scalaVersion := "3.1.0"
 ThisBuild / version := "0.1.0"
 
 ThisBuild / name := "s2mc"
@@ -33,7 +33,7 @@ ThisBuild / scalacOptions ++= Seq(
 )
 
 lazy val protocol_core =
-  project.in(file("protocol-core")).settings(libraryDependencies ++= Seq())
+  project.in(file("protocol-core")).settings()
 
 lazy val protocol_impl =
   project
