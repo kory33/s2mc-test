@@ -1,0 +1,65 @@
+name: Run cached tests
+
+# Build script adopted from itemstack-count-infrastructure (https://github.com/kory33/itemstack-count-infrastructure/blob/22721250c3e8bb2688538e3933a5f5f998406c2c/.github/workflows/create-release.yml)
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'develop'
+      - 'feature/**'
+  pull_request:
+    branches:
+      - 'master'
+      - 'develop'
+
+jobs:
+  lint_and_test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Prepare build dependencies cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-build-dependencies
+          cache-version: v-2
+        with:
+          # sbt等は$HOMEではなくユーザーディレクトリを見ているようで、
+          # GH Actionsでの ~ は /github/home/ に展開されるにもかかわらず
+          # 実際のキャッシュは /root/ 以下に配備される。
+          #
+          # /root/.m2, /root/.ivy/cache, /root/.sbt - sbt関連のキャッシュ
+          # /root/.cache - cousierがscalasbt等をキャッシュするのに使っている
+          path: |
+            /root/.ivy2/cache
+            /root/.sbt
+            /root/.m2
+            /root/.cache
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-${{ hashFiles('**/build.sbt') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-
+
+      - name: Prepare build cache
+        if: github.ref != 'refs/heads/master'
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-build
+          cache-version: v-2
+        with:
+          path: |
+            target
+            project/target
+            project/project/target
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-
+
+      - name: Check Format
+        run: sbt "scalafix --check; scalafmtCheckAll"
+
+      - name: Test
+        run: sbt test
