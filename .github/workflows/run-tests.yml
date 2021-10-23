@@ -58,8 +58,5 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-
 
-      - name: Check Format
-        run: sbt "scalafixAll --check; scalafmtCheckAll"
-
       - name: Test
         run: sbt test
