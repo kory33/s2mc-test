@@ -18,8 +18,8 @@ import scala.compiletime.ops.int.S
 class ProtocolBasedTransportSpec extends AnyFlatSpec with should.Matchers {
   import cats.implicits.given
 
-  val mockedProtocol: Protocol[(CodecBinding[Unit], CodecBinding[Int]), EmptyTuple] =
-    new Protocol(
+  val mockedProtocol: Protocol[(Unit, Int), EmptyTuple] =
+    Protocol(
       PacketIdBindings(
         3 -> ByteCodec(DecodeFiniteBytes.pure(()), _ => fs2.Chunk.empty),
         42 -> ByteCodec(DecodeFiniteBytes.pure(3), (a: Int) => fs2.Chunk(a.toByte))
