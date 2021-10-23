@@ -198,17 +198,14 @@ object GenByteDecode {
                     next match {
                       case OptionalField(_, uType, cond) =>
                         uType.asType match
+                          // format: off
                           // ut is a type such that Option[ut] =:= ft
-                          case '[ut] =>
-                            '{
-                              if (
-                                ${
-                                  replaceFieldReferencesWithParameters(parametersSoFar)(cond)
-                                }
-                              ) then
-                                ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
-                              else ${ byteDecodeMonad }.pure(None)
-                            } // Expr of type DecodeFiniteBytes[Option[ut]]
+                          case '[ut] => '{
+                            if ${ replaceFieldReferencesWithParameters(parametersSoFar)(cond) } then 
+                              ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
+                            else ${ byteDecodeMonad }.pure(None)
+                          } // Expr of type DecodeFiniteBytes[Option[ut]]
+                          // format: on
                       case RequiredField(_, fieldType) => summonDecoderExpr[ft]
                     }
                   }.asExprOf[DecodeFiniteBytes[ft]]
