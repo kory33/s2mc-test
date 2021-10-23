@@ -42,14 +42,9 @@ case class ProtocolBasedTransport[F[_], SelfBoundBindings <: Tuple, PeerBoundBin
 
   /**
    * An action to write a packet object [[peerBoundPacket]] to the transport.
-   *
-   * This is an inline function, and can only be invoked when [[P]] and [[PeerBoundBindings]]
-   * are both concrete at the call site.
    */
-  final inline def writePacket[P](peerBoundPacket: P)(
-    // this constraint will ensure that idx can be materialized at compile time
-    using Require[IncludedInT[PeerBoundBindings, CodecBinding[P]]]
-  ): F[Unit] = transport.write.tupled {
-    protocolView.peerBound.encode(peerBoundPacket)
-  }
+  def writePacket[P: protocolView.peerBound.CanEncode](peerBoundPacket: P): F[Unit] =
+    transport.write.tupled {
+      protocolView.peerBound.encode(peerBoundPacket)
+    }
 }
