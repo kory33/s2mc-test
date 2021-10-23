@@ -20,7 +20,7 @@ type PacketIn[BindingTup <: Tuple] = Tuple.Union[PacketTupleFor[BindingTup]]
  * required that [[bindings]] should not contain two entries with the same packet ID.
  */
 class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
-  using ev: Tuple.IsMappedBy[CodecBinding][BindingTup]
+  using val ev: Tuple.IsMappedBy[CodecBinding][BindingTup]
 )(using Require[ContainsDistinctT[BindingTup]]) {
 
   require(
