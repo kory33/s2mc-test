@@ -26,17 +26,11 @@ jobs:
           cache-name: cache-build-dependencies
           cache-version: v-3
         with:
-          # sbt等は$HOMEではなくユーザーディレクトリを見ているようで、
-          # GH Actionsでの ~ は /github/home/ に展開されるにもかかわらず
-          # 実際のキャッシュは /root/ 以下に配備される。
-          #
-          # /root/.m2, /root/.ivy/cache, /root/.sbt - sbt関連のキャッシュ
-          # /root/.cache - cousierがscalasbt等をキャッシュするのに使っている
           path: |
-            /root/.ivy2/cache
-            /root/.sbt
-            /root/.m2
-            /root/.cache
+            ~/.ivy2/cache
+            ~/.sbt
+            ~/.m2
+            ~/.cache
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-${{ hashFiles('**/build.sbt') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-
@@ -52,6 +46,9 @@ jobs:
             target
             project/target
             project/project/target
+            protocol-core/target
+            protocol-impl/target
+            examples/target
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-
