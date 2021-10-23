@@ -5,6 +5,8 @@ import com.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import com.github.kory33.s2mctest.core.generic.compiletime.*
 import com.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
 
+import scala.Tuple.Elem
+
 type PacketId = Int
 type CodecBinding[A] = (PacketId, ByteCodec[A])
 type PacketTupleFor[BindingTup <: Tuple] = Tuple.InverseMap[BindingTup, CodecBinding]
@@ -52,16 +54,59 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
   }
 
   /**
-   * Encode the object [[obj]] to its binary form and pair the result up with packet id
-   * specifying the datatype [[O]]. This function requires a parameter [[idx]], the index at
-   * which [[BindingTup]] contains [[CodecBinding]] for [[O]].
+   * A helper trait of objects that is able to tell which index of [[BindingTup]] contains the
+   * binding for [[P]].
    */
-  def encodeWithBindingIndex[O](obj: O, idx: Int)(
-    using ev: Tuple.Elem[BindingTup & NonEmptyTuple, idx.type] =:= CodecBinding[O]
-  ): (PacketId, fs2.Chunk[Byte]) =
-    val binding: CodecBinding[O] = ev(
-      // the cast is safe because ev witnesses that BindingTup is nonempty
-      bindings.asInstanceOf[BindingTup & NonEmptyTuple].apply(idx)
+  trait CanEncode[P] {
+    val idx: Int
+    val ev: Tuple.Elem[BindingTup & NonEmptyTuple, idx.type] =:= CodecBinding[P]
+  }
+
+  object CanEncode {
+    def apply[P](using ev: CanEncode[P]): CanEncode[P] = ev
+
+    inline given canEncode[P](
+      // this constraint will ensure that idx can be materialized at compile time
+      using Require[IncludedInT[BindingTup, CodecBinding[P]]]
+    ): CanEncode[P] = {
+      val idxP = scala.compiletime.constValue[IndexOfT[CodecBinding[P], BindingTup]]
+
+      // PeerBoundBindings & NonEmptyTuple is guaranteed to be a concrete tuple type,
+      // because CodecBinding[P] is included in PeerBoundBindings so it must be nonempty.
+      //
+      // By Require[IncludedInT[...]] constraint, IndexOfT[CodecBinding[P], PeerBoundBindings]
+      // reduces to a singleton type of integer at which PeerBoundBindings has CodecBinding[P],
+      // so this summoning succeeds.
+      val ev: Tuple.Elem[
+        BindingTup & NonEmptyTuple,
+        IndexOfT[CodecBinding[P], BindingTup]
+      ] =:= CodecBinding[P] =
+        scala.compiletime.summonInline
+
+      // We know that IndexOfT[CodecBinding[P], PeerBoundBindings] and idx.type will reduce to
+      // the same integer types, but somehow Scala 3.0.1 compiler does not seem to recognize this.
+      // Hence the asInstanceOf cast.
+      // TODO can we get rid of this?
+      val ev1: Tuple.Elem[BindingTup & NonEmptyTuple, idxP.type] =:= CodecBinding[P] =
+        ev.asInstanceOf
+
+      new CanEncode[P] {
+        override val idx: idxP.type = idxP
+        override val ev: Tuple.Elem[BindingTup & NonEmptyTuple, idxP.type] =:= CodecBinding[P] =
+          ev1
+      }
+    }
+  }
+
+  /**
+   * Encode the object [[packet]] to its binary form and pair the result up with packet id
+   * specifying the datatype [[P]].
+   */
+  def encode[P](packet: P)(using ce: CanEncode[P]): (PacketId, fs2.Chunk[Byte]) = {
+    val binding: CodecBinding[P] = ce.ev(
+      // the cast is safe because ce.ev witnesses that BindingTup is nonempty
+      bindings.asInstanceOf[BindingTup & NonEmptyTuple].apply(ce.idx)
     )
-    (binding._1, binding._2.encode.write(obj))
+    (binding._1, binding._2.encode.write(packet))
+  }
 }
