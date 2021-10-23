@@ -6,6 +6,7 @@ import com.github.kory33.s2mctest.core.generic.compiletime.*
 import com.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
 
 import scala.Tuple.Elem
+import scala.annotation.implicitNotFound
 
 type PacketId = Int
 type CodecBinding[A] = (PacketId, ByteCodec[A])
@@ -57,6 +58,9 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
    * A helper trait of objects that is able to tell which index of [[BindingTup]] contains the
    * binding for [[P]].
    */
+  @implicitNotFound(
+    "Could not find CanEncode instance for ${P}. Ensure that this protocol supports ${P} as a packet"
+  )
   trait CanEncode[P] {
     val idx: Int
     val ev: Tuple.Elem[BindingTup & NonEmptyTuple, idx.type] =:= CodecBinding[P]
