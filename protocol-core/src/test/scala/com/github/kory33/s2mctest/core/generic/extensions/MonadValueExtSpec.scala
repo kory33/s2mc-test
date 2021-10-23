@@ -1,8 +1,8 @@
 package com.github.kory33.s2mctest.core.generic.extensions
 
+import cats.data.State
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-import cats.data.State
 
 class MonadValueExtSpec extends AnyFlatSpec with should.Matchers {
   import cats.implicits.given

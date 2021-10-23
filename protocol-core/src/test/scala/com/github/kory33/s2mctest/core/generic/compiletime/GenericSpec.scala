@@ -2,8 +2,9 @@ package com.github.kory33.s2mctest.core.generic.compiletime
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-import scala.util.NotGiven
+
 import scala.annotation.nowarn
+import scala.util.NotGiven
 
 class GenericSpec extends AnyFlatSpec with should.Matchers {
   "Require" should "be found when given true" in {
