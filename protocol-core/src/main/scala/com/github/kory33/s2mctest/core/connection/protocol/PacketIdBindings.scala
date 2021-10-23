@@ -55,16 +55,16 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
   }
 
   /**
-   * A helper trait of objects that is able to tell which index of [[BindingTup]] contains the
-   * binding for [[P]].
+   * A helper class that is able to tell which index of [[BindingTup]] contains the binding for
+   * [[P]].
    */
   @implicitNotFound(
-    "Could not find CanEncode instance for ${P}. Ensure that this protocol supports ${P} as a packet"
+    "Could not find CanEncode instance for ${P}. Please make sure that this protocol supports ${P} as a packet"
   )
-  trait CanEncode[P] {
-    val idx: Int
+  class CanEncode[P](
+    val idx: Int,
     val ev: Tuple.Elem[BindingTup & NonEmptyTuple, idx.type] =:= CodecBinding[P]
-  }
+  )
 
   object CanEncode {
     def apply[P](using ev: CanEncode[P]): CanEncode[P] = ev
@@ -94,11 +94,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
       val ev1: Tuple.Elem[BindingTup & NonEmptyTuple, idxP.type] =:= CodecBinding[P] =
         ev.asInstanceOf
 
-      new CanEncode[P] {
-        override val idx: idxP.type = idxP
-        override val ev: Tuple.Elem[BindingTup & NonEmptyTuple, idxP.type] =:= CodecBinding[P] =
-          ev1
-      }
+      new CanEncode[P](idxP, ev1)
     }
   }
 
