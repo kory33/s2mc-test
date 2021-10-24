@@ -39,8 +39,7 @@ object AccountPool {
       AccountPool(setRef, generate)
     }
 
-  def unsafeFromGenerationRule(generate: Set[String] => String): AccountPool[IO] =
-    fromGenerationRule[IO](generate).unsafeRunSync()(using cats.effect.unsafe.implicits.global)
-
-  def unsafeDefault: AccountPool[IO] = unsafeFromGenerationRule(GenerationRules.default)
+  def default[F[_]: Ref.Make: Functor]: F[AccountPool[F]] = fromGenerationRule(
+    GenerationRules.default
+  )
 }
