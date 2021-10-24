@@ -1,6 +1,7 @@
 ThisBuild / scalaVersion := "3.1.0"
 ThisBuild / version := "0.1.0"
 
+ThisBuild / organization := "io.github.kory33"
 ThisBuild / name := "s2mc"
 
 ThisBuild / resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/"
@@ -59,3 +60,7 @@ lazy val client_core =
 
 lazy val examples =
   project.dependsOn(protocol_core, protocol_impl).in(file("examples"))
+
+// publishing configuration
+ThisBuild / publishTo := sonatypePublishToBundle.value
+ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
