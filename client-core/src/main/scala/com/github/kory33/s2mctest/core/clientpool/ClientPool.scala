@@ -1,7 +1,7 @@
 package com.github.kory33.s2mctest.core.clientpool
 
-import cats.{Monad, MonadThrow}
 import cats.effect.kernel.{Ref, Resource}
+import cats.{Monad, MonadThrow}
 import com.github.kory33.s2mctest.core.client.StatefulClient
 
 trait ClientPool[F[_], SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State] {
