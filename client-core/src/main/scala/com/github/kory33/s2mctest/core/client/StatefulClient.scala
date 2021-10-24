@@ -15,9 +15,10 @@ import com.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTranspo
  */
 // format: off
 class StatefulClient[
-  F[_]: MonadThrow, State,
+  F[_]: MonadThrow,
   SelfBoundPackets <: Tuple,
-  PeerBoundPackets <: Tuple
+  PeerBoundPackets <: Tuple,
+  State
 ](
 // format: on
   val transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
@@ -80,5 +81,20 @@ class StatefulClient[
    */
   def writePacket[P: transport.protocolView.peerBound.CanEncode](packet: P): F[Unit] =
     transport.writePacket(packet)
+
+}
+
+object StatefulClient {
+
+  // format: off
+  def withInitialState[F[_]: Ref.Make: MonadThrow, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State](
+  // format: on
+    transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
+    initialState: State,
+    abstraction: PacketAbstraction[Tuple.Union[SelfBoundPackets], State, F[Unit]]
+  ): F[StatefulClient[F, SelfBoundPackets, PeerBoundPackets, State]] =
+    Monad[F].map(Ref.of[F, State](initialState)) { ref =>
+      new StatefulClient(transport, ref, abstraction)
+    }
 
 }
