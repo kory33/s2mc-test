@@ -10,12 +10,11 @@ ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports"
 
 ThisBuild / libraryDependencies ++= Seq(
   // cats libraries
-  "org.typelevel" %% "cats-mtl" % "1.2.1",
   "org.typelevel" %% "cats-free" % "2.6.1",
 
   // effect libraries
   "org.typelevel" %% "cats-effect" % "3.2.2",
-  // fs2.Chunk is used on core too
+  // fs2.Chunk is used on protocol_core too
   "co.fs2" %% "fs2-core" % "3.1.0",
 
   // to make datatype-generic programming easier
@@ -33,7 +32,7 @@ ThisBuild / scalacOptions ++= Seq(
 )
 
 lazy val protocol_core =
-  project.in(file("protocol-core")).settings()
+  project.in(file("protocol-core"))
 
 lazy val protocol_impl =
   project
@@ -52,5 +51,11 @@ lazy val protocol_impl =
       )
     )
 
+lazy val client_core =
+  project
+    .dependsOn(protocol_core)
+    .in(file("client-core"))
+    .settings(libraryDependencies ++= Seq("dev.optics" %% "monocle-core" % "3.0.0"))
+
 lazy val examples =
-  project.dependsOn(protocol_core, protocol_impl).in(file("examples")).settings()
+  project.dependsOn(protocol_core, protocol_impl).in(file("examples"))
