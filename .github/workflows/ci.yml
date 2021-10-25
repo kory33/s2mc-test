@@ -72,4 +72,7 @@ jobs:
           echo "$PGP_SECRET" | gpg --import
 
       - name: Publish
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: sbt publish
