@@ -67,7 +67,9 @@ jobs:
       - name: Import signing PGP key
         env:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
-        run: echo $PGP_SECRET | gpg --import
+        run: |
+          gpg --version
+          echo "$PGP_SECRET" | gpg --import
 
       - name: Publish
         run: sbt publish
