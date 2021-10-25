@@ -62,17 +62,3 @@ jobs:
 
       - name: Test
         run: sbt test
-
-      # releasing (possibly snapshot) artifacts
-      - name: Import signing PGP key
-        env:
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-        run: |
-          gpg --version
-          echo "$PGP_SECRET" | gpg --import
-
-      - name: Publish
-        env:
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        run: sbt publish
