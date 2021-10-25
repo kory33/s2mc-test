@@ -22,7 +22,7 @@ SOFTWARE.
 
 ====================================
 
-com.github.kory33.s2mctest.core.generic.derives.FunctorDerives contains code from Shapeless 3:
+io.github.kory33.s2mctest.core.generic.derives.FunctorDerives contains code from Shapeless 3:
 
 Copyright (c) 2019 Miles Sabin
 
@@ -38,7 +38,7 @@ and limitations under the License.
 
 ====================================
 
-com.github.kory33.s2mctest.impl.connection.codec.typenbtio.ReadNBT contains code adopted from TypeNBT:
+io.github.kory33.s2mctest.impl.connection.codec.typenbtio.ReadNBT contains code adopted from TypeNBT:
 
 Copyright (c) 2018 Katrix
 
@@ -59,7 +59,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
 
 ====================================
 
-com.github.kory33.s2mctest.impl.connection.packets.PacketIntent is a derived work of Stevenarella / Steven:
+io.github.kory33.s2mctest.impl.connection.packets.PacketIntent is a derived work of Stevenarella / Steven:
 
 Copyright (c) 2015 The steven Developers
 
@@ -83,6 +83,6 @@ SOFTWARE.
 
 ====================================
 
-com.github.kory33.s2mctest.impl.connection.codec.ByteCodecs is significantly based on https://wiki.vg/Protocol.
+io.github.kory33.s2mctest.impl.connection.codec.ByteCodecs is significantly based on https://wiki.vg/Protocol.
 
 ====================================
