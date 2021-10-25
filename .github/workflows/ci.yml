@@ -62,3 +62,10 @@ jobs:
 
       - name: Test
         run: sbt test
+
+      # releasing (possibly snapshot) artifacts
+      - name: Import signing PGP key
+        run: echo $PGP_SECRET | base64 -d | gpg --import
+
+      - name: Publish
+        run: sbt publish
