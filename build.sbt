@@ -1,6 +1,8 @@
 ThisBuild / scalaVersion := "3.1.0"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
+ThisBuild / versionScheme := Some("semver-spec")
+
 ThisBuild / organization := "io.github.kory33"
 ThisBuild / homepage := Some(url("https://github.com/kory33/s2mc-test"))
 ThisBuild / licenses := List(
