@@ -14,8 +14,6 @@ ThisBuild / developers := List(
   Developer("kory33", "Ryosuke Kondo", "korygm33@gmail.com", url("https://github.com/kory33"))
 )
 
-ThisBuild / name := "s2mc"
-
 ThisBuild / resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/"
 
 ThisBuild / semanticdbEnabled := true
