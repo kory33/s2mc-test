@@ -65,7 +65,7 @@ jobs:
 
       # releasing (possibly snapshot) artifacts
       - name: Import signing PGP key
-        run: echo $PGP_SECRET | gpg --import
+        run: echo ${{ secrets.PGP_SECRET }} | gpg --import
 
       - name: Publish
         run: sbt publish
