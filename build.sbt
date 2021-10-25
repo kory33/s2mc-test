@@ -80,9 +80,6 @@ lazy val examples =
 
 // region publishing configuration
 
-//https://github.com/sbt/sbt-ci-release/issues/122
-ThisBuild / publish / skip := true
-
 ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
 
