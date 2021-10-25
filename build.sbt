@@ -78,6 +78,12 @@ lazy val examples =
     .in(file("examples"))
     .settings(name := "s2mc-examples")
 
-// publishing configuration
+// region publishing configuration
+
+//https://github.com/sbt/sbt-ci-release/issues/122
+ThisBuild / publish / skip := true
+
 ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
+
+// endregion
