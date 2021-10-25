@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.impl.connection.codec.encode
 
-import io.github.kory33.s2mctest.core.connection.codec.ByteEncode
 import fs2.Chunk
+import io.github.kory33.s2mctest.core.connection.codec.ByteEncode
 
 import java.nio.charset.Charset
 

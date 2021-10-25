@@ -1,6 +1,7 @@
 package io.github.kory33.s2mctest.impl.connection.codec
 
 import cats.Monad
+import fs2.Chunk
 import io.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeBytes, DecodeFiniteBytes}
 import io.github.kory33.s2mctest.core.connection.codec.{ByteCodec, ByteEncode}
 import io.github.kory33.s2mctest.impl.connection.codec.decode.macros.GenByteDecode
@@ -8,7 +9,6 @@ import io.github.kory33.s2mctest.impl.connection.codec.decode.{PrimitiveDecodes,
 import io.github.kory33.s2mctest.impl.connection.codec.encode.{PrimitiveEncodes, VarNumEncodes}
 import io.github.kory33.s2mctest.impl.connection.codec.typenbtio.{ReadNBT, WriteNBT}
 import io.github.kory33.s2mctest.impl.connection.typeclass.IntLike
-import fs2.Chunk
 import net.katsstuff.typenbt.NBTCompound
 import shapeless3.deriving.K0
 

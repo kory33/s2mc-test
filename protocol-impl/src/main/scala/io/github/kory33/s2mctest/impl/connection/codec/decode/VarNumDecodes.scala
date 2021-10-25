@@ -1,8 +1,8 @@
 package io.github.kory33.s2mctest.impl.connection.codec.decode
 
 import cats.Monad
-import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeBytes
 import fs2.Chunk
+import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeBytes
 
 object VarNumDecodes {
 

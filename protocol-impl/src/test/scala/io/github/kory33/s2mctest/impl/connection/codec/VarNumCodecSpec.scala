@@ -1,8 +1,8 @@
 package io.github.kory33.s2mctest.impl.connection.codec
 
+import io.github.kory33.s2mctest.core.connection.codec.interpreters.DecodeFiniteBytesInterpreter
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.UByte
-import io.github.kory33.s2mctest.core.connection.codec.interpreters.DecodeFiniteBytesInterpreter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 import org.scalatest.prop.Configuration.MinSuccessful

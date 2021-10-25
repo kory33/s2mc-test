@@ -2,6 +2,8 @@ package io.github.kory33.s2mctest.impl.connection.transport
 
 import cats.Monad
 import cats.effect.Resource
+import fs2.Chunk
+import fs2.io.net.Socket
 import io.github.kory33.s2mctest.core.connection.algebra.ReadBytes
 import io.github.kory33.s2mctest.core.connection.codec.dsl.{
   DecodeBytes,
@@ -18,8 +20,6 @@ import io.github.kory33.s2mctest.core.connection.protocol.PacketId
 import io.github.kory33.s2mctest.core.connection.transport.PacketTransport
 import io.github.kory33.s2mctest.impl.connection.codec.decode.VarNumDecodes
 import io.github.kory33.s2mctest.impl.connection.codec.encode.VarNumEncodes
-import fs2.Chunk
-import fs2.io.net.Socket
 
 import java.io.IOException
 

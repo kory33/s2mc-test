@@ -3,6 +3,7 @@ package io.github.kory33.s2mctest.examples
 import cats.Monad
 import cats.effect.IO
 import com.comcast.ip4s.SocketAddress
+import fs2.io.net.Network
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.transport.{
   PacketTransport,
@@ -12,7 +13,6 @@ import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.{U
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent
 import io.github.kory33.s2mctest.impl.connection.protocol.CommonProtocol
 import io.github.kory33.s2mctest.impl.connection.transport.NetworkTransport
-import fs2.io.net.Network
 
 @main
 def simpleClient_1_12_2(): Unit = {
