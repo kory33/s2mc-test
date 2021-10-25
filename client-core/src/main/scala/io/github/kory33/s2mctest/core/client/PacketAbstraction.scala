@@ -1,8 +1,8 @@
 package io.github.kory33.s2mctest.core.client
 
 import cats.{Functor, Monoid}
-import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives.derived
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives
+import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives.derived
 import monocle.Lens
 
 import scala.reflect.TypeTest

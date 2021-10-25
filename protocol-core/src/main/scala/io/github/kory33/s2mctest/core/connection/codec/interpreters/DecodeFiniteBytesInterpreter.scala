@@ -5,7 +5,6 @@ import io.github.kory33.s2mctest.core.connection.codec.dsl.{
   DecodeFiniteBytes,
   ReadFiniteBytesInstruction
 }
-import io.github.kory33.s2mctest.core.connection.codec.dsl.ReadFiniteBytesInstruction
 import io.github.kory33.s2mctest.core.generic.extra.EitherKExtra
 
 object DecodeFiniteBytesInterpreter {

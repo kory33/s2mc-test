@@ -2,9 +2,8 @@ package io.github.kory33.s2mctest.core.connection.codec.interpreters
 
 import cats.Monad
 import cats.data.{EitherT, State}
-import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeBytes
 import io.github.kory33.s2mctest.core.connection.algebra.ReadBytes
-import io.github.kory33.s2mctest.core.connection.codec.dsl.ReadBytesInstruction
+import io.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeBytes, ReadBytesInstruction}
 
 object DecodeBytesInterpreter {
 

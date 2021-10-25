@@ -1,12 +1,12 @@
 package io.github.kory33.s2mctest.core.connection.transport
 
 import cats.Functor
+import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.{
   DecodeFiniteBytesInterpreter,
   ParseResult
 }
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, PacketIn, ProtocolView}
-import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 
 /**
  * The protocol-aware transport. This class provides two primary operations,

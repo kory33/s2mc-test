@@ -1,9 +1,9 @@
 package io.github.kory33.s2mctest.core.connection.protocol
 
-import io.github.kory33.s2mctest.core.generic.compiletime.*
 import io.github.kory33.s2mctest.core.connection.codec.ByteCodec
-import io.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
 import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
+import io.github.kory33.s2mctest.core.generic.compiletime.*
+import io.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
 
 import scala.Tuple.Elem
 import scala.annotation.implicitNotFound

@@ -1,16 +1,15 @@
 package io.github.kory33.s2mctest.core.connection.transport
 
 import cats.data.Writer
+import fs2.Chunk
+import io.github.kory33.s2mctest.core.connection.codec.ByteCodec
+import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import io.github.kory33.s2mctest.core.connection.protocol.{
   CodecBinding,
   PacketId,
   PacketIdBindings,
   Protocol
 }
-import fs2.Chunk
-import io.github.kory33.s2mctest.core.connection.codec.ByteCodec
-import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
-import io.github.kory33.s2mctest.core.connection.protocol.Protocol
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
