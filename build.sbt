@@ -1,5 +1,5 @@
 ThisBuild / scalaVersion := "3.1.0"
-ThisBuild / version := "0.1.0"
+ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / organization := "io.github.kory33"
 ThisBuild / name := "s2mc"
@@ -33,13 +33,14 @@ ThisBuild / scalacOptions ++= Seq(
 )
 
 lazy val protocol_core =
-  project.in(file("protocol-core"))
+  project.in(file("protocol-core")).settings(name := "s2mc-protocol-core")
 
 lazy val protocol_impl =
   project
     .dependsOn(protocol_core)
     .in(file("protocol-impl"))
     .settings(
+      name := "s2mc-protocol-impl",
       libraryDependencies ++= Seq(
         // effect libraries
         "co.fs2" %% "fs2-io" % "3.1.0",
@@ -56,10 +57,16 @@ lazy val client_core =
   project
     .dependsOn(protocol_core)
     .in(file("client-core"))
-    .settings(libraryDependencies ++= Seq("dev.optics" %% "monocle-core" % "3.0.0"))
+    .settings(
+      name := "s2mc-client-core",
+      libraryDependencies ++= Seq("dev.optics" %% "monocle-core" % "3.0.0")
+    )
 
 lazy val examples =
-  project.dependsOn(protocol_core, protocol_impl).in(file("examples"))
+  project
+    .dependsOn(protocol_core, protocol_impl)
+    .in(file("examples"))
+    .settings(name := "s2mc-examples")
 
 // publishing configuration
 ThisBuild / publishTo := sonatypePublishToBundle.value
