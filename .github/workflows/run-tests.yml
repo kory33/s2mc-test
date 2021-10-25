@@ -54,14 +54,8 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-${{ github.ref }}-
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.cache-version }}-
 
-      - name: Check Format
-        run: sbt scalafmtCheckAll
-
-      - name: Compile & Scalafix
-        run: sbt "compile; scalafixAll --check"
-
-      - name: Test
-        run: sbt test
+      - name: Lint and Test
+        run: sbt "scalafmtCheckAll; compile; scalafixAll --check; test"
 
       # releasing (possibly snapshot) artifacts
       - name: Import signing PGP key
