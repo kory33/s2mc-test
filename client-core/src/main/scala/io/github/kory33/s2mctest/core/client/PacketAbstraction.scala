@@ -94,4 +94,12 @@ object PacketAbstraction {
     Monoid
       .instance[PacketAbstraction[P, S, C]](none[P, S, C], (pa1, pa2) => pa1.thenAbstract(pa2))
 
+  /**
+   * Combine all given abstractions using [[PacketAbstraction.thenAbstract]] method.
+   */
+  def combineAll[P, S, C](
+    abstractions: PacketAbstraction[P, S, C]*
+  ): PacketAbstraction[P, S, C] =
+    abstractionMonoid.combineAll(abstractions)
+
 }
