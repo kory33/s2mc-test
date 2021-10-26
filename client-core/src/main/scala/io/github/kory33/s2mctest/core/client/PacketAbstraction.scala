@@ -23,7 +23,7 @@ import scala.reflect.TypeTest
  * This functional object receives a packet and judges if the packet should invoke a state
  * modification. If so, it returns a `Some[State => (State, Cmd)]` and `None` otherwise.
  */
-trait PacketAbstraction[Packet, State, Cmd] {
+trait PacketAbstraction[Packet, State, +Cmd] {
 
   /**
    * A function that receives a packet and judges if the packet should invoke a state
@@ -75,11 +75,20 @@ trait PacketAbstraction[Packet, State, Cmd] {
    * Combine this abstraction with another. The obtained abstraction will attempt to update the
    * state using [[another]] if this object rejects to update the state.
    */
-  final def thenAbstract(
-    another: PacketAbstraction[Packet, State, Cmd]
-  ): PacketAbstraction[Packet, State, Cmd] = { packet =>
+  final def thenAbstract[C2 >: Cmd](
+    another: PacketAbstraction[Packet, State, C2]
+  ): PacketAbstraction[Packet, State, C2] = { packet =>
     PacketAbstraction.this.stateUpdate(packet).orElse(another.stateUpdate(packet))
   }
+
+  /**
+   * Obtain a new [[PacketAbstraction]] by mapping the output [[Cmd]].
+   */
+  final def mapCmd[C2](f: Cmd => C2): PacketAbstraction[Packet, State, C2] = (p: Packet) =>
+    stateUpdate(p).map { update => s =>
+      val (newS, cmd) = update(s)
+      (newS, f(cmd))
+    }
 }
 
 object PacketAbstraction {
@@ -93,6 +102,13 @@ object PacketAbstraction {
   given abstractionMonoid[P, S, C]: Monoid[PacketAbstraction[P, S, C]] =
     Monoid
       .instance[PacketAbstraction[P, S, C]](none[P, S, C], (pa1, pa2) => pa1.thenAbstract(pa2))
+
+  given abstractionFunctor[P, S]: Functor[PacketAbstraction[P, S, *]] =
+    new Functor[PacketAbstraction[P, S, *]] {
+      override def map[A, B](fa: PacketAbstraction[P, S, A])(
+        f: A => B
+      ): PacketAbstraction[P, S, B] = fa.mapCmd(f)
+    }
 
   /**
    * Combine all given abstractions using [[PacketAbstraction.thenAbstract]] method.
