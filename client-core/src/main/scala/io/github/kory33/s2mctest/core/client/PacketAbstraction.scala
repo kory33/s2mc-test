@@ -1,6 +1,7 @@
 package io.github.kory33.s2mctest.core.client
 
 import cats.{Functor, Monoid}
+import cats.data.NonEmptyList
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives.derived
 import monocle.Lens
@@ -51,6 +52,24 @@ trait PacketAbstraction[Packet, State, Cmd] {
 
     { packet => this.stateUpdate(packet).map(lens.modifyF[(*, Cmd)]) }
   }
+
+  /**
+   * Get an abstraction that keeps track of all past states. This may be better suited for
+   * debugging purposes.
+   */
+  final def keepTrackOfStateChanges: PacketAbstraction[Packet, NonEmptyList[State], Cmd] =
+    // This is essentially
+    //   defocus(Lens[NonEmptyList[State], State](_.head)(s => ls => NonEmptyList(s, ls.toList)))
+    // However the lens described as above violates many laws like getReplace and hence is invalid.
+    { packet =>
+      this
+        .stateUpdate(packet)
+        .map((f: State => (State, Cmd)) => {
+          case NonEmptyList(head, tail) =>
+            val (newHead, cmd) = f(head)
+            (NonEmptyList(newHead, head :: tail), cmd)
+        })
+    }
 
   /**
    * Combine this abstraction with another. The obtained abstraction will attempt to update the
