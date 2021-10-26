@@ -72,6 +72,15 @@ lazy val client_core =
       libraryDependencies ++= Seq("dev.optics" %% "monocle-core" % "3.0.0")
     )
 
+lazy val client_impl =
+  project
+    .dependsOn(client_core, protocol_impl)
+    .in(file("client-impl"))
+    .settings(
+      name := "s2mc-client-impl",
+      libraryDependencies ++= Seq("dev.optics" %% "monocle-macro" % "3.0.0")
+    )
+
 lazy val examples =
   project
     .dependsOn(protocol_core, protocol_impl)
