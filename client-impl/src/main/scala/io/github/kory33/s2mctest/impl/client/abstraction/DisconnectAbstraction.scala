@@ -1,8 +1,8 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.{Applicative, MonadError}
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.Disconnect
 import io.github.kory33.s2mctest.core.client.PacketAbstraction
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.Disconnect
 
 object DisconnectAbstraction {
 

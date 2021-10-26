@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.core.client
 
-import cats.{Applicative, Functor, Monoid}
 import cats.data.NonEmptyList
+import cats.{Applicative, Functor, Monoid}
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives.derived
 import monocle.Lens
