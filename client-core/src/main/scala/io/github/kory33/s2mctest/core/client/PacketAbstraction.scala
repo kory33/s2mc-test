@@ -91,12 +91,19 @@ trait PacketAbstraction[Packet, State, +Cmd] {
     }
 
   /**
-   * Lift the [[Cmd]] type to `F[Cmd]` some some applicative type [[F]].
+   * Lift the [[Cmd]] type to `F[Cmd]` for some applicative type [[F]].
    */
   final def liftCmd[F[_], C2 >: Cmd](
     using F: Applicative[F]
   ): PacketAbstraction[Packet, State, F[C2]] =
     mapCmd(F.pure)
+
+  /**
+   * Lift the [[Cmd]] type to `F[Cmd]` for some covariant applicative type [[F]].
+   */
+  final def liftCmdCovariant[F[+_]](
+    using F: Applicative[F]
+  ): PacketAbstraction[Packet, State, F[Cmd]] = mapCmd(F.pure)
 }
 
 object PacketAbstraction {
