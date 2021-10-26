@@ -42,7 +42,8 @@ object ClientPool {
   ](
   // format: on
     _accountPool: AccountPool[F],
-    init: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, State]
+    initialState: State,
+    init: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets]
   ) {
 
     private case class PoolState(
@@ -89,7 +90,9 @@ object ClientPool {
         override val accountPool: _accountPool.type = _accountPool
 
         override val freshClient: Resource[F, Client] = {
-          Resource.make(accountPool.getFresh >>= init.initializeFresh)(finalizeUsedClient)
+          Resource.make(accountPool.getFresh >>= (init.initializeFresh(_, initialState)))(
+            finalizeUsedClient
+          )
         }
 
         override val recycledClient: Resource[F, Client] = {
@@ -109,8 +112,9 @@ object ClientPool {
   def withInitData[F[_]: Monad: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State](
   // format: on
     accountPool: AccountPool[F],
-    clientInitialization: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, State]
+    initialState: State,
+    clientInitialization: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets]
   ): WithAccountPoolAndInitialization[F, SelfBoundPackets, PeerBoundPackets, State] =
-    WithAccountPoolAndInitialization(accountPool, clientInitialization)
+    WithAccountPoolAndInitialization(accountPool, initialState, clientInitialization)
 
 }
