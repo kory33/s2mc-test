@@ -57,14 +57,12 @@ class StatefulClient[
           }
       }
       updateFunction = abstraction.stateUpdate(packet)
-      _ <- updateFunction match {
-        case Some(f) =>
-          for {
-            additionalAction <- stateRef.modify(f)
-            responses <- additionalAction
-            _ <- responses.traverse(transport.write)
-          } yield ()
-        case None => Monad[F].unit
+      _ <- updateFunction.traverse { f =>
+        for {
+          additionalAction <- stateRef.modify(f)
+          responses <- additionalAction
+          _ <- responses.traverse(transport.write)
+        } yield ()
       }
     } yield if updateFunction.isEmpty then Some(packet) else None
 
