@@ -49,10 +49,38 @@ case class ProtocolBasedTransport[F[_], SelfBoundPackets <: Tuple, PeerBoundPack
   import io.github.kory33.s2mctest.core.generic.compiletime.*
 
   /**
+   * A path-dependent type of packet objects that contains an information about lower-level
+   * encodings.
+   */
+  trait Response {
+    type Packet
+    val data: Packet
+    val ev: protocolView.peerBound.CanEncode[Packet]
+  }
+
+  object Response {
+    def apply[P](
+      peerBoundPacket: P
+    )(using canEncode: protocolView.peerBound.CanEncode[P]): Response = new Response {
+      override type Packet = P
+      override val data: P = peerBoundPacket
+      override val ev: protocolView.peerBound.CanEncode[P] = canEncode
+    }
+  }
+
+  /**
    * An action to write a packet object [[peerBoundPacket]] to the transport.
    */
   def writePacket[P: protocolView.peerBound.CanEncode](peerBoundPacket: P): F[Unit] =
     transport.write.tupled {
       protocolView.peerBound.encode(peerBoundPacket)
     }
+
+  /**
+   * An action to write a [[Response]] object to the transport. The end-users wanting to send
+   * concrete packet objects using this object is recommended to use [[writePacket]] method
+   * instead.
+   */
+  def write(response: Response): F[Unit] =
+    writePacket[response.Packet](response.data)(using response.ev)
 }

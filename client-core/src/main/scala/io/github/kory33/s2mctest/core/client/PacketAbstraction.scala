@@ -1,6 +1,6 @@
 package io.github.kory33.s2mctest.core.client
 
-import cats.{Functor, Monoid}
+import cats.{Applicative, Functor, Monoid}
 import cats.data.NonEmptyList
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives.derived
@@ -89,6 +89,14 @@ trait PacketAbstraction[Packet, State, +Cmd] {
       val (newS, cmd) = update(s)
       (newS, f(cmd))
     }
+
+  /**
+   * Lift the [[Cmd]] type to `F[Cmd]` some some applicative type [[F]].
+   */
+  final def liftCmd[F[_], C2 >: Cmd](
+    using F: Applicative[F]
+  ): PacketAbstraction[Packet, State, F[C2]] =
+    mapCmd(F.pure)
 }
 
 object PacketAbstraction {

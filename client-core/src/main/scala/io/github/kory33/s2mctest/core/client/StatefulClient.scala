@@ -20,11 +20,11 @@ class StatefulClient[
   PeerBoundPackets <: Tuple,
   State
 ](
-// format: on
   val transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
   stateRef: Ref[F, State],
-  abstraction: PacketAbstraction[Tuple.Union[SelfBoundPackets], State, F[Unit]]
+  abstraction: PacketAbstraction[Tuple.Union[SelfBoundPackets], State, F[List[transport.Response]]]
 ) {
+  // format: on
 
   import cats.implicits.given
 
@@ -58,8 +58,13 @@ class StatefulClient[
       }
       updateFunction = abstraction.stateUpdate(packet)
       _ <- updateFunction match {
-        case Some(f) => Monad[F].flatten(stateRef.modify(f))
-        case None    => Monad[F].unit
+        case Some(f) =>
+          for {
+            additionalAction <- stateRef.modify(f)
+            responses <- additionalAction
+            _ <- responses.traverse(transport.write)
+          } yield ()
+        case None => Monad[F].unit
       }
     } yield if updateFunction.isEmpty then Some(packet) else None
 
@@ -77,7 +82,7 @@ class StatefulClient[
     Monad[F].untilDefinedM(nextPacketOrStateUpdate)
 
   /**
-   * Write [[packet]] to the underlying transport.
+   * Write a [[packet]] to the underlying transport.
    */
   def writePacket[P: transport.protocolView.peerBound.CanEncode](packet: P): F[Unit] =
     transport.writePacket(packet)
@@ -88,10 +93,10 @@ object StatefulClient {
 
   // format: off
   def withInitialState[F[_]: Ref.Make: MonadThrow, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State](
-  // format: on
     transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
     initialState: State,
-    abstraction: PacketAbstraction[Tuple.Union[SelfBoundPackets], State, F[Unit]]
+    abstraction: PacketAbstraction[Tuple.Union[SelfBoundPackets], State, F[List[transport.Response]]]
+    // format: on
   ): F[StatefulClient[F, SelfBoundPackets, PeerBoundPackets, State]] =
     Monad[F].map(Ref.of[F, State](initialState)) { ref =>
       new StatefulClient(transport, ref, abstraction)
