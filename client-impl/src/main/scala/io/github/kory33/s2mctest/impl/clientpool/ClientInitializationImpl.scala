@@ -4,8 +4,10 @@ import cats.MonadThrow
 import cats.effect.{IO, Ref, Resource}
 import com.comcast.ip4s.{Host, SocketAddress}
 import fs2.io.net.Network
+import io.github.kory33.s2mctest.core.generic.compiletime.*
 import io.github.kory33.s2mctest.core.client.{PacketAbstraction, StatefulClient}
 import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
+import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, Protocol}
 import io.github.kory33.s2mctest.core.connection.transport.{
   PacketTransport,
@@ -14,12 +16,15 @@ import io.github.kory33.s2mctest.core.connection.transport.{
 import io.github.kory33.s2mctest.core.generic.compiletime.{IncludedInT, Require}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.{UShort, VarInt}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Handshaking.ServerBound.Handshake
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ServerBound.LoginStart
-import io.github.kory33.s2mctest.impl.connection.protocol.{
-  CommonProtocol,
-  VersionDependentProtocol
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.{
+  LoginSuccess_String,
+  LoginSuccess_UUID
 }
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ServerBound.LoginStart
+import io.github.kory33.s2mctest.impl.connection.protocol.{CommonProtocol, WithVersionNumber}
 import io.github.kory33.s2mctest.impl.connection.transport.NetworkTransport
+
+import java.io.IOException
 
 object ClientInitializationImpl {
 
@@ -32,8 +37,68 @@ object ClientInitializationImpl {
     using NetF: Network[F]
   ) {
     import cats.implicits.given
+    import reflect.Selectable.reflectiveSelectable
 
-    inline def withCommonHandShake[
+    /**
+     * The implicit evidence that the protocol with [[LoginServerBoundPackets]] and
+     * [[LoginClientBoundPackets]] supports name-based login.
+     */
+    trait DoLoginEv[LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple] {
+      def doLoginWith(
+        transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+        name: String
+      ): F[Unit]
+    }
+
+    object DoLoginEv {
+
+      inline given doLoginWithString[
+        LoginServerBoundPackets <: Tuple,
+        LoginClientBoundPackets <: Tuple
+      ](
+        using
+        Require[IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[
+          LoginStart
+        ]]],
+        LoginSuccess_String <:< Tuple.Union[LoginClientBoundPackets]
+      ): DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets] = (
+        transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+        name: String
+      ) =>
+        transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
+          case ParseResult.Just(LoginSuccess_String(_, _)) => MonadThrow[F].unit
+          case failure =>
+            MonadThrow[F].raiseError(IOException {
+              s"Received $failure but expected Just(LoginSuccess_String(_, _))." +
+                "Please check that encryption and compression is turned off for the target server"
+            })
+        }
+
+      inline given doLoginWithUUID[
+        LoginServerBoundPackets <: Tuple,
+        LoginClientBoundPackets <: Tuple
+      ](
+        using
+        Require[IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[
+          LoginStart
+        ]]],
+        LoginSuccess_UUID <:< Tuple.Union[LoginClientBoundPackets]
+      ): DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets] = (
+        transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+        name: String
+      ) =>
+        transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
+          case ParseResult.Just(LoginSuccess_UUID(_, _)) => MonadThrow[F].unit
+          case failure =>
+            MonadThrow[F].raiseError(IOException {
+              s"Received $failure but expected Just(LoginSuccess_UUID(_, _))." +
+                "Please check that encryption and compression is turned off for the target server"
+            })
+        }
+
+    }
+
+    def withCommonHandShake[
       // format: off
       LoginServerBoundPackets <: Tuple,
       LoginClientBoundPackets <: Tuple,
@@ -42,7 +107,7 @@ object ClientInitializationImpl {
       State
       // format: on
     ](
-      protocol: VersionDependentProtocol {
+      protocol: WithVersionNumber {
         val loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets]
         val playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets]
       },
@@ -51,6 +116,8 @@ object ClientInitializationImpl {
       ) => PacketAbstraction[Tuple.Union[PlayClientBoundPackets], State, F[
         List[transport.Response]
       ]]
+    )(
+      using doLoginEv: DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets]
     ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, State] =
       (playerName: String, initialState: State) => {
         val networkTransportResource: Resource[F, PacketTransport[F]] =
@@ -82,11 +149,11 @@ object ClientInitializationImpl {
                   protocol.loginProtocol.asViewedFromClient
                 )
 
-              ???
-              // TODO send LoginStart and receive LoginSuccess packet (this will be version dependent, probably use macro)
+              doLoginEv.doLoginWith(transport, playerName)
             }
 
-            doHandShake >> doLogin >> {
+            val initializeClient
+              : F[StatefulClient[F, PlayClientBoundPackets, PlayServerBoundPackets, State]] = {
               val transport =
                 ProtocolBasedTransport(
                   networkTransport,
@@ -95,6 +162,8 @@ object ClientInitializationImpl {
 
               StatefulClient.withInitialState(transport, initialState, abstraction(transport))
             }
+
+            doHandShake >> doLogin >> initializeClient
           }
         }
       }
