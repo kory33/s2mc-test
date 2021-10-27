@@ -17,7 +17,7 @@ import monocle.macros.GenLens
 private case class ClientState(position: PositionAndOrientation)
 private object ClientState {
   val unitLens: Lens[ClientState, Unit] = Lens[ClientState, Unit](_ => ())(_ => s => s)
-  val positionLens: Lens[ClientState, Unit] = GenLens[ClientState](_.position)
+  val positionLens: Lens[ClientState, PositionAndOrientation] = GenLens[ClientState](_.position)
 }
 
 @main
