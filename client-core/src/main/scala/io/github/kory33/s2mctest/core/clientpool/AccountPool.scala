@@ -29,7 +29,7 @@ object AccountPool {
    */
   object GenerationRules {
     def numbered(prefix: String): Set[String] => String = set => s"$prefix-${set.size}"
-    val default: Set[String] => String = numbered("s2mc-client-")
+    val default: Set[String] => String = numbered("s2mc_client_")
   }
 
   def fromGenerationRule[F[_]: Ref.Make: Functor](
