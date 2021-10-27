@@ -28,6 +28,65 @@ import java.io.IOException
 
 object ClientInitializationImpl {
 
+  /**
+   * The implicit evidence that the protocol with [[LoginServerBoundPackets]] and
+   * [[LoginClientBoundPackets]] supports name-based login.
+   */
+  trait DoLoginEv[F[_], LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple] {
+    def doLoginWith(
+      transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+      name: String
+    ): F[Unit]
+  }
+
+  object DoLoginEv {
+
+    inline given doLoginWithString[
+      // format: off
+      F[_]: MonadThrow, LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple
+      // format: on
+    ](
+      using Require[
+        IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[LoginStart]]
+      ],
+      Require[IncludedInT[LoginClientBoundPackets, LoginSuccess_String]]
+    ): DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets] = (
+      transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+      name: String
+    ) =>
+      transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
+        case ParseResult.Just(LoginSuccess_String(_, _)) => MonadThrow[F].unit
+        case failure =>
+          MonadThrow[F].raiseError(IOException {
+            s"Received $failure but expected Just(LoginSuccess_String(_, _))." +
+              "Please check that encryption and compression is turned off for the target server"
+          })
+      }
+
+    inline given doLoginWithUUID[
+      // format: off
+      F[_]: MonadThrow, LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple
+      // format: on
+    ](
+      using Require[
+        IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[LoginStart]]
+      ],
+      Require[IncludedInT[LoginClientBoundPackets, LoginSuccess_UUID]]
+    ): DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets] = (
+      transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+      name: String
+    ) =>
+      transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
+        case ParseResult.Just(LoginSuccess_UUID(_, _)) => MonadThrow[F].unit
+        case failure =>
+          MonadThrow[F].raiseError(IOException {
+            s"Received $failure but expected Just(LoginSuccess_UUID(_, _))." +
+              "Please check that encryption and compression is turned off for the target server"
+          })
+      }
+
+  }
+
   def withAddress(address: SocketAddress[Host]): WithAddressApplied =
     WithAddressApplied(address)
 
@@ -42,65 +101,6 @@ object ClientInitializationImpl {
   )(using netF: Network[F]) {
     import cats.implicits.given
     import reflect.Selectable.reflectiveSelectable
-
-    /**
-     * The implicit evidence that the protocol with [[LoginServerBoundPackets]] and
-     * [[LoginClientBoundPackets]] supports name-based login.
-     */
-    trait DoLoginEv[LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple] {
-      def doLoginWith(
-        transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
-        name: String
-      ): F[Unit]
-    }
-
-    object DoLoginEv {
-
-      inline given doLoginWithString[
-        LoginServerBoundPackets <: Tuple,
-        LoginClientBoundPackets <: Tuple
-      ](
-        using
-        Require[IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[
-          LoginStart
-        ]]],
-        LoginSuccess_String <:< Tuple.Union[LoginClientBoundPackets]
-      ): DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets] = (
-        transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
-        name: String
-      ) =>
-        transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
-          case ParseResult.Just(LoginSuccess_String(_, _)) => MonadThrow[F].unit
-          case failure =>
-            MonadThrow[F].raiseError(IOException {
-              s"Received $failure but expected Just(LoginSuccess_String(_, _))." +
-                "Please check that encryption and compression is turned off for the target server"
-            })
-        }
-
-      inline given doLoginWithUUID[
-        LoginServerBoundPackets <: Tuple,
-        LoginClientBoundPackets <: Tuple
-      ](
-        using
-        Require[IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[
-          LoginStart
-        ]]],
-        LoginSuccess_UUID <:< Tuple.Union[LoginClientBoundPackets]
-      ): DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets] = (
-        transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
-        name: String
-      ) =>
-        transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
-          case ParseResult.Just(LoginSuccess_UUID(_, _)) => MonadThrow[F].unit
-          case failure =>
-            MonadThrow[F].raiseError(IOException {
-              s"Received $failure but expected Just(LoginSuccess_UUID(_, _))." +
-                "Please check that encryption and compression is turned off for the target server"
-            })
-        }
-
-    }
 
     def withCommonHandShake[
       LoginServerBoundPackets <: Tuple,
@@ -118,7 +118,7 @@ object ClientInitializationImpl {
         List[transport.Response]
       ]]
     )(
-      using doLoginEv: DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets]
+      using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets]
     ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, State] =
       (playerName: String, initialState: State) => {
         val networkTransportResource: Resource[F, PacketTransport[F]] =

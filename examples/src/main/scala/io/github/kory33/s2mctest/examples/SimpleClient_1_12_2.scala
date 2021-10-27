@@ -1,5 +1,6 @@
 package io.github.kory33.s2mctest.examples
 
+import cats.Monad
 import com.comcast.ip4s.SocketAddress
 import cats.effect.IO
 import io.github.kory33.s2mctest.core.client.PacketAbstraction
@@ -35,7 +36,12 @@ def simpleClient_1_12_2(): Unit = {
       ClientInitializationImpl
         .withAddress(address)
         .withStateAndEffectType[IO, ClientState]
-        .withCommonHandShake(
+        .withCommonHandShake[
+          versions.v1_12_2.loginProtocol.ServerBoundPackets,
+          versions.v1_12_2.loginProtocol.ClientBoundPackets,
+          versions.v1_12_2.playProtocol.ServerBoundPackets,
+          versions.v1_12_2.playProtocol.ClientBoundPackets
+        ](
           versions.v1_12_2,
           transport =>
             PacketAbstraction.combineAll(

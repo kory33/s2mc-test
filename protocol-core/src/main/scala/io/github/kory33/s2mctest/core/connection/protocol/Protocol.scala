@@ -12,6 +12,9 @@ class Protocol[ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple](
   val clientBound: PacketIdBindings[Tuple.Map[ClientBoundPackets, CodecBinding]]
 ) {
 
+  type AssociatedServerBoundPackets = ServerBoundPackets
+  type AssociatedClientBoundPackets = ServerBoundPackets
+
   def asViewedFromClient: ProtocolView[ClientBoundPackets, ServerBoundPackets] =
     ProtocolView(clientBound, serverBound)
 
