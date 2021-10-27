@@ -1,5 +1,6 @@
 package io.github.kory33.s2mctest.core.clientpool
 
+import cats.effect.MonadCancelThrow
 import cats.effect.kernel.{Ref, Resource}
 import cats.{Monad, MonadThrow}
 import io.github.kory33.s2mctest.core.client.StatefulClient
@@ -38,12 +39,12 @@ object ClientPool {
 
   // format: off
   case class WithAccountPoolAndInitialization[
-    F[_]: Monad: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State
+    F[_]: MonadCancelThrow: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State
   ](
   // format: on
     _accountPool: AccountPool[F],
     initialState: State,
-    init: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets]
+    init: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, State]
   ) {
 
     private case class PoolState(
@@ -90,9 +91,11 @@ object ClientPool {
         override val accountPool: _accountPool.type = _accountPool
 
         override val freshClient: Resource[F, Client] = {
-          Resource.make(accountPool.getFresh >>= (init.initializeFresh(_, initialState)))(
-            finalizeUsedClient
-          )
+          Resource.make(
+            // FIXME do not throw away the finalizer... or can we? (we don't necessarily have to close all connections ourselves)
+            accountPool.getFresh >>=
+              (init.initializeFresh(_, initialState).allocated[Client].map(_._1))
+          )(finalizeUsedClient)
         }
 
         override val recycledClient: Resource[F, Client] = {
@@ -109,11 +112,11 @@ object ClientPool {
   }
 
   // format: off
-  def withInitData[F[_]: Monad: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State](
+  def withInitData[F[_]: MonadCancelThrow: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State](
   // format: on
     accountPool: AccountPool[F],
     initialState: State,
-    clientInitialization: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets]
+    clientInitialization: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, State]
   ): WithAccountPoolAndInitialization[F, SelfBoundPackets, PeerBoundPackets, State] =
     WithAccountPoolAndInitialization(accountPool, initialState, clientInitialization)
 
