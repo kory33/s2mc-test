@@ -28,14 +28,18 @@ import java.io.IOException
 
 object ClientInitializationImpl {
 
-  def withAddress[F[_]: Network: MonadThrow: Ref.Make](
-    address: SocketAddress[Host]
-  ): WithAddressApplied[F] =
-    WithAddressApplied[F](address)
+  def withAddress(address: SocketAddress[Host]): WithAddressApplied =
+    WithAddressApplied(address)
 
-  case class WithAddressApplied[F[_]: MonadThrow: Ref.Make](address: SocketAddress[Host])(
-    using NetF: Network[F]
-  ) {
+  case class WithAddressApplied(address: SocketAddress[Host]) {
+    def withStateAndEffectType[F[_]: MonadThrow: Ref.Make: Network, State]
+      : WithStateAndEffectApplied[F, State] =
+      WithStateAndEffectApplied[F, State](address)
+  }
+
+  case class WithStateAndEffectApplied[F[_]: MonadThrow: Ref.Make, State](
+    address: SocketAddress[Host]
+  )(using netF: Network[F]) {
     import cats.implicits.given
     import reflect.Selectable.reflectiveSelectable
 
@@ -99,13 +103,10 @@ object ClientInitializationImpl {
     }
 
     def withCommonHandShake[
-      // format: off
       LoginServerBoundPackets <: Tuple,
       LoginClientBoundPackets <: Tuple,
       PlayServerBoundPackets <: Tuple,
-      PlayClientBoundPackets <: Tuple,
-      State
-      // format: on
+      PlayClientBoundPackets <: Tuple
     ](
       protocol: WithVersionNumber {
         val loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets]
@@ -121,7 +122,7 @@ object ClientInitializationImpl {
     ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, State] =
       (playerName: String, initialState: State) => {
         val networkTransportResource: Resource[F, PacketTransport[F]] =
-          NetF.client(address).map { socket => NetworkTransport.noCompression(socket) }
+          netF.client(address).map { socket => NetworkTransport.noCompression(socket) }
 
         networkTransportResource.flatMap { (networkTransport: PacketTransport[F]) =>
           Resource.eval {

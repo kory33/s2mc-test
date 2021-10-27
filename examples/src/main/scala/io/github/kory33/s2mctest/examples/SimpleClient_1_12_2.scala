@@ -33,7 +33,8 @@ def simpleClient_1_12_2(): Unit = {
       accountPool,
       ClientState(PositionAndOrientation(0, 0, 0, 0, 0)),
       ClientInitializationImpl
-        .withAddress[IO](address)
+        .withAddress(address)
+        .withStateAndEffectType[IO, ClientState]
         .withCommonHandShake(
           versions.v1_12_2,
           transport =>
