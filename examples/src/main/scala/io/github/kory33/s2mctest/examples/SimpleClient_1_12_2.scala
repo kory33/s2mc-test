@@ -38,10 +38,11 @@ def simpleClient_1_12_2(): Unit = {
           versions.v1_12_2,
           transport =>
             PacketAbstraction.combineAll(
-              KeepAliveAbstraction.forI64(transport).defocus(ClientState.unitLens),
+              KeepAliveAbstraction.forI64(transport).defocus(ClientState.unitLens).widenPackets,
               PlayerPositionAbstraction
                 .withConfirmPacket(transport)
                 .defocus(ClientState.positionLens)
+                .widenPackets
             )
         )
     )
