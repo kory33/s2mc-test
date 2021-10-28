@@ -39,6 +39,8 @@ object ClientInitializationImpl {
     ): F[Unit]
   }
 
+  import cats.implicits.given
+
   object DoLoginEv {
 
     inline given doLoginWithString[
@@ -50,7 +52,7 @@ object ClientInitializationImpl {
         IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[LoginStart]]
       ],
       Require[IncludedInT[LoginClientBoundPackets, LoginSuccess_String]]
-    ): DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets] = (
+    ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
       transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
       name: String
     ) =>
@@ -72,7 +74,7 @@ object ClientInitializationImpl {
         IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[LoginStart]]
       ],
       Require[IncludedInT[LoginClientBoundPackets, LoginSuccess_UUID]]
-    ): DoLoginEv[LoginServerBoundPackets, LoginClientBoundPackets] = (
+    ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
       transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
       name: String
     ) =>
@@ -99,7 +101,6 @@ object ClientInitializationImpl {
   case class WithStateAndEffectApplied[F[_]: MonadThrow: Ref.Make, State](
     address: SocketAddress[Host]
   )(using netF: Network[F]) {
-    import cats.implicits.given
     import reflect.Selectable.reflectiveSelectable
 
     def withCommonHandShake[
@@ -108,10 +109,9 @@ object ClientInitializationImpl {
       PlayServerBoundPackets <: Tuple,
       PlayClientBoundPackets <: Tuple
     ](
-      protocol: WithVersionNumber {
-        val loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets]
-        val playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets]
-      },
+      protocolVersion: VarInt,
+      loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets],
+      playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
       abstraction: (
         transport: ProtocolBasedTransport[F, PlayClientBoundPackets, PlayServerBoundPackets]
       ) => PacketAbstraction[Tuple.Union[PlayClientBoundPackets], State, F[
@@ -134,7 +134,7 @@ object ClientInitializationImpl {
 
               transport.writePacket(
                 Handshake(
-                  protocol.protocolVersion,
+                  protocolVersion,
                   address.host.toString,
                   UShort(address.port.value),
                   // transition to Login state
@@ -145,10 +145,7 @@ object ClientInitializationImpl {
 
             val doLogin: F[Unit] = {
               val transport =
-                ProtocolBasedTransport(
-                  networkTransport,
-                  protocol.loginProtocol.asViewedFromClient
-                )
+                ProtocolBasedTransport(networkTransport, loginProtocol.asViewedFromClient)
 
               doLoginEv.doLoginWith(transport, playerName)
             }
@@ -156,10 +153,7 @@ object ClientInitializationImpl {
             val initializeClient
               : F[StatefulClient[F, PlayClientBoundPackets, PlayServerBoundPackets, State]] = {
               val transport =
-                ProtocolBasedTransport(
-                  networkTransport,
-                  protocol.playProtocol.asViewedFromClient
-                )
+                ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
 
               StatefulClient.withInitialState(transport, initialState, abstraction(transport))
             }

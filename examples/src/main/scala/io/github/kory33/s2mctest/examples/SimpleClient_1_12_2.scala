@@ -36,13 +36,10 @@ def simpleClient_1_12_2(): Unit = {
       ClientInitializationImpl
         .withAddress(address)
         .withStateAndEffectType[IO, ClientState]
-        .withCommonHandShake[
-          versions.v1_12_2.loginProtocol.ServerBoundPackets,
-          versions.v1_12_2.loginProtocol.ClientBoundPackets,
-          versions.v1_12_2.playProtocol.ServerBoundPackets,
-          versions.v1_12_2.playProtocol.ClientBoundPackets
-        ](
-          versions.v1_12_2,
+        .withCommonHandShake(
+          versions.v1_12_2.protocolVersion,
+          versions.v1_12_2.loginProtocol,
+          versions.v1_12_2.playProtocol,
           transport =>
             PacketAbstraction.combineAll(
               KeepAliveAbstraction
@@ -61,7 +58,15 @@ def simpleClient_1_12_2(): Unit = {
     .cached(50)
     .unsafeRunSync()
 
-  val program: IO[Unit] = ???
+  val program: IO[Unit] = clientPool.recycledClient.use { client =>
+    Monad[IO].foreverM {
+      for {
+        packet <- client.nextPacket
+        state <- client.getState
+        _ <- IO(println((packet, state)))
+      } yield ()
+    }
+  }
 
   program.unsafeRunSync()
 }
