@@ -91,5 +91,19 @@ lazy val examples =
 
 ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
+ThisBuild / licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
+
+ThisBuild / homepage := Some(url("https://github.com/kory33/s2mc-test"))
+ThisBuild / scmInfo := Some(
+  ScmInfo(url("https://github.com/kory33/s2mc-test"), "scm:git@github.com:kory33/s2mc-test.git")
+)
+ThisBuild / developers := List(
+  Developer(
+    id = "kory33",
+    name = "Ryosuke Kondo",
+    email = "korygm33@gmail.com",
+    url = url("https://github.com/kory33")
+  )
+)
 
 // endregion
