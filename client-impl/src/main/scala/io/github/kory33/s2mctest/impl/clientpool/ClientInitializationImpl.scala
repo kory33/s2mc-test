@@ -4,7 +4,6 @@ import cats.MonadThrow
 import cats.effect.{IO, Ref, Resource}
 import com.comcast.ip4s.{Host, SocketAddress}
 import fs2.io.net.Network
-import io.github.kory33.s2mctest.core.generic.compiletime.*
 import io.github.kory33.s2mctest.core.client.{PacketAbstraction, StatefulClient}
 import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
@@ -13,7 +12,7 @@ import io.github.kory33.s2mctest.core.connection.transport.{
   PacketTransport,
   ProtocolBasedTransport
 }
-import io.github.kory33.s2mctest.core.generic.compiletime.{IncludedInT, Require}
+import io.github.kory33.s2mctest.core.generic.compiletime.{IncludedInT, Require, _}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.{UShort, VarInt}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Handshaking.ServerBound.Handshake
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.{

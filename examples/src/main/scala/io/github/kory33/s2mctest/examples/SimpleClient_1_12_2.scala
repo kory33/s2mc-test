@@ -1,8 +1,8 @@
 package io.github.kory33.s2mctest.examples
 
 import cats.Monad
-import com.comcast.ip4s.SocketAddress
 import cats.effect.IO
+import com.comcast.ip4s.SocketAddress
 import io.github.kory33.s2mctest.core.client.PacketAbstraction
 import io.github.kory33.s2mctest.core.client.states.PositionAndOrientation
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
