@@ -41,18 +41,20 @@ def simpleClient_1_12_2(): Unit = {
           versions.v1_12_2.loginProtocol,
           versions.v1_12_2.playProtocol,
           transport =>
-            PacketAbstraction.combineAll(
-              KeepAliveAbstraction
-                .forI64(transport)
-                .liftCmdCovariant[IO]
-                .defocus(ClientState.unitLens)
-                .widenPackets,
-              PlayerPositionAbstraction
-                .withConfirmPacket(transport)
-                .liftCmdCovariant[IO]
-                .defocus(ClientState.positionLens)
-                .widenPackets
-            )
+            PacketAbstraction
+              .nothing[ClientState]
+              .thenAbstract {
+                KeepAliveAbstraction
+                  .forI64(transport)
+                  .defocus(ClientState.unitLens)
+                  .liftCmdCovariant[IO]
+              }
+              .thenAbstract {
+                PlayerPositionAbstraction
+                  .withConfirmPacket(transport)
+                  .defocus(ClientState.positionLens)
+                  .liftCmdCovariant[IO]
+              }
         )
     )
     .cached(50)

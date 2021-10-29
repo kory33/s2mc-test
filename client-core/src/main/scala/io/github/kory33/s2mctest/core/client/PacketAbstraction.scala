@@ -4,9 +4,10 @@ import cats.data.NonEmptyList
 import cats.{Applicative, Functor, Monoid}
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives
 import io.github.kory33.s2mctest.core.generic.derives.FunctorDerives.derived
+import io.github.kory33.s2mctest.core.generic.givens.GivenEither
 import monocle.Lens
 
-import scala.reflect.TypeTest
+import scala.reflect.{TypeTest, Typeable}
 
 /**
  * An abstraction of packet data within a [[StatefulClient]]. This is a functional interface of
@@ -32,9 +33,10 @@ trait PacketAbstraction[Packet, State, +Cmd] {
   def stateUpdate(packet: Packet): Option[State => (State, Cmd)]
 
   /**
-   * Widen the packet type to a supertype [[WPacket]] of [[Packet]].
+   * Widen the packet type to a type [[WPacket]] whose values can be narrowed down to
+   * [[Packet]].
    */
-  final def widenPackets[WPacket >: Packet](
+  final def widenPackets[WPacket](
     using TypeTest[WPacket, Packet]
   ): PacketAbstraction[WPacket, State, Cmd] = {
     case packet: Packet => this.stateUpdate(packet)
@@ -75,10 +77,37 @@ trait PacketAbstraction[Packet, State, +Cmd] {
    * Combine this abstraction with another. The obtained abstraction will attempt to update the
    * state using [[another]] if this object rejects to update the state.
    */
-  final def thenAbstract[C2 >: Cmd](
+  final def orElseAbstract[C2 >: Cmd](
     another: PacketAbstraction[Packet, State, C2]
   ): PacketAbstraction[Packet, State, C2] = { packet =>
     PacketAbstraction.this.stateUpdate(packet).orElse(another.stateUpdate(packet))
+  }
+
+  /**
+   * Combine this with another abstraction that deals with a packet type [[P]] that is not a
+   * subtype of [[Packet]]. The result of a state update for a packet `p` of type `Packet | P`
+   * will be:
+   *   - if `p: Packet`, then `this.stateUpdate(p)`
+   *   - if otherwise `p: P`, then `another.stateUpdate(p)`
+   */
+  final def thenAbstract[P, C2](another: PacketAbstraction[P, State, C2])(
+    using ng: scala.util.NotGiven[P <:< Packet],
+    // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
+    ge: GivenEither[Typeable[Packet], Packet =:= Nothing]
+  ): PacketAbstraction[Packet | P, State, C2 | Cmd] = ge match {
+    case GivenEither(Left(_ @ given Typeable[Packet])) =>
+      (packet: Packet | P) =>
+        packet match {
+          case packet: Packet => PacketAbstraction.this.stateUpdate(packet)
+          case packet         =>
+            // this cast is safe because `packet` was `Packet | P` but
+            // the case `packet: Packet` has been already tried with a `Typeable` instance
+            another.stateUpdate(packet.asInstanceOf[P])
+        }
+    case GivenEither(Right(ev)) =>
+      (packet: Packet | P) =>
+        // in this branch, `Packet | P` equals `P`
+        another.stateUpdate(ev.substituteCo[[X] =>> X | P](packet))
   }
 
   /**
@@ -110,13 +139,21 @@ object PacketAbstraction {
 
   /**
    * A [[PacketAbstraction]] that abstracts no packet. This is a two-sided identity for the
-   * [[PacketAbstraction.thenAbstract]] method.
+   * [[PacketAbstraction.orElseAbstract]] method.
    */
   def none[P, S, C]: PacketAbstraction[P, S, C] = (_: P) => None
 
+  /**
+   * A [[PacketAbstraction]] that abstracts no packet. This is a version of [[none]] that needs
+   * less type arguments.
+   */
+  def nothing[S]: PacketAbstraction[Nothing, S, Nothing] = (_: Nothing) => None
+
   given abstractionMonoid[P, S, C]: Monoid[PacketAbstraction[P, S, C]] =
-    Monoid
-      .instance[PacketAbstraction[P, S, C]](none[P, S, C], (pa1, pa2) => pa1.thenAbstract(pa2))
+    Monoid.instance[PacketAbstraction[P, S, C]](
+      none[P, S, C],
+      (pa1, pa2) => pa1.orElseAbstract(pa2)
+    )
 
   given abstractionFunctor[P, S]: Functor[PacketAbstraction[P, S, *]] =
     new Functor[PacketAbstraction[P, S, *]] {
@@ -126,9 +163,10 @@ object PacketAbstraction {
     }
 
   /**
-   * Combine all given abstractions using [[PacketAbstraction.thenAbstract]] method.
+   * Combine all given abstractions with the same type parameters using
+   * [[PacketAbstraction.orElseAbstract]] method.
    */
-  def combineAll[P, S, C](
+  def orElseInOrder[P, S, C](
     abstractions: PacketAbstraction[P, S, C]*
   ): PacketAbstraction[P, S, C] =
     abstractionMonoid.combineAll(abstractions)

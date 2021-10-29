@@ -108,7 +108,7 @@ object ClientInitializationImpl {
       LoginClientBoundPackets <: Tuple,
       PlayServerBoundPackets <: Tuple,
       PlayClientBoundPackets <: Tuple,
-      U <: Tuple.Union[PlayClientBoundPackets]
+      U
     ](
       protocolVersion: VarInt,
       loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets],
