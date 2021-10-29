@@ -12,7 +12,7 @@ import io.github.kory33.s2mctest.core.connection.transport.{
   PacketTransport,
   ProtocolBasedTransport
 }
-import io.github.kory33.s2mctest.core.generic.compiletime.{IncludedInT, Require, _}
+import io.github.kory33.s2mctest.core.generic.compiletime.{IncludedInT, Require, *}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.{UShort, VarInt}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Handshaking.ServerBound.Handshake
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.{
@@ -24,6 +24,7 @@ import io.github.kory33.s2mctest.impl.connection.protocol.{CommonProtocol, WithV
 import io.github.kory33.s2mctest.impl.connection.transport.NetworkTransport
 
 import java.io.IOException
+import scala.reflect.TypeTest
 
 object ClientInitializationImpl {
 
@@ -106,18 +107,18 @@ object ClientInitializationImpl {
       LoginServerBoundPackets <: Tuple,
       LoginClientBoundPackets <: Tuple,
       PlayServerBoundPackets <: Tuple,
-      PlayClientBoundPackets <: Tuple
+      PlayClientBoundPackets <: Tuple,
+      U <: Tuple.Union[PlayClientBoundPackets]
     ](
       protocolVersion: VarInt,
       loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets],
       playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
       abstraction: (
         transport: ProtocolBasedTransport[F, PlayClientBoundPackets, PlayServerBoundPackets]
-      ) => PacketAbstraction[Tuple.Union[PlayClientBoundPackets], State, F[
-        List[transport.Response]
-      ]]
+      ) => PacketAbstraction[U, State, F[List[transport.Response]]]
     )(
-      using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets]
+      using typeTest: TypeTest[Tuple.Union[PlayClientBoundPackets], U],
+      doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets]
     ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, State] =
       (playerName: String, initialState: State) => {
         val networkTransportResource: Resource[F, PacketTransport[F]] =
@@ -154,7 +155,11 @@ object ClientInitializationImpl {
               val transport =
                 ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
 
-              StatefulClient.withInitialState(transport, initialState, abstraction(transport))
+              StatefulClient.withInitialState(
+                transport,
+                initialState,
+                abstraction(transport).widenPackets[Tuple.Union[PlayClientBoundPackets]]
+              )
             }
 
             doHandShake >> doLogin >> initializeClient
