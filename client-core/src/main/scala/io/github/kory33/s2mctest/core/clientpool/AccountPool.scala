@@ -28,8 +28,8 @@ object AccountPool {
    * Rules for generating account names.
    */
   object GenerationRules {
-    def numbered(prefix: String): Set[String] => String = set => s"$prefix-${set.size}"
-    val default: Set[String] => String = numbered("s2mc_client_")
+    def numbered(prefix: String): Set[String] => String = set => s"${prefix}_${set.size}"
+    val default: Set[String] => String = numbered("s2mc_client")
   }
 
   def fromGenerationRule[F[_]: Ref.Make: Functor](
