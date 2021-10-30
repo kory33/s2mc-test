@@ -29,7 +29,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "co.fs2" %% "fs2-core" % "3.1.0",
 
   // to make datatype-generic programming easier
-  "org.typelevel" %% "shapeless3-deriving" % "3.0.2",
+  "org.typelevel" %% "shapeless3-deriving" % "3.0.3",
 
   // test libraries
   "org.scalatest" %% "scalatest" % "3.2.10" % "test",

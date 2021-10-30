@@ -21,8 +21,14 @@ object FunctorDerives {
     def map[A, B](fa: F[A])(f: A => B): F[B] =
       inst.map(fa)([t[_]] => (ft: Functor[t], ta: t[A]) => ft.map(ta)(f))
 
+  given Functor[[X] =>> X] with
+    def map[A, B](a: A)(f: A => B): B = f(a)
+
   given [T]: Functor[[X] =>> T] with
     def map[A, B](t: T)(f: A => B): T = t
+
+  given [F[_], G[_]](using ff: Functor[F], fg: Functor[G]): Functor[[t] =>> F[G[t]]] with
+    def map[A, B](fga: F[G[A]])(f: A => B): F[G[B]] = ff.map(fga)(ga => fg.map(ga)(f))
 
   extension (functor: Functor.type)
     inline def derived[F[_]](using gen: K1.Generic[F]): Functor[F] = functorGen

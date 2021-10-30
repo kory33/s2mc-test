@@ -49,8 +49,10 @@ trait PacketAbstraction[Packet, State, +Cmd] {
   final def defocus[LargerState](
     lens: Lens[LargerState, State]
   ): PacketAbstraction[Packet, LargerState, Cmd] = {
-    import FunctorDerives.{derived, given}
-    given Functor[(*, Cmd)] = Functor.derived[(*, Cmd)]
+    // shapeless-derivation does not work for tuples as of Scala 3.1.0 and shapeless 3.0.3
+    // https://github.com/typelevel/shapeless-3/issues/46
+    given Functor[(*, Cmd)] with
+      def map[A, B](fa: (A, Cmd))(f: A => B): (B, Cmd) = (f(fa._1), fa._2)
 
     { packet => this.stateUpdate(packet).map(lens.modifyF[(*, Cmd)]) }
   }
