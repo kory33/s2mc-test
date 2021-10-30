@@ -116,9 +116,8 @@ object ClientInitializationImpl {
       abstraction: (
         transport: ProtocolBasedTransport[F, PlayClientBoundPackets, PlayServerBoundPackets]
       ) => PacketAbstraction[U, State, F[List[transport.Response]]]
-    )(
-      using typeTest: TypeTest[Tuple.Union[PlayClientBoundPackets], U],
-      doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets]
+    )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
+      using TypeTest[Tuple.Union[PlayClientBoundPackets], U]
     ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, State] =
       (playerName: String, initialState: State) => {
         val networkTransportResource: Resource[F, PacketTransport[F]] =
