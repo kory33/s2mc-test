@@ -95,104 +95,102 @@ object GenByteDecode2 {
     if !typeSymbol.flags.is(Flags.Case) then
       report.throwError(s"Expected a case class but found ${typeSymbol}")
 
-    if ResolveConstructors.primaryConstructorHasTypeParameter[A] then
-      report.throwError(s"Classes with type parameters not supported, found ${typeSymbol}")
-
-    typeSymbol.tree match {
-      case d @ ClassDef(className, DefDef(_, params, _, _), _, _, body) =>
-        val conditions: List[OptionalFieldCondition] = gatherFieldConditions(d)
-
-        val fields: List[ClassField] = classFields(d, conditions)
-
-        def replaceFieldReferencesWithParameters(params: Queue[Term])(
-          expr: Expr[Boolean]
-        ): Expr[Boolean] =
-          val mapper: TreeMap = new TreeMap:
-            override def transformTerm(tree: Term)(
-              /* virtually unused */ _owner: Symbol
-            ): Term = tree match
-              case Ident(name) =>
-                if (fields.exists(_.fieldName == name))
-                  params
-                    .find {
-                      case t @ Ident(paramName) if paramName == name => true
-                      case _                                         => false
-                    }
-                    .getOrElse(report.throwError {
-                      s"\tReference to an identifier \"$name\" in the expression ${expr.show} is invalid.\n" +
-                        s"\tNote that a nonemptiness condition of an optional field can only refer to class fields declared before the optional field."
-                    })
-                else
-                  tree
-              case _ => super.transformTerm(tree)(_owner)
-          mapper.transformTerm(expr.asTerm)(Symbol.spliceOwner).asExprOf[Boolean]
-
-        def mapConstructorParamsToPureDecoder(
-          constructorParameters: Queue[Term]
-        ): Expr[DecodeFiniteBytes[A]] =
-          '{
-            ${ byteDecodeMonad }.pure {
-              ${
-                Apply(ResolveConstructors.primaryConstructorTermOf[A](using quotes), constructorParameters.toList)
-                  .asExprOf[A]
-              }
-            }
-          }
-
-        def recurse(
-          currentOwner: Symbol,
-          parametersSoFar: Queue[Term],
-          remainingFields: List[ClassField]
-        ): Expr[DecodeFiniteBytes[A]] =
-          remainingFields match {
-            case (next :: rest) =>
-              next.fieldType.asType match
-                case '[ft] =>
-                  val fieldDecoder: Expr[DecodeFiniteBytes[ft]] = {
-                    next match {
-                      case OptionalField(_, uType, cond) =>
-                        uType.asType match
-                          // format: off
-                          // ut is a type such that Option[ut] =:= ft
-                          case '[ut] => '{
-                            if ${ replaceFieldReferencesWithParameters(parametersSoFar)(cond) } then 
-                              ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
-                            else ${ byteDecodeMonad }.pure(None)
-                          } // Expr of type DecodeFiniteBytes[Option[ut]]
-                          // format: on
-                      case RequiredField(_, fieldType) => summonDecoderExpr[ft]
-                    }
-                  }.asExprOf[DecodeFiniteBytes[ft]]
-
-                  val continuation: Expr[ft => DecodeFiniteBytes[A]] =
-                    Lambda(
-                      currentOwner,
-                      MethodType(List(next.fieldName))(
-                        _ => List(next.fieldType),
-                        _ => TypeRepr.of[DecodeFiniteBytes[A]]
-                      ),
-                      (innerOwner, params) =>
-                        params.head match {
-                          case p: Term =>
-                            recurse(innerOwner, parametersSoFar.enqueue(p), rest)
-                              .asTerm
-                              // we need explicit owner conversion
-                              // see https://github.com/lampepfl/dotty/issues/12309#issuecomment-831240766 for details
-                              .changeOwner(innerOwner)
-                          case p =>
-                            report.throwError(s"Expected an identifier, got unexpected $p")
-                        }
-                    ).asExprOf[ft => DecodeFiniteBytes[A]]
-
-                  '{ ${ byteDecodeMonad }.flatMap(${ fieldDecoder })(${ continuation }) }
-            case Nil => mapConstructorParamsToPureDecoder(parametersSoFar)
-          }
-
-        recurse(Symbol.spliceOwner, Queue.empty, fields)
+    val d @ ClassDef(className, DefDef(_, params, _, _), _, _, body) = typeSymbol.tree match {
+      case d: ClassDef => d
       case _ =>
         report.throwError(
           s"Class definition of the given type (${TypeRepr.of[A]}) was not found"
         )
     }
+
+    val conditions: List[OptionalFieldCondition] = gatherFieldConditions(d)
+
+    val fields: List[ClassField] = classFields(d, conditions)
+
+    def replaceFieldReferencesWithParameters(params: Queue[Term])(
+      expr: Expr[Boolean]
+    ): Expr[Boolean] =
+      val mapper: TreeMap = new TreeMap:
+        override def transformTerm(tree: Term)(
+          /* virtually unused */ _owner: Symbol
+        ): Term = tree match
+          case Ident(name) =>
+            if (fields.exists(_.fieldName == name))
+              params
+                .find {
+                  case t @ Ident(paramName) if paramName == name => true
+                  case _                                         => false
+                }
+                .getOrElse(report.throwError {
+                  s"\tReference to an identifier \"$name\" in the expression ${expr.show} is invalid.\n" +
+                    s"\tNote that a nonemptiness condition of an optional field can only refer to class fields declared before the optional field."
+                })
+            else
+              tree
+          case _ => super.transformTerm(tree)(_owner)
+      mapper.transformTerm(expr.asTerm)(Symbol.spliceOwner).asExprOf[Boolean]
+
+    def mapConstructorParamsToPureDecoder(
+      constructorParameters: Queue[Term]
+    ): Expr[DecodeFiniteBytes[A]] =
+      '{
+        ${ byteDecodeMonad }.pure {
+          ${
+            Apply(ResolveConstructors.primaryConstructorTermOf[A](using quotes), constructorParameters.toList)
+              .asExprOf[A]
+          }
+        }
+      }
+
+    def recurse(
+      currentOwner: Symbol,
+      parametersSoFar: Queue[Term],
+      remainingFields: List[ClassField]
+    ): Expr[DecodeFiniteBytes[A]] =
+      remainingFields match {
+        case (next :: rest) =>
+          next.fieldType.asType match
+            case '[ft] =>
+              val fieldDecoder: Expr[DecodeFiniteBytes[ft]] = {
+                next match {
+                  case OptionalField(_, uType, cond) =>
+                    uType.asType match
+                      // format: off
+                      // ut is a type such that Option[ut] =:= ft
+                      case '[ut] => '{
+                        if ${ replaceFieldReferencesWithParameters(parametersSoFar)(cond) } then 
+                          ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
+                        else ${ byteDecodeMonad }.pure(None)
+                      } // Expr of type DecodeFiniteBytes[Option[ut]]
+                      // format: on
+                  case RequiredField(_, fieldType) => summonDecoderExpr[ft]
+                }
+              }.asExprOf[DecodeFiniteBytes[ft]]
+
+              val continuation: Expr[ft => DecodeFiniteBytes[A]] =
+                Lambda(
+                  currentOwner,
+                  MethodType(List(next.fieldName))(
+                    _ => List(next.fieldType),
+                    _ => TypeRepr.of[DecodeFiniteBytes[A]]
+                  ),
+                  (innerOwner, params) =>
+                    params.head match {
+                      case p: Term =>
+                        recurse(innerOwner, parametersSoFar.enqueue(p), rest)
+                          .asTerm
+                          // we need explicit owner conversion
+                          // see https://github.com/lampepfl/dotty/issues/12309#issuecomment-831240766 for details
+                          .changeOwner(innerOwner)
+                      case p =>
+                        report.throwError(s"Expected an identifier, got unexpected $p")
+                    }
+                ).asExprOf[ft => DecodeFiniteBytes[A]]
+
+              '{ ${ byteDecodeMonad }.flatMap(${ fieldDecoder })(${ continuation }) }
+        case Nil => mapConstructorParamsToPureDecoder(parametersSoFar)
+      }
+
+    recurse(Symbol.spliceOwner, Queue.empty, fields)
   }
 }
