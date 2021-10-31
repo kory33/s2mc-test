@@ -19,8 +19,17 @@ object ResolveConstructors {
   def primaryConstructorTermOf[A](
     using quotes: Quotes,
     AType: Type[A]
-  ): quotes.reflect.Term /* reference to a constructor, can be `Apply`ed */ = {
+  ): quotes.reflect.Term /* reference to a reified constructor, can be `Apply`ed */ = {
     import quotes.reflect.*
-    Select(New(TypeTree.of[A]), TypeRepr.of[A].typeSymbol.primaryConstructor)
+
+    val appliedTypes = ResolveAppliedTypeTrees.appliedTypesOf[A]
+
+    if appliedTypes.nonEmpty then
+      TypeApply(
+        Select(New(TypeTree.of[A]), TypeRepr.of[A].typeSymbol.primaryConstructor),
+        appliedTypes
+      )
+    else
+      Select(New(TypeTree.of[A]), TypeRepr.of[A].typeSymbol.primaryConstructor)
   }
 }

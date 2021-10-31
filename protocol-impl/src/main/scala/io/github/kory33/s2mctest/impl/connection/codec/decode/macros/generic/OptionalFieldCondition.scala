@@ -16,6 +16,24 @@ object OptionalFieldCondition:
       case _                     => None
     }
 
+  // list of conditions specifying that the field (_1) is nonEmpty precisely when condition (_2) is true
+  def gatherFromClassBody(using quotes: Quotes)(classBody: List[quotes.reflect.Statement]): List[OptionalFieldCondition] =
+    import quotes.reflect.*
+    classBody
+      .flatMap {
+        case a: Term => Some(a.asExpr)
+        case _       => None
+      }
+      .flatMap {
+        case '{
+              scala
+                .Predef
+                .require((${ ident }: Option[Any]).nonEmpty == (${ cond }: Boolean))
+            } =>
+          fromOptionExpr(ident, cond)
+        case _ => None
+      }
+
   private def conjunctNonzeroClauses(using quotes: Quotes)(
     clauses: List[Expr[Boolean]]
   ): Option[Expr[Boolean]] =

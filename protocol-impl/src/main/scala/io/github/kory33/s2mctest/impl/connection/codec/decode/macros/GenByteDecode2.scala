@@ -45,47 +45,26 @@ object GenByteDecode2 {
     }
     case class RequiredField(fieldName: String, fieldType: TypeRepr) extends ClassField
 
-    // list of conditions specifying that the field (_1) is nonEmpty precisely when condition (_2) is true
-    def gatherFieldConditions(d: ClassDef): List[OptionalFieldCondition] = d match {
-      case ClassDef(className, DefDef(_, params, _, _), _, _, body) =>
-        body
-          .flatMap {
-            case a: Term => Some(a.asExpr)
-            case _       => None
-          }
-          .flatMap {
-            case '{
-                  scala
-                    .Predef
-                    .require((${ ident }: Option[Any]).nonEmpty == (${ cond }: Boolean))
-                } =>
-              OptionalFieldCondition.fromOptionExpr(ident, cond)
-            case _ => None
-          }
-    }
-
-    def classFields(d: ClassDef, fieldConditions: List[OptionalFieldCondition]): List[ClassField] =
-      d match {
-        case ClassDef(className, DefDef(_, params, _, _), _, _, body) =>
-          params.map(_.params).flatten.flatMap {
-            case ValDef(fieldName, typeTree, _) =>
-              typeTree.tpe.asType match
-                case '[scala.Option[ut]] =>
-                  val condition =
-                    fieldConditions.conditionOn(fieldName)
-                      .getOrElse(report.throwError {
-                        s"\tExpected nonemptyness test for the optional field $fieldName.\n" +
-                          "\tIt is possible that the macro could not inspect the class definition body.\n" +
-                          "\tMake sure to:\n" +
-                          "\t - add -Yretain-trees compiler flag" +
-                          "\t - locate the target class in a file different from the expansion site"
-                      })
-                  Some(OptionalField(fieldName, TypeRepr.of[ut], condition))
-                case '[t] =>
-                  Some(RequiredField(fieldName, TypeRepr.of[t]))
-            case _ => None
-          }
+    def reifiedClassFields(classParamClauses: List[ParamClause], fieldConditions: List[OptionalFieldCondition]): List[ClassField] = {
+      classParamClauses.map(_.params).flatten.flatMap {
+        case ValDef(fieldName, typeTree, _) =>
+          typeTree.tpe.asType match
+            case '[scala.Option[ut]] =>
+              val condition =
+                fieldConditions.conditionOn(fieldName)
+                  .getOrElse(report.throwError {
+                    s"\tExpected nonemptyness test for the optional field $fieldName.\n" +
+                      "\tIt is possible that the macro could not inspect the class definition body.\n" +
+                      "\tMake sure to:\n" +
+                      "\t - add -Yretain-trees compiler flag" +
+                      "\t - locate the target class in a file different from the expansion site"
+                  })
+              Some(OptionalField(fieldName, TypeRepr.of[ut], condition))
+            case '[t] =>
+              Some(RequiredField(fieldName, TypeRepr.of[t]))
+        case _ => None
       }
+    }
 
     val typeSymbol = TypeRepr.of[A].typeSymbol
 
@@ -95,7 +74,7 @@ object GenByteDecode2 {
     if !typeSymbol.flags.is(Flags.Case) then
       report.throwError(s"Expected a case class but found ${typeSymbol}")
 
-    val d @ ClassDef(className, DefDef(_, params, _, _), _, _, body) = typeSymbol.tree match {
+    val d = typeSymbol.tree match {
       case d: ClassDef => d
       case _ =>
         report.throwError(
@@ -103,9 +82,28 @@ object GenByteDecode2 {
         )
     }
 
-    val conditions: List[OptionalFieldCondition] = gatherFieldConditions(d)
+    if {
+      val constructorParamss = d.constructor.paramss
+      val hasSingleParamClause = constructorParamss.size == 1
+      val hasSingleTypeAndParamClasuses = constructorParamss.size == 2 && {
+        val firstClause: List[ValDef | TypeDef] = constructorParamss.head.params
+        firstClause match {
+          case TypeDef(_, _) :: _ => true // found type parameter declaration
+          case _ => false // a type parameter clause cannot be empty, so the head must be free of type parameters
+        }
+      }
+      !(hasSingleParamClause || hasSingleTypeAndParamClasuses)
+    } then
+      report.throwError {
+        "Class definition of the given type should have at most one " +
+        "type parameter clause and at most one parameter clause"
+      }
 
-    val fields: List[ClassField] = classFields(d, conditions)
+    val reifiedFields: List[ClassField] =
+      reifiedClassFields(
+        d.constructor.paramss,
+        OptionalFieldCondition.gatherFromClassBody(d.body)
+      )
 
     def replaceFieldReferencesWithParameters(params: Queue[Term])(
       expr: Expr[Boolean]
@@ -115,7 +113,7 @@ object GenByteDecode2 {
           /* virtually unused */ _owner: Symbol
         ): Term = tree match
           case Ident(name) =>
-            if (fields.exists(_.fieldName == name))
+            if (reifiedFields.exists(_.fieldName == name))
               params
                 .find {
                   case t @ Ident(paramName) if paramName == name => true
@@ -191,6 +189,6 @@ object GenByteDecode2 {
         case Nil => mapConstructorParamsToPureDecoder(parametersSoFar)
       }
 
-    recurse(Symbol.spliceOwner, Queue.empty, fields)
+    recurse(Symbol.spliceOwner, Queue.empty, reifiedFields)
   }
 }
