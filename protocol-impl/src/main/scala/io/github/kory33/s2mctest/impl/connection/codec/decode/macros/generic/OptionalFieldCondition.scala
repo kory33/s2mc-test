@@ -2,6 +2,7 @@ package io.github.kory33.s2mctest.impl.connection.codec.decode.macros.generic
 
 import scala.quoted.Expr
 import scala.quoted.Quotes
+import scala.annotation.tailrec
 
 case class OptionalFieldCondition(fieldName: String, condition: Expr[Boolean])
 
@@ -33,10 +34,10 @@ object OptionalFieldCondition:
 
   extension (conditions: List[OptionalFieldCondition])
     def conditionOn(using Quotes)(fieldName: String): Option[Expr[Boolean]] = 
-      val conditions: List[Expr[Boolean]] = conditions.flatMap {
+      val conditionsExprs: List[Expr[Boolean]] = conditions.flatMap {
         case OptionalFieldCondition(n, c) if n == fieldName => Some(c)
         case _                                              => None
       }
 
-      conjunctNonzeroClauses(conditions)
+      conjunctNonzeroClauses(conditionsExprs)
 
