@@ -16,7 +16,6 @@ object ResolveConstructors {
         Select(New(TypeTree.of[A]), TypeRepr.of[A].typeSymbol.primaryConstructor),
         appliedTypes
       )
-    else
-      Select(New(TypeTree.of[A]), TypeRepr.of[A].typeSymbol.primaryConstructor)
+    else Select(New(TypeTree.of[A]), TypeRepr.of[A].typeSymbol.primaryConstructor)
   }
 }

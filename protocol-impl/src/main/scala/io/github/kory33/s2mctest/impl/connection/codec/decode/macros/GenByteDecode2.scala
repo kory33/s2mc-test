@@ -9,6 +9,7 @@ import scala.quoted.Expr
 object GenByteDecode2 {
   import scala.quoted.*
   import generic.OptionalFieldCondition
+  import generic.ResolveAppliedTypeTrees
   import generic.ResolveConstructors
 
   inline given gen[A]: DecodeFiniteBytes[A] =
@@ -45,28 +46,55 @@ object GenByteDecode2 {
     }
     case class RequiredField(fieldName: String, fieldType: TypeRepr) extends ClassField
 
-    def reifiedClassFields(classParamClauses: List[ParamClause], fieldConditions: List[OptionalFieldCondition]): List[ClassField] = {
-      classParamClauses.map(_.params).flatten.flatMap {
-        case ValDef(fieldName, typeTree, _) =>
-          typeTree.tpe.asType match
-            case '[scala.Option[ut]] =>
-              val condition =
-                fieldConditions.conditionOn(fieldName)
-                  .getOrElse(report.throwError {
-                    s"\tExpected nonemptyness test for the optional field $fieldName.\n" +
-                      "\tIt is possible that the macro could not inspect the class definition body.\n" +
-                      "\tMake sure to:\n" +
-                      "\t - add -Yretain-trees compiler flag" +
-                      "\t - locate the target class in a file different from the expansion site"
-                  })
-              Some(OptionalField(fieldName, TypeRepr.of[ut], condition))
-            case '[t] =>
-              Some(RequiredField(fieldName, TypeRepr.of[t]))
-        case _ => None
+    val typeSymbol = TypeRepr.of[A].typeSymbol
+
+    def reifiedClassFields(
+      classParamClauses: List[ParamClause],
+      fieldConditions: List[OptionalFieldCondition]
+    ): List[ClassField] = {
+      val defs = classParamClauses.map(_.params).flatten
+      val typeDefs: List[TypeDef] = defs.flatMap {
+        case d: TypeDef => Some(d)
+        case _          => None
+      }
+      val valDefs: List[ValDef] = defs.flatMap {
+        case d: ValDef => Some(d)
+        case _         => None
+      }
+      val appliedTypes: List[TypeTree] = ResolveAppliedTypeTrees.appliedTypesOf[A]
+
+      val fieldTypeReifier: TreeMap = new TreeMap:
+        override def transformTypeTree(
+          tree: TypeTree
+        )(_owner: Symbol /* virtually unused */ ): TypeTree =
+          tree match {
+            case TypeIdent(name) =>
+              if typeDefs.exists(_.name == name) then
+                appliedTypes(typeDefs.indexWhere(_.name == name))
+              else tree
+            case _ => super.transformTypeTree(tree)(_owner)
+          }
+
+      valDefs.map { valDef =>
+        val ValDef(fieldName, typeTree, _) = valDef
+
+        fieldTypeReifier.transformTypeTree(typeTree)(typeSymbol).tpe.asType match
+          case '[scala.Option[ut]] =>
+            val condition =
+              fieldConditions
+                .conditionOn(fieldName)
+                .getOrElse(report.throwError {
+                  s"\tExpected nonemptyness test for the optional field $fieldName.\n" +
+                    "\tIt is possible that the macro could not inspect the class definition body.\n" +
+                    "\tMake sure to:\n" +
+                    "\t - add -Yretain-trees compiler flag" +
+                    "\t - locate the target class in a file different from the expansion site"
+                })
+            OptionalField(fieldName, TypeRepr.of[ut], condition)
+          case '[t] =>
+            RequiredField(fieldName, TypeRepr.of[t])
       }
     }
-
-    val typeSymbol = TypeRepr.of[A].typeSymbol
 
     if typeSymbol.hasAnnotation(TypeRepr.of[NoGenByteDecode].typeSymbol) then
       report.throwError(s"The symbol ${typeSymbol} has NoGenByteDecode annotation.")
@@ -89,14 +117,15 @@ object GenByteDecode2 {
         val firstClause: List[ValDef | TypeDef] = constructorParamss.head.params
         firstClause match {
           case TypeDef(_, _) :: _ => true // found type parameter declaration
-          case _ => false // a type parameter clause cannot be empty, so the head must be free of type parameters
+          case _ =>
+            false // a type parameter clause cannot be empty, so the head must be free of type parameters
         }
       }
       !(hasSingleParamClause || hasSingleTypeAndParamClasuses)
     } then
       report.throwError {
         "Class definition of the given type should have at most one " +
-        "type parameter clause and at most one parameter clause"
+          "type parameter clause and at most one parameter clause"
       }
 
     val reifiedFields: List[ClassField] =
@@ -109,23 +138,22 @@ object GenByteDecode2 {
       expr: Expr[Boolean]
     ): Expr[Boolean] =
       val mapper: TreeMap = new TreeMap:
-        override def transformTerm(tree: Term)(
-          /* virtually unused */ _owner: Symbol
-        ): Term = tree match
-          case Ident(name) =>
-            if (reifiedFields.exists(_.fieldName == name))
-              params
-                .find {
-                  case t @ Ident(paramName) if paramName == name => true
-                  case _                                         => false
-                }
-                .getOrElse(report.throwError {
-                  s"\tReference to an identifier \"$name\" in the expression ${expr.show} is invalid.\n" +
-                    s"\tNote that a nonemptiness condition of an optional field can only refer to class fields declared before the optional field."
-                })
-            else
-              tree
-          case _ => super.transformTerm(tree)(_owner)
+        override def transformTerm(tree: Term)( /* virtually unused */ _owner: Symbol): Term =
+          tree match
+            case Ident(name) =>
+              if (reifiedFields.exists(_.fieldName == name))
+                params
+                  .find {
+                    case t @ Ident(paramName) if paramName == name => true
+                    case _                                         => false
+                  }
+                  .getOrElse(report.throwError {
+                    s"\tReference to an identifier \"$name\" in the expression ${expr.show} is invalid.\n" +
+                      s"\tNote that a nonemptiness condition of an optional field can only refer to class fields declared before the optional field."
+                  })
+              else
+                tree
+            case _ => super.transformTerm(tree)(_owner)
       mapper.transformTerm(expr.asTerm)(Symbol.spliceOwner).asExprOf[Boolean]
 
     def mapConstructorParamsToPureDecoder(
@@ -134,8 +162,10 @@ object GenByteDecode2 {
       '{
         ${ byteDecodeMonad }.pure {
           ${
-            Apply(ResolveConstructors.primaryConstructorTermOf[A](using quotes), constructorParameters.toList)
-              .asExprOf[A]
+            Apply(
+              ResolveConstructors.primaryConstructorTermOf[A](using quotes),
+              constructorParameters.toList
+            ).asExprOf[A]
           }
         }
       }
