@@ -90,7 +90,7 @@ object GenByteDecode {
               //     List(TypeRef(NoPrefix,type S))
               //   )
               // which still has an unreplaced type variable S.
-              // 
+              //
               // FIXME: I have no idea what the difference between .copy and .apply is.
               //        Can somebody explain this?
               Applied(transformTypeTree(tyCons)(_owner), transformTrees(argsList)(_owner))
