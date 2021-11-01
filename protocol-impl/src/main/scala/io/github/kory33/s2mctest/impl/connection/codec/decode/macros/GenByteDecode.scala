@@ -72,7 +72,30 @@ object GenByteDecode {
               if typeDefs.exists(_.name == name) then
                 appliedTypes(typeDefs.indexWhere(_.name == name))
               else tree
-            case _ => super.transformTypeTree(tree)(_owner)
+            case Applied(tyCons, argsList) =>
+              // Weirdly we need to explicitly state this; otherwise we will have unreplaced
+              // type variables when we convert this to TypeRef using .tpe method.
+              // The default implementation of TypeTree uses Applied.copy, which seems to
+              // behave differently from Applied.apply.
+              //
+              // For instance, if we leave this branch with the default implementation,
+              // we get a TypeTree whose string representation is something like
+              //   AppliedTypeTree(
+              //     Ident(F),
+              //     List(TypeTree[TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),object scala),class Byte)])
+              //   )
+              // which is what we expect. However, when we call .tpe method on this result, we get
+              //   AppliedType(
+              //     TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class generic)),object TestClasses$package),type F),
+              //     List(TypeRef(NoPrefix,type S))
+              //   )
+              // which still has an unreplaced type variable S.
+              // 
+              // FIXME: I have no idea what the difference between .copy and .apply is.
+              //        Can somebody explain this?
+              Applied(transformTypeTree(tyCons)(_owner), transformTrees(argsList)(_owner))
+            case _ =>
+              super.transformTypeTree(tree)(_owner)
           }
 
       valDefs.map { valDef =>
