@@ -18,6 +18,22 @@ object KeepAliveAbstraction {
 
   /**
    * A helper trait that can help the compiler resolve abstraction pattern automatically.
+   *
+   * Note: We might as well declare this type as
+   * {{{
+   *   type AbstractionEvidence[F[_], CBPacket <: Tuple, AbstractedPacket, ResponsePacket] =
+   *     (
+   *       transport: ProtocolBasedTransport[F, CBPacket, ?]
+   *     ) => transport.protocolView.peerBound.CanEncode[ResponsePacket] ?=> PacketAbstraction[
+   *       AbstractedPacket,
+   *       Unit,
+   *       List[transport.Response]
+   *     ]
+   * }}}
+   * and doing so would drastically reduce the amount of boilerplate.
+   *
+   * However, as of Scala 3.1.2-RC1-bin-20211029-ad5c714-NIGHTLY, curried dependent context
+   * function types are not yet supported by implementation restriction.
    */
   trait AbstractionEvidence[F[_], CBPacket <: Tuple, AbstractedPacket, ResponsePacket] {
     def abstraction(transport: ProtocolBasedTransport[F, CBPacket, ?])(
