@@ -1,4 +1,4 @@
-package io.github.kory33.s2mctest.impl.connection.codec.decode.macros.generic
+package io.github.kory33.s2mctest.impl.generic.macros
 
 import scala.annotation.tailrec
 import scala.quoted.{Expr, Quotes}

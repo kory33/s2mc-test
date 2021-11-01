@@ -8,9 +8,9 @@ import scala.quoted.Expr
 
 object GenByteDecode {
   import scala.quoted.*
-  import generic.OptionalFieldCondition
-  import generic.ResolveAppliedTypeTrees
-  import generic.ResolveConstructors
+  import io.github.kory33.s2mctest.impl.generic.macros.OptionalFieldCondition
+  import io.github.kory33.s2mctest.impl.generic.macros.ResolveAppliedTypeTrees
+  import io.github.kory33.s2mctest.impl.generic.macros.ResolveConstructors
 
   inline given gen[A]: DecodeFiniteBytes[A] =
     ${ genImpl[A] }
