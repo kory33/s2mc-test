@@ -71,7 +71,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
 
     inline given canEncode[P](
       // this constraint will ensure that idx can be materialized at compile time
-      using Require[IncludedInT[BindingTup, CodecBinding[P]]]
+      using Includes[CodecBinding[P]][BindingTup]
     ): CanEncode[P] = {
       val idxP = scala.compiletime.constValue[IndexOfT[CodecBinding[P], BindingTup]]
 

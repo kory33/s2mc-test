@@ -44,9 +44,8 @@ object KeepAliveAbstraction {
   import io.github.kory33.s2mctest.core.generic.compiletime.*
 
   object AbstractionEvidence {
-    given forI64[F[_], CBPacket <: Tuple](
-      using Require[IncludedInT[CBPacket, KeepAliveClientbound_i64]]
-    ): AbstractionEvidence[F, CBPacket, KeepAliveClientbound_i64, KeepAliveServerbound_i64] =
+    given forI64[F[_], CBPacket <: Tuple: Includes[KeepAliveClientbound_i64]]
+      : AbstractionEvidence[F, CBPacket, KeepAliveClientbound_i64, KeepAliveServerbound_i64] =
       new AbstractionEvidence[F, CBPacket, KeepAliveClientbound_i64, KeepAliveServerbound_i64] {
         def abstraction(transport: ProtocolBasedTransport[F, CBPacket, ?])(
           using transport.protocolView.peerBound.CanEncode[KeepAliveServerbound_i64]
@@ -56,9 +55,8 @@ object KeepAliveAbstraction {
         }
       }
 
-    given forI32[F[_], CBPacket <: Tuple](
-      using Require[IncludedInT[CBPacket, KeepAliveClientbound_i32]]
-    ): AbstractionEvidence[F, CBPacket, KeepAliveClientbound_i32, KeepAliveServerbound_i32] =
+    given forI32[F[_], CBPacket <: Tuple: Includes[KeepAliveClientbound_i32]]
+      : AbstractionEvidence[F, CBPacket, KeepAliveClientbound_i32, KeepAliveServerbound_i32] =
       new AbstractionEvidence[F, CBPacket, KeepAliveClientbound_i32, KeepAliveServerbound_i32] {
         def abstraction(transport: ProtocolBasedTransport[F, CBPacket, ?])(
           using transport.protocolView.peerBound.CanEncode[KeepAliveServerbound_i32]
@@ -68,14 +66,13 @@ object KeepAliveAbstraction {
         }
       }
 
-    given forVarInt[F[_], CBPacket <: Tuple](
-      using Require[IncludedInT[CBPacket, KeepAliveClientbound_VarInt]]
-    ): AbstractionEvidence[
-      F,
-      CBPacket,
-      KeepAliveClientbound_VarInt,
-      KeepAliveServerbound_VarInt
-    ] =
+    given forVarInt[F[_], CBPacket <: Tuple: Includes[KeepAliveClientbound_VarInt]]
+      : AbstractionEvidence[
+        F,
+        CBPacket,
+        KeepAliveClientbound_VarInt,
+        KeepAliveServerbound_VarInt
+      ] =
       new AbstractionEvidence[
         F,
         CBPacket,

@@ -12,7 +12,7 @@ import io.github.kory33.s2mctest.core.connection.transport.{
   PacketTransport,
   ProtocolBasedTransport
 }
-import io.github.kory33.s2mctest.core.generic.compiletime.{IncludedInT, Require, *}
+import io.github.kory33.s2mctest.core.generic.compiletime.*
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.{UShort, VarInt}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Handshaking.ServerBound.Handshake
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.{
@@ -45,13 +45,10 @@ object ClientInitializationImpl {
 
     inline given doLoginWithString[
       // format: off
-      F[_]: MonadThrow, LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple
+      F[_]: MonadThrow, LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]
       // format: on
     ](
-      using Require[
-        IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[LoginStart]]
-      ],
-      Require[IncludedInT[LoginClientBoundPackets, LoginSuccess_String]]
+      using Includes[CodecBinding[LoginStart]][Tuple.Map[LoginServerBoundPackets, CodecBinding]]
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
       transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
       name: String
@@ -67,13 +64,10 @@ object ClientInitializationImpl {
 
     inline given doLoginWithUUID[
       // format: off
-      F[_]: MonadThrow, LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple
+      F[_]: MonadThrow, LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_UUID]
       // format: on
     ](
-      using Require[
-        IncludedInT[Tuple.Map[LoginServerBoundPackets, CodecBinding], CodecBinding[LoginStart]]
-      ],
-      Require[IncludedInT[LoginClientBoundPackets, LoginSuccess_UUID]]
+      using Includes[CodecBinding[LoginStart]][Tuple.Map[LoginServerBoundPackets, CodecBinding]]
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
       transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
       name: String
