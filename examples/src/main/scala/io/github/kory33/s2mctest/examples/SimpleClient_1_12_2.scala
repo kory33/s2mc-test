@@ -44,10 +44,7 @@ def simpleClient_1_12_2(): Unit = {
             PacketAbstraction
               .nothing[ClientState]
               .thenAbstract {
-                KeepAliveAbstraction
-                  .forI64(transport)
-                  .defocus(ClientState.unitLens)
-                  .liftCmdCovariant[IO]
+                KeepAliveAbstraction.forTransport(transport).defocus(ClientState.unitLens)
               }
               .thenAbstract {
                 PlayerPositionAbstraction
