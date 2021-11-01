@@ -155,7 +155,9 @@ object ByteCodecs {
 
     given ByteCodec[Tag] = autogenerateFor[Tag]
 
-    given ByteCodec[Slot] = autogenerateFor[Slot]
+    given ByteCodec[Slot.Upto_1_12_2] = autogenerateFor[Slot.Upto_1_12_2]
+
+    given ByteCodec[Slot.Upto_1_17_1] = autogenerateFor[Slot.Upto_1_17_1]
 
     given ByteCodec[Trade] = autogenerateFor[Trade]
 
@@ -286,7 +288,7 @@ object ByteCodecs {
           group <- summon[DecodeFiniteBytes[String]]
           ingredients <- summon[DecodeFiniteBytes[RecipeIngredient]]
             .replicateA(width.raw * height.raw)
-          result <- summon[DecodeFiniteBytes[Slot]]
+          result <- summon[DecodeFiniteBytes[Slot.Upto_1_17_1]]
         } yield RecipeData.Shaped(width, height, group, ingredients.toVector, result)
 
       ByteCodec(decode, ByteEncode.forADT[RecipeData.Shaped])

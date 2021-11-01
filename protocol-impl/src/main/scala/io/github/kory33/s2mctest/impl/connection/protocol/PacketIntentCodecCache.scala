@@ -1,7 +1,10 @@
 package io.github.kory33.s2mctest.impl.connection.protocol
 
 import io.github.kory33.s2mctest.core.connection.codec.{ByteCodec, ByteEncode}
-import io.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes.Position
+import io.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes.{
+  Position,
+  Slot
+}
 import shapeless3.deriving.K0
 
 /**
@@ -43,7 +46,6 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[ConfirmTransactionServerbound] = autogenerateFor[ConfirmTransactionServerbound]
   given ByteCodec[EnchantItem] = autogenerateFor[EnchantItem]
   given ByteCodec[ClickWindowButton] = autogenerateFor[ClickWindowButton]
-  given ByteCodec[ClickWindow] = autogenerateFor[ClickWindow]
   given ByteCodec[ClickWindow_u8] = autogenerateFor[ClickWindow_u8]
   given ByteCodec[CloseWindow] = autogenerateFor[CloseWindow]
   given ByteCodec[PluginMessageServerbound] = autogenerateFor[PluginMessageServerbound]
@@ -90,7 +92,6 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[HeldItemChange] = autogenerateFor[HeldItemChange]
   given ByteCodec[UpdateCommandBlock] = autogenerateFor[UpdateCommandBlock]
   given ByteCodec[UpdateCommandBlockMinecart] = autogenerateFor[UpdateCommandBlockMinecart]
-  given ByteCodec[CreativeInventoryAction] = autogenerateFor[CreativeInventoryAction]
   given ByteCodec[UpdateJigsawBlock_Joint] = autogenerateFor[UpdateJigsawBlock_Joint]
   given ByteCodec[UpdateJigsawBlock_Type] = autogenerateFor[UpdateJigsawBlock_Type]
   given ByteCodec[UpdateStructureBlock] = autogenerateFor[UpdateStructureBlock]
@@ -155,9 +156,7 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[WindowOpenHorse] = autogenerateFor[WindowOpenHorse]
   given ByteCodec[WindowOpen_u8] = autogenerateFor[WindowOpen_u8]
   given ByteCodec[WindowOpen_VarInt] = autogenerateFor[WindowOpen_VarInt]
-  given ByteCodec[WindowItems] = autogenerateFor[WindowItems]
   given ByteCodec[WindowProperty] = autogenerateFor[WindowProperty]
-  given ByteCodec[WindowSetSlot] = autogenerateFor[WindowSetSlot]
   given ByteCodec[SetCooldown] = autogenerateFor[SetCooldown]
   given ByteCodec[PluginMessageClientbound] = autogenerateFor[PluginMessageClientbound]
   given ByteCodec[PluginMessageClientbound_i16] = autogenerateFor[PluginMessageClientbound_i16]
@@ -266,7 +265,6 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[EntityVelocity] = autogenerateFor[EntityVelocity]
   given ByteCodec[EntityVelocity_i32] = autogenerateFor[EntityVelocity_i32]
   given ByteCodec[EntityEquipment_Array] = autogenerateFor[EntityEquipment_Array]
-  given ByteCodec[EntityEquipment_VarInt] = autogenerateFor[EntityEquipment_VarInt]
   given ByteCodec[EntityEquipment_u16] = autogenerateFor[EntityEquipment_u16]
   given ByteCodec[EntityEquipment_u16_i32] = autogenerateFor[EntityEquipment_u16_i32]
   given ByteCodec[SetExperience] = autogenerateFor[SetExperience]
@@ -329,5 +327,30 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[StatusPing] = autogenerateFor[StatusPing]
   given ByteCodec[StatusResponse] = autogenerateFor[StatusResponse]
   given ByteCodec[StatusPong] = autogenerateFor[StatusPong]
+  
+  // region polymorphic givens
+  private def clickWindow[S <: Slot: ByteCodec]: ByteCodec[ClickWindow[S]] = autogenerateFor[ClickWindow[S]]
+  private def creativeInventoryActions[S <: Slot: ByteCodec]: ByteCodec[CreativeInventoryAction[S]] = autogenerateFor[CreativeInventoryAction[S]]
+  private def windowSetSlot[S <: Slot: ByteCodec]: ByteCodec[WindowSetSlot[S]] = autogenerateFor[WindowSetSlot[S]]
+  private def windowItems[T <: Slot: ByteCodec]: ByteCodec[WindowItems[T]] = autogenerateFor[WindowItems[T]]
+  private def entityEquipment_VarInt[S <: Slot: ByteCodec]: ByteCodec[EntityEquipment_VarInt[S]] = autogenerateFor[EntityEquipment_VarInt[S]]
+
+  // ...and their monomorphic instantiations
+  given clickWindowUpto_1_12_2: ByteCodec[ClickWindow[Slot.Upto_1_12_2]] = clickWindow[Slot.Upto_1_12_2]
+  given clickWindowUpto_1_17_1: ByteCodec[ClickWindow[Slot.Upto_1_17_1]] = clickWindow[Slot.Upto_1_17_1]
+
+  given creativeInventoryActions_1_12_2: ByteCodec[CreativeInventoryAction[Slot.Upto_1_12_2]] = creativeInventoryActions[Slot.Upto_1_12_2]
+  given creativeInventoryActions_1_17_1: ByteCodec[CreativeInventoryAction[Slot.Upto_1_17_1]] = creativeInventoryActions[Slot.Upto_1_17_1]
+
+  given windowSetSlot_1_12_2: ByteCodec[WindowSetSlot[Slot.Upto_1_12_2]] = windowSetSlot[Slot.Upto_1_12_2]
+  given windowSetSlot_1_17_1: ByteCodec[WindowSetSlot[Slot.Upto_1_17_1]] = windowSetSlot[Slot.Upto_1_17_1]
+
+  given windowItems_1_12_2: ByteCodec[WindowItems[Slot.Upto_1_12_2]] = windowItems[Slot.Upto_1_12_2]
+  given windowItems_1_17_1: ByteCodec[WindowItems[Slot.Upto_1_17_1]] = windowItems[Slot.Upto_1_17_1]
+
+  given entityEquipment_VarInt_1_12_2: ByteCodec[EntityEquipment_VarInt[Slot.Upto_1_12_2]] = entityEquipment_VarInt[Slot.Upto_1_12_2]
+  given entityEquipment_VarInt_1_17_1: ByteCodec[EntityEquipment_VarInt[Slot.Upto_1_17_1]] = entityEquipment_VarInt[Slot.Upto_1_17_1]
+  // endregion
+
   // format: on
 }

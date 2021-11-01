@@ -14,6 +14,7 @@ object v18w50a extends WithVersionNumber {
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.*
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ServerBound.*
   import io.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.PositionCodecBefore1_14.given
+  import io.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes.Slot.Upto_1_17_1 as VersionSpecificSlot
 
   val protocolVersion: VarInt = VarInt(451)
 
@@ -32,7 +33,7 @@ object v18w50a extends WithVersionNumber {
       0x05 -> ByteCodec[TabComplete],
       0x06 -> ByteCodec[ConfirmTransactionServerbound],
       0x07 -> ByteCodec[EnchantItem],
-      0x08 -> ByteCodec[ClickWindow],
+      0x08 -> ByteCodec[ClickWindow[VersionSpecificSlot]],
       0x09 -> ByteCodec[CloseWindow],
       0x0a -> ByteCodec[PluginMessageServerbound],
       0x0b -> ByteCodec[EditBook],
@@ -60,7 +61,7 @@ object v18w50a extends WithVersionNumber {
       0x21 -> ByteCodec[HeldItemChange],
       0x22 -> ByteCodec[UpdateCommandBlock],
       0x23 -> ByteCodec[UpdateCommandBlockMinecart],
-      0x24 -> ByteCodec[CreativeInventoryAction],
+      0x24 -> ByteCodec[CreativeInventoryAction[VersionSpecificSlot]],
       0x25 -> ByteCodec[UpdateStructureBlock],
       0x26 -> ByteCodec[SetSign],
       0x27 -> ByteCodec[ArmSwing],
@@ -90,9 +91,9 @@ object v18w50a extends WithVersionNumber {
       0x12 -> ByteCodec[ConfirmTransaction],
       0x13 -> ByteCodec[WindowClose],
       0x14 -> ByteCodec[WindowOpen],
-      0x15 -> ByteCodec[WindowItems],
+      0x15 -> ByteCodec[WindowItems[VersionSpecificSlot]],
       0x16 -> ByteCodec[WindowProperty],
-      0x17 -> ByteCodec[WindowSetSlot],
+      0x17 -> ByteCodec[WindowSetSlot[VersionSpecificSlot]],
       0x18 -> ByteCodec[SetCooldown],
       0x19 -> ByteCodec[PluginMessageClientbound],
       0x1a -> ByteCodec[NamedSoundEffect],
@@ -136,7 +137,7 @@ object v18w50a extends WithVersionNumber {
       0x40 -> ByteCodec[EntityMetadata],
       0x41 -> ByteCodec[EntityAttach],
       0x42 -> ByteCodec[EntityVelocity],
-      0x43 -> ByteCodec[EntityEquipment_VarInt],
+      0x43 -> ByteCodec[EntityEquipment_VarInt[VersionSpecificSlot]],
       0x44 -> ByteCodec[SetExperience],
       0x45 -> ByteCodec[UpdateHealth],
       0x46 -> ByteCodec[ScoreboardObjective],

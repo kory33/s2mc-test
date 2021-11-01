@@ -207,15 +207,35 @@ object PacketDataCompoundTypes:
    */
   case class BlockChangeRecord(horizontalPosition: UByte, yCoordinate: UByte, blockId: VarInt)
 
-  case class Slot(
-    present: Boolean,
-    itemId: Option[VarInt],
-    itemCount: Option[Byte],
-    nbt: Option[NBTCompoundOrEnd]
-  ) {
-    require(itemId.nonEmpty == (present))
-    require(itemCount.nonEmpty == (present))
-    require(nbt.nonEmpty == (present))
+  transparent trait Slot
+  object Slot {
+    // Upto 1.8.9: https://wiki.vg/index.php?title=Slot_Data&oldid=7094
+    // Upto 1.12.2: https://wiki.vg/index.php?title=Slot_Data&oldid=7835
+    case class Upto_1_12_2(
+      blockId: Short,
+      itemCount: Option[Byte],
+      damage: Option[Short],
+      nbt: Option[NBTCompoundOrEnd]
+    ) extends Slot {
+      require(itemCount.nonEmpty == (blockId != -1))
+      require(damage.nonEmpty == (blockId != -1))
+      require(nbt.nonEmpty == (blockId != -1))
+    }
+
+    // https://wiki.vg/index.php?title=Slot_Data&oldid=16637
+    case class Upto_1_17_1(
+      present: Boolean,
+      itemId: Option[VarInt],
+      itemCount: Option[Byte],
+      nbt: Option[NBTCompoundOrEnd]
+    ) extends Slot {
+      require(itemId.nonEmpty == (present))
+      require(itemCount.nonEmpty == (present))
+      require(nbt.nonEmpty == (present))
+    }
+
+    type Current = Upto_1_17_1
+    final val Current = Upto_1_17_1
   }
 
   case class Tag(identifier: String, ids: LenPrefixedSeq[VarInt, VarInt])
@@ -228,13 +248,15 @@ object PacketDataCompoundTypes:
   case class ChunkMeta(chunkX: Int, chunkZ: Int, bitMask: UShort)
 
   /**
-   * see https://wiki.vg/index.php?title=Protocol&oldid=14929#Trade_List for details
+   * see https://wiki.vg/index.php?title=Protocol&oldid=14929#Trade_List for details.
+   *
+   * We use [[Slot.Upto_1_17_1]] because this datatype was not present before 1.14.
    */
   case class Trade(
-    inputItem1: Slot,
-    outputItem: Slot,
+    inputItem1: Slot.Upto_1_17_1,
+    outputItem: Slot.Upto_1_17_1,
     hasSecondItem: Boolean,
-    inputItem2: Option[Slot],
+    inputItem2: Option[Slot.Upto_1_17_1],
     disabled: Boolean,
     usedCount: Int,
     maxUsageCount: Int,
@@ -292,7 +314,7 @@ object PacketDataCompoundTypes:
   /**
    * see https://wiki.vg/index.php?title=Protocol&oldid=16953#Entity_Equipment for details
    */
-  case class EntityEquipment(slot: Byte, item: Slot)
+  case class EntityEquipment(slot: Byte, item: Slot.Upto_1_17_1)
   type EntityEquipments = Vector[EntityEquipment]
 
   /**
@@ -398,7 +420,7 @@ object PacketDataCompoundTypes:
     require(suggestions.nonEmpty == ((flags & 0x10) != 0x00.toByte))
   }
 
-  type RecipeIngredient = LenPrefixedSeq[VarInt, Slot]
+  type RecipeIngredient = LenPrefixedSeq[VarInt, Slot.Upto_1_17_1]
 
   enum CookingDataType:
     case Smelting
@@ -409,7 +431,7 @@ object PacketDataCompoundTypes:
   case class CookingRecipeData(
     group: String,
     ingredient: RecipeIngredient,
-    result: Slot,
+    result: Slot.Upto_1_17_1,
     experience: Float,
     cookingTime: VarInt
   )
@@ -421,17 +443,17 @@ object PacketDataCompoundTypes:
     case Shapeless(
       group: String,
       ingredients: LenPrefixedSeq[VarInt, RecipeIngredient],
-      result: Slot
+      result: Slot.Upto_1_17_1
     )
     @NoGenByteDecode case Shaped(
       width: VarInt,
       height: VarInt,
       group: String,
       ingredients: Vector[RecipeIngredient] /* length is `width * height` */,
-      result: Slot
+      result: Slot.Upto_1_17_1
     )
-    case Stonecutting(group: String, ingredient: RecipeIngredient, result: Slot)
-    case Smithing(base: RecipeIngredient, addition: RecipeIngredient, result: Slot)
+    case Stonecutting(group: String, ingredient: RecipeIngredient, result: Slot.Upto_1_17_1)
+    case Smithing(base: RecipeIngredient, addition: RecipeIngredient, result: Slot.Upto_1_17_1)
 
     /**
      * smelting / blasting / smoking / campfire cooking recipes
@@ -439,4 +461,7 @@ object PacketDataCompoundTypes:
     @NoGenByteDecode case Cooking(dataType: CookingDataType, data: CookingRecipeData)
     @NoGenByteDecode case NoAdditionalData(recipeType: String)
 
+  /**
+   * We use [[Slot.Upto_1_17_1]] because protocols earlier than 1.13 don't declare recipes
+   */
   @NoGenByteDecode case class Recipe(identifier: String, data: RecipeData)

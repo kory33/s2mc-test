@@ -14,6 +14,7 @@ object v1_7_10 extends WithVersionNumber {
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.*
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ServerBound.*
   import io.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.PositionCodecBefore1_14.given
+  import io.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes.Slot.Upto_1_12_2 as VersionSpecificSlot
 
   val protocolVersion: VarInt = VarInt(5)
 
@@ -40,7 +41,7 @@ object v1_7_10 extends WithVersionNumber {
       0x0d -> ByteCodec[CloseWindow],
       0x0e -> ByteCodec[ClickWindow_u8],
       0x0f -> ByteCodec[ConfirmTransactionServerbound],
-      0x10 -> ByteCodec[CreativeInventoryAction],
+      0x10 -> ByteCodec[CreativeInventoryAction[VersionSpecificSlot]],
       0x11 -> ByteCodec[EnchantItem],
       0x12 -> ByteCodec[SetSign_i16y],
       0x13 -> ByteCodec[ClientAbilities_f32],
@@ -97,8 +98,8 @@ object v1_7_10 extends WithVersionNumber {
       0x2c -> ByteCodec[SpawnGlobalEntity_i32],
       0x2d -> ByteCodec[WindowOpen_u8],
       0x2e -> ByteCodec[WindowClose],
-      0x2f -> ByteCodec[WindowSetSlot],
-      0x30 -> ByteCodec[WindowItems],
+      0x2f -> ByteCodec[WindowSetSlot[VersionSpecificSlot]],
+      0x30 -> ByteCodec[WindowItems[VersionSpecificSlot]],
       0x31 -> ByteCodec[WindowProperty],
       0x32 -> ByteCodec[ConfirmTransaction],
       0x33 -> ByteCodec[UpdateSign_u16],

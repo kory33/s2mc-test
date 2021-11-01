@@ -14,6 +14,7 @@ object v1_16_1 extends WithVersionNumber {
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.*
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ServerBound.*
   import io.github.kory33.s2mctest.impl.connection.codec.ByteCodecs.PositionCodec.given
+  import io.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes.Slot.Upto_1_17_1 as VersionSpecificSlot
 
   val protocolVersion: VarInt = VarInt(736)
 
@@ -33,7 +34,7 @@ object v1_16_1 extends WithVersionNumber {
       0x06 -> ByteCodec[TabComplete],
       0x07 -> ByteCodec[ConfirmTransactionServerbound],
       0x08 -> ByteCodec[ClickWindowButton],
-      0x09 -> ByteCodec[ClickWindow],
+      0x09 -> ByteCodec[ClickWindow[VersionSpecificSlot]],
       0x0a -> ByteCodec[CloseWindow],
       0x0b -> ByteCodec[PluginMessageServerbound],
       0x0c -> ByteCodec[EditBook],
@@ -63,7 +64,7 @@ object v1_16_1 extends WithVersionNumber {
       0x24 -> ByteCodec[HeldItemChange],
       0x25 -> ByteCodec[UpdateCommandBlock],
       0x26 -> ByteCodec[UpdateCommandBlockMinecart],
-      0x27 -> ByteCodec[CreativeInventoryAction],
+      0x27 -> ByteCodec[CreativeInventoryAction[VersionSpecificSlot]],
       0x28 -> ByteCodec[UpdateJigsawBlock_Joint],
       0x29 -> ByteCodec[UpdateStructureBlock],
       0x2a -> ByteCodec[SetSign],
@@ -93,9 +94,9 @@ object v1_16_1 extends WithVersionNumber {
       0x11 -> ByteCodec[DeclareCommands],
       0x12 -> ByteCodec[ConfirmTransaction],
       0x13 -> ByteCodec[WindowClose],
-      0x14 -> ByteCodec[WindowItems],
+      0x14 -> ByteCodec[WindowItems[VersionSpecificSlot]],
       0x15 -> ByteCodec[WindowProperty],
-      0x16 -> ByteCodec[WindowSetSlot],
+      0x16 -> ByteCodec[WindowSetSlot[VersionSpecificSlot]],
       0x17 -> ByteCodec[SetCooldown],
       0x18 -> ByteCodec[PluginMessageClientbound],
       0x19 -> ByteCodec[NamedSoundEffect],

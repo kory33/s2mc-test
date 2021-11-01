@@ -182,13 +182,13 @@ object PacketIntent {
       /**
        * ClickWindow is sent when the client clicks in a window.
        */
-      case class ClickWindow(
+      case class ClickWindow[S <: Slot](
         id: UByte,
         slot: Short,
         button: UByte,
         actionNumber: UShort,
         mode: VarInt,
-        clickedItem: Slot
+        clickedItem: S
       )
 
       case class ClickWindow_u8(
@@ -197,7 +197,7 @@ object PacketIntent {
         button: UByte,
         actionNumber: UShort,
         mode: UByte,
-        clickedItem: Slot
+        clickedItem: Slot.Upto_1_12_2
       )
 
       /**
@@ -213,7 +213,7 @@ object PacketIntent {
 
       case class PluginMessageServerbound_i16(channel: String, data: LenPrefixedByteSeq[Short])
 
-      case class EditBook(newBook: Slot, isSigning: Boolean, hand: VarInt)
+      case class EditBook(newBook: Slot.Upto_1_17_1, isSigning: Boolean, hand: VarInt)
 
       case class QueryEntityNBT(transactionId: VarInt, entityId: VarInt)
 
@@ -454,7 +454,7 @@ object PacketIntent {
        * CreativeInventoryAction is sent when the client clicks in the creative inventory. This
        * is used to spawn items in creative.
        */
-      case class CreativeInventoryAction(slot: Short, clickedItem: Slot)
+      case class CreativeInventoryAction[S <: Slot](slot: Short, clickedItem: S)
 
       case class UpdateJigsawBlock_Joint(
         location: Position,
@@ -550,7 +550,7 @@ object PacketIntent {
       case class PlayerBlockPlacement_u8_Item(
         location: Position,
         face: UByte,
-        hand: Slot,
+        hand: Slot.Upto_1_12_2,
         cursorX: UByte,
         cursorY: UByte,
         cursorZ: UByte
@@ -561,7 +561,7 @@ object PacketIntent {
         y: UByte,
         z: Int,
         face: UByte,
-        hand: Slot,
+        hand: Slot.Upto_1_12_2,
         cursorX: UByte,
         cursorY: UByte,
         cursorZ: UByte
@@ -1051,7 +1051,7 @@ object PacketIntent {
       /**
        * WindowItems sets every item in a window.
        */
-      case class WindowItems(id: UByte, items: LenPrefixedSeq[Short, Slot])
+      case class WindowItems[S <: Slot](id: UByte, items: LenPrefixedSeq[Short, S])
 
       /**
        * WindowProperty changes the value of a property of a window. Properties vary depending
@@ -1062,7 +1062,7 @@ object PacketIntent {
       /**
        * WindowSetSlot changes an itemstack in one of the slots in a window.
        */
-      case class WindowSetSlot(id: UByte, property: Short, item: Slot)
+      case class WindowSetSlot[S <: Slot](id: UByte, property: Short, item: S)
 
       /**
        * SetCooldown disables a set item (by id) for the set number of ticks
@@ -2111,11 +2111,11 @@ object PacketIntent {
        */
       case class EntityEquipment_Array(entityId: VarInt, equipments: EntityEquipments)
 
-      case class EntityEquipment_VarInt(entityId: VarInt, slot: VarInt, item: Slot)
+      case class EntityEquipment_VarInt[S <: Slot](entityId: VarInt, slot: VarInt, item: S)
 
-      case class EntityEquipment_u16(entityId: VarInt, slot: UShort, item: Slot)
+      case class EntityEquipment_u16(entityId: VarInt, slot: UShort, item: Slot.Upto_1_12_2)
 
-      case class EntityEquipment_u16_i32(entityId: Int, slot: UShort, item: Slot)
+      case class EntityEquipment_u16_i32(entityId: Int, slot: UShort, item: Slot.Upto_1_12_2)
 
       /**
        * SetExperience updates the experience bar on the client.
