@@ -61,7 +61,7 @@ def simpleClient_1_12_2(): Unit = {
     Monad[IO].foreverM {
       for {
         packet <- client.nextPacket
-        state <- client.getState
+        state <- client.worldView
         _ <- IO(println((packet, state)))
       } yield ()
     }
