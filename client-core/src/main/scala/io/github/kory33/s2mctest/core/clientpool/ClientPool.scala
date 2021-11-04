@@ -3,11 +3,11 @@ package io.github.kory33.s2mctest.core.clientpool
 import cats.effect.MonadCancelThrow
 import cats.effect.kernel.{Ref, Resource}
 import cats.{Monad, MonadThrow}
-import io.github.kory33.s2mctest.core.client.StatefulClient
+import io.github.kory33.s2mctest.core.client.SightedClient
 
-trait ClientPool[F[_], SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State] {
+trait ClientPool[F[_], SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView] {
 
-  final type Client = StatefulClient[F, SelfBoundPackets, PeerBoundPackets, State]
+  final type Client = SightedClient[F, SelfBoundPackets, PeerBoundPackets, WorldView]
 
   /**
    * The account pool from which client usernames are atomically generated.
@@ -49,7 +49,7 @@ object ClientPool {
 
     private case class PoolState(
       clientsInUse: Int,
-      dormantClients: List[StatefulClient[F, SelfBoundPackets, PeerBoundPackets, State]]
+      dormantClients: List[SightedClient[F, SelfBoundPackets, PeerBoundPackets, State]]
     ) {
       val totalClients: Int = clientsInUse + dormantClients.size
     }
@@ -112,12 +112,12 @@ object ClientPool {
   }
 
   // format: off
-  def withInitData[F[_]: MonadCancelThrow: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State](
+  def withInitData[F[_]: MonadCancelThrow: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView](
   // format: on
     accountPool: AccountPool[F],
-    initialState: State,
-    clientInitialization: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, State]
-  ): WithAccountPoolAndInitialization[F, SelfBoundPackets, PeerBoundPackets, State] =
+    initialState: WorldView,
+    clientInitialization: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, WorldView]
+  ): WithAccountPoolAndInitialization[F, SelfBoundPackets, PeerBoundPackets, WorldView] =
     WithAccountPoolAndInitialization(accountPool, initialState, clientInitialization)
 
 }

@@ -4,7 +4,7 @@ import cats.MonadThrow
 import cats.effect.{IO, Ref, Resource}
 import com.comcast.ip4s.{Host, SocketAddress}
 import fs2.io.net.Network
-import io.github.kory33.s2mctest.core.client.{PacketAbstraction, StatefulClient}
+import io.github.kory33.s2mctest.core.client.{PacketAbstraction, SightedClient}
 import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, Protocol}
@@ -87,12 +87,12 @@ object ClientInitializationImpl {
     WithAddressApplied(address)
 
   case class WithAddressApplied(address: SocketAddress[Host]) {
-    def withStateAndEffectType[F[_]: MonadThrow: Ref.Make: Network, State]
-      : WithStateAndEffectApplied[F, State] =
-      WithStateAndEffectApplied[F, State](address)
+    def withWorldViewAndEffectType[F[_]: MonadThrow: Ref.Make: Network, WorldView]
+      : WithWorldViewAndEffectApplied[F, WorldView] =
+      WithWorldViewAndEffectApplied[F, WorldView](address)
   }
 
-  case class WithStateAndEffectApplied[F[_]: MonadThrow: Ref.Make, State](
+  case class WithWorldViewAndEffectApplied[F[_]: MonadThrow: Ref.Make, WorldView](
     address: SocketAddress[Host]
   )(using netF: Network[F]) {
     import reflect.Selectable.reflectiveSelectable
@@ -109,11 +109,11 @@ object ClientInitializationImpl {
       playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
       abstraction: (
         transport: ProtocolBasedTransport[F, PlayClientBoundPackets, PlayServerBoundPackets]
-      ) => PacketAbstraction[U, State, F[List[transport.Response]]]
+      ) => PacketAbstraction[U, WorldView, F[List[transport.Response]]]
     )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
       using TypeTest[Tuple.Union[PlayClientBoundPackets], U]
-    ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, State] =
-      (playerName: String, initialState: State) => {
+    ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
+      (playerName: String, initialWorldView: WorldView) => {
         val networkTransportResource: Resource[F, PacketTransport[F]] =
           netF.client(address).map { socket => NetworkTransport.noCompression(socket) }
 
@@ -143,14 +143,15 @@ object ClientInitializationImpl {
               doLoginEv.doLoginWith(transport, playerName)
             }
 
-            val initializeClient
-              : F[StatefulClient[F, PlayClientBoundPackets, PlayServerBoundPackets, State]] = {
+            val initializeClient: F[
+              SightedClient[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView]
+            ] = {
               val transport =
                 ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
 
-              StatefulClient.withInitialState(
+              SightedClient.withInitialWorldView(
                 transport,
-                initialState,
+                initialWorldView,
                 abstraction(transport).widenPackets[Tuple.Union[PlayClientBoundPackets]]
               )
             }

@@ -10,27 +10,27 @@ import monocle.Lens
 import scala.reflect.{TypeTest, Typeable}
 
 /**
- * An abstraction of packet data within a [[StatefulClient]]. This is a functional interface of
- * the form `Packet => Option[State => (State, Cmd)]`.
+ * An abstraction of packet data within a [[SightedClient]]. This is a functional interface of
+ * the form `Packet => Option[WorldView => (WorldView, Cmd)]`.
  *
- * [[Packet]] is the (super-)type of packets to abstract away, [[State]] is [[StatefulClient]]'s
- * state corresponding to an abstraction and [[Cmd]] is a datatype that describes an effect to
- * cause whenever a state modification takes place.
+ * [[Packet]] is the (super-)type of packets to abstract away, [[WorldView]] is
+ * [[SightedClient]]'s view of the world corresponding to an abstraction and [[Cmd]] is a
+ * datatype that describes an effect to cause whenever a view modification takes place.
  *
- * A "state modification" is a function of the form `State => (State, Cmd)`. It arises as a
- * result of receiving packets, and is a function from the old [[State]] to a pair of new
- * [[State]] and an effect [[Cmd]].
+ * A "view modification" is a function of the form `WorldView => (WorldView, Cmd)`. It arises as
+ * a result of receiving packets, and is a function from the old [[WorldView]] to a pair of new
+ * [[WorldView]] and an effect [[Cmd]].
  *
- * This functional object receives a packet and judges if the packet should invoke a state
- * modification. If so, it returns a `Some[State => (State, Cmd)]` and `None` otherwise.
+ * This functional object receives a packet and judges if the packet should invoke a view
+ * modification. If so, it returns a `Some[WorldView => (WorldView, Cmd)]` and `None` otherwise.
  */
-trait PacketAbstraction[Packet, State, +Cmd] {
+trait PacketAbstraction[Packet, WorldView, +Cmd] {
 
   /**
-   * A function that receives a packet and judges if the packet should invoke a state
+   * A function that receives a packet and judges if the packet should invoke a view
    * modification.
    */
-  def stateUpdate(packet: Packet): Option[State => (State, Cmd)]
+  def viewUpdate(packet: Packet): Option[WorldView => (WorldView, Cmd)]
 
   /**
    * Widen the packet type to a type [[WPacket]] whose values can be narrowed down to
@@ -38,37 +38,38 @@ trait PacketAbstraction[Packet, State, +Cmd] {
    */
   final def widenPackets[WPacket](
     using TypeTest[WPacket, Packet]
-  ): PacketAbstraction[WPacket, State, Cmd] = {
-    case packet: Packet => this.stateUpdate(packet)
+  ): PacketAbstraction[WPacket, WorldView, Cmd] = {
+    case packet: Packet => this.viewUpdate(packet)
     case _              => None
   }
 
   /**
-   * "Defocus" this abstraction to deal with a larger state datatype [[LargerState]].
+   * "Defocus" this abstraction to deal with a larger view datatype [[BroaderView]] that
+   * contains more information than [[WorldView]].
    */
-  final def defocus[LargerState](
-    lens: Lens[LargerState, State]
-  ): PacketAbstraction[Packet, LargerState, Cmd] = {
+  final def defocus[BroaderView](
+    lens: Lens[BroaderView, WorldView]
+  ): PacketAbstraction[Packet, BroaderView, Cmd] = {
     // shapeless-derivation does not work for tuples as of Scala 3.1.0 and shapeless 3.0.3
     // https://github.com/typelevel/shapeless-3/issues/46
     given Functor[(*, Cmd)] with
       def map[A, B](fa: (A, Cmd))(f: A => B): (B, Cmd) = (f(fa._1), fa._2)
 
-    { packet => this.stateUpdate(packet).map(lens.modifyF[(*, Cmd)]) }
+    { packet => this.viewUpdate(packet).map(lens.modifyF[(*, Cmd)]) }
   }
 
   /**
-   * Get an abstraction that keeps track of all past states. This may be better suited for
+   * Construct an abstraction that keeps track of all past views. This may be better suited for
    * debugging purposes.
    */
-  final def keepTrackOfStateChanges: PacketAbstraction[Packet, NonEmptyList[State], Cmd] =
+  final def keepTrackOfViewChanges: PacketAbstraction[Packet, NonEmptyList[WorldView], Cmd] =
     // This is essentially
-    //   defocus(Lens[NonEmptyList[State], State](_.head)(s => ls => NonEmptyList(s, ls.toList)))
+    //   defocus(Lens[NonEmptyList[WorldView], WorldView](_.head)(s => ls => NonEmptyList(s, ls.toList)))
     // However the lens described as above violates many laws like getReplace and hence is invalid.
     { packet =>
       this
-        .stateUpdate(packet)
-        .map((f: State => (State, Cmd)) => {
+        .viewUpdate(packet)
+        .map((f: WorldView => (WorldView, Cmd)) => {
           case NonEmptyList(head, tail) =>
             val (newHead, cmd) = f(head)
             (NonEmptyList(newHead, head :: tail), cmd)
@@ -77,46 +78,46 @@ trait PacketAbstraction[Packet, State, +Cmd] {
 
   /**
    * Combine this abstraction with another. The obtained abstraction will attempt to update the
-   * state using [[another]] if this object rejects to update the state.
+   * view using [[another]] if this object rejects to update the view.
    */
   final def orElseAbstract[C2 >: Cmd](
-    another: PacketAbstraction[Packet, State, C2]
-  ): PacketAbstraction[Packet, State, C2] = { packet =>
-    PacketAbstraction.this.stateUpdate(packet).orElse(another.stateUpdate(packet))
+    another: PacketAbstraction[Packet, WorldView, C2]
+  ): PacketAbstraction[Packet, WorldView, C2] = { packet =>
+    PacketAbstraction.this.viewUpdate(packet).orElse(another.viewUpdate(packet))
   }
 
   /**
    * Combine this with another abstraction that deals with a packet type [[P]] that is not a
-   * subtype of [[Packet]]. The result of a state update for a packet `p` of type `Packet | P`
+   * subtype of [[Packet]]. The result of a view update for a packet `p` of type `Packet | P`
    * will be:
-   *   - if `p: Packet`, then `this.stateUpdate(p)`
-   *   - if otherwise `p: P`, then `another.stateUpdate(p)`
+   *   - if `p: Packet`, then `this.viewUpdate(p)`
+   *   - if otherwise `p: P`, then `another.viewUpdate(p)`
    */
-  final def thenAbstract[P, C2](another: PacketAbstraction[P, State, C2])(
+  final def thenAbstract[P, C2](another: PacketAbstraction[P, WorldView, C2])(
     using ng: scala.util.NotGiven[P <:< Packet],
     // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
     ge: GivenEither[Typeable[Packet], Packet =:= Nothing]
-  ): PacketAbstraction[Packet | P, State, C2 | Cmd] = ge match {
+  ): PacketAbstraction[Packet | P, WorldView, C2 | Cmd] = ge match {
     case GivenEither(Left(_ @ given Typeable[Packet])) =>
       (packet: Packet | P) =>
         packet match {
-          case packet: Packet => PacketAbstraction.this.stateUpdate(packet)
+          case packet: Packet => PacketAbstraction.this.viewUpdate(packet)
           case packet         =>
             // this cast is safe because `packet` was `Packet | P` but
             // the case `packet: Packet` has been already tried with a `Typeable` instance
-            another.stateUpdate(packet.asInstanceOf[P])
+            another.viewUpdate(packet.asInstanceOf[P])
         }
     case GivenEither(Right(ev)) =>
       (packet: Packet | P) =>
         // in this branch, `Packet | P` equals `P`
-        another.stateUpdate(ev.substituteCo[[X] =>> X | P](packet))
+        another.viewUpdate(ev.substituteCo[[X] =>> X | P](packet))
   }
 
   /**
    * Obtain a new [[PacketAbstraction]] by mapping the output [[Cmd]].
    */
-  final def mapCmd[C2](f: Cmd => C2): PacketAbstraction[Packet, State, C2] = (p: Packet) =>
-    stateUpdate(p).map { update => s =>
+  final def mapCmd[C2](f: Cmd => C2): PacketAbstraction[Packet, WorldView, C2] = (p: Packet) =>
+    viewUpdate(p).map { update => s =>
       val (newS, cmd) = update(s)
       (newS, f(cmd))
     }
@@ -126,7 +127,7 @@ trait PacketAbstraction[Packet, State, +Cmd] {
    */
   final def liftCmd[F[_], C2 >: Cmd](
     using F: Applicative[F]
-  ): PacketAbstraction[Packet, State, F[C2]] =
+  ): PacketAbstraction[Packet, WorldView, F[C2]] =
     mapCmd(F.pure)
 
   /**
@@ -134,7 +135,7 @@ trait PacketAbstraction[Packet, State, +Cmd] {
    */
   final def liftCmdCovariant[F[+_]](
     using F: Applicative[F]
-  ): PacketAbstraction[Packet, State, F[Cmd]] = mapCmd(F.pure)
+  ): PacketAbstraction[Packet, WorldView, F[Cmd]] = mapCmd(F.pure)
 }
 
 object PacketAbstraction {

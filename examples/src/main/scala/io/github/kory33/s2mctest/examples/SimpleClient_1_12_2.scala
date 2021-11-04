@@ -35,7 +35,7 @@ def simpleClient_1_12_2(): Unit = {
       WorldView(PositionAndOrientation(0, 0, 0, 0, 0)),
       ClientInitializationImpl
         .withAddress(address)
-        .withStateAndEffectType[IO, WorldView]
+        .withWorldViewAndEffectType[IO, WorldView]
         .withCommonHandShake(
           versions.v1_12_2.protocolVersion,
           versions.v1_12_2.loginProtocol,
