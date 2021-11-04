@@ -15,10 +15,10 @@ import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
 import monocle.Lens
 import monocle.macros.GenLens
 
-private case class ClientState(position: PositionAndOrientation)
-private object ClientState {
-  val unitLens: Lens[ClientState, Unit] = Lens[ClientState, Unit](_ => ())(_ => s => s)
-  val positionLens: Lens[ClientState, PositionAndOrientation] = GenLens[ClientState](_.position)
+private case class WorldView(position: PositionAndOrientation)
+private object WorldView {
+  val unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
+  val positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
 }
 
 @main
@@ -32,24 +32,24 @@ def simpleClient_1_12_2(): Unit = {
   val clientPool = ClientPool
     .withInitData(
       accountPool,
-      ClientState(PositionAndOrientation(0, 0, 0, 0, 0)),
+      WorldView(PositionAndOrientation(0, 0, 0, 0, 0)),
       ClientInitializationImpl
         .withAddress(address)
-        .withStateAndEffectType[IO, ClientState]
+        .withWorldViewAndEffectType[IO, WorldView]
         .withCommonHandShake(
           versions.v1_12_2.protocolVersion,
           versions.v1_12_2.loginProtocol,
           versions.v1_12_2.playProtocol,
           transport =>
             PacketAbstraction
-              .nothing[ClientState]
+              .nothing[WorldView]
               .thenAbstract {
-                KeepAliveAbstraction.forTransport(transport).defocus(ClientState.unitLens)
+                KeepAliveAbstraction.forTransport(transport).defocus(WorldView.unitLens)
               }
               .thenAbstract {
                 PlayerPositionAbstraction
                   .withConfirmPacket(transport)
-                  .defocus(ClientState.positionLens)
+                  .defocus(WorldView.positionLens)
                   .liftCmdCovariant[IO]
               }
         )
