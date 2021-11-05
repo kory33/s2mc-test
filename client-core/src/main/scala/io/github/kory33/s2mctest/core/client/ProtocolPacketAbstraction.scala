@@ -1,0 +1,85 @@
+package io.github.kory33.s2mctest.core.client
+
+import cats.Applicative
+import cats.data.NonEmptyList
+import io.github.kory33.s2mctest.core.connection.transport.{
+  PacketTransport,
+  ProtocolBasedTransport
+}
+import io.github.kory33.s2mctest.core.generic.givens.GivenEither
+import monocle.Lens
+
+import scala.reflect.TypeTest
+
+/**
+ * Partially applied factory of [[TransportPacketAbstraction]] which is able to produce
+ * [[TransportPacketAbstraction]] when given a packet transport of [[SelfBoundPackets]] and
+ * [[PeerBoundPackets]].
+ *
+ * These objects are better suited for composing packet abstractions compared to dealing with
+ * [[TransportPacketAbstraction]] directly.
+ */
+trait ProtocolPacketAbstraction[
+  // format: off
+  F[_],
+  // format: on
+  SelfBoundPackets <: Tuple,
+  PeerBoundPackets <: Tuple,
+  Packet,
+  WorldView
+] {
+
+  def abstractOnTransport(
+    packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]
+  ): TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
+
+  /**
+   * "Defocus" this abstraction to deal with a larger view datatype [[BroaderView]] that
+   * contains more information than [[WorldView]].
+   */
+  final def defocus[BroaderView](
+    lens: Lens[BroaderView, WorldView]
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, BroaderView] =
+    abstractOnTransport(_).defocus(lens)
+
+  /**
+   * Construct an abstraction that keeps track of all past views. This may be better suited for
+   * debugging purposes.
+   */
+  final def keepTrackOfViewChanges
+    : ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, NonEmptyList[
+      WorldView
+    ]] = abstractOnTransport(_).keepTrackOfViewChanges
+
+  /**
+   * Combine this abstraction with another. The obtained abstraction will attempt to update the
+   * view using [[another]] if this object rejects to update the view.
+   */
+  final def orElseAbstract(
+    another: ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView]
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
+    (packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]) =>
+      this
+        .abstractOnTransport(packetTransport)
+        .orElseAbstract(another.abstractOnTransport(packetTransport))
+
+  /**
+   * Combine this with another abstraction that deals with a packet type [[P]] that is not a
+   * subtype of [[Packet]]. The result of a view update for a packet `p` of type `Packet | P`
+   * will be:
+   *   - if `p: Packet`, then `this.viewUpdate(p)`
+   *   - if otherwise `p: P`, then `another.viewUpdate(p)`
+   */
+  final def thenAbstract[P](
+    another: ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, P, WorldView]
+  )(
+    using ng: scala.util.NotGiven[P <:< Packet],
+    // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
+    ge: GivenEither[scala.reflect.Typeable[Packet], Packet =:= Nothing]
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, P | Packet, WorldView] =
+    (packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]) =>
+      this
+        .abstractOnTransport(packetTransport)
+        .thenAbstract(another.abstractOnTransport(packetTransport))
+
+}
