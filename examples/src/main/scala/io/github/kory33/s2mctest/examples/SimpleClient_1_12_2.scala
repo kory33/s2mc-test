@@ -48,7 +48,7 @@ def simpleClient_1_12_2(): Unit = {
               }
               .thenAbstract {
                 PlayerPositionAbstraction
-                  .withConfirmPacket(transport)
+                  .forTransport(transport)
                   .defocus(WorldView.positionLens)
                   .liftCmdCovariant[IO]
               }

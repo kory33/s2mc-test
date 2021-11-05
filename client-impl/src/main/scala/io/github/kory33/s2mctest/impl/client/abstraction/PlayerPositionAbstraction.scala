@@ -12,7 +12,7 @@ object PlayerPositionAbstraction {
    * An abstraction of player teleport packets that automatically updates
    * [[PositionAndOrientation]] of the client.
    */
-  def withConfirmPacket(transport: ProtocolBasedTransport[?, ?, ?])(
+  def forTransport(transport: ProtocolBasedTransport[?, ?, ?])(
     using transport.protocolView.peerBound.CanEncode[TeleportConfirm]
   ): TransportPacketAbstraction[TeleportPlayer_WithConfirm, PositionAndOrientation, List[
     transport.Response
