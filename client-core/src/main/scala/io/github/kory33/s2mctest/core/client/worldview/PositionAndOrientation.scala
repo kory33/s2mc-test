@@ -1,4 +1,4 @@
-package io.github.kory33.s2mctest.core.client.states
+package io.github.kory33.s2mctest.core.client.worldview
 
 /**
  * The datatype describing the position and orientation of an entity.

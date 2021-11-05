@@ -4,7 +4,7 @@ import cats.Monad
 import cats.effect.IO
 import com.comcast.ip4s.SocketAddress
 import io.github.kory33.s2mctest.core.client.TransportPacketAbstraction
-import io.github.kory33.s2mctest.core.client.states.PositionAndOrientation
+import io.github.kory33.s2mctest.core.client.worldview.PositionAndOrientation
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
 import io.github.kory33.s2mctest.impl.client.abstraction.{
   DisconnectAbstraction,

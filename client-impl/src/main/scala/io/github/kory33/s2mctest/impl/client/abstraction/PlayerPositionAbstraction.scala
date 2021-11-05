@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
 import io.github.kory33.s2mctest.core.client.TransportPacketAbstraction
-import io.github.kory33.s2mctest.core.client.states.PositionAndOrientation
+import io.github.kory33.s2mctest.core.client.worldview.PositionAndOrientation
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.TeleportPlayer_WithConfirm
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.TeleportConfirm
