@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.{Applicative, MonadError}
-import io.github.kory33.s2mctest.core.client.PacketAbstraction
+import io.github.kory33.s2mctest.core.client.TransportPacketAbstraction
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.Disconnect
 
 object DisconnectAbstraction {
@@ -12,7 +12,7 @@ object DisconnectAbstraction {
    */
   def throwOnDisconnect[F[_], A, E](error: E)(
     using MonadError[F, E]
-  ): PacketAbstraction[Disconnect, Unit, F[A]] =
+  ): TransportPacketAbstraction[Disconnect, Unit, F[A]] =
     _ => Some(_ => ((), MonadError[F, E].raiseError[A](error)))
 
   /**
@@ -21,7 +21,7 @@ object DisconnectAbstraction {
    */
   def setOnDisconnect[F[_]: Applicative, A, B](
     value: A
-  ): PacketAbstraction[Disconnect, A, F[List[B]]] =
+  ): TransportPacketAbstraction[Disconnect, A, F[List[B]]] =
     _ => Some(_ => (value, Applicative[F].pure(List.empty[B])))
 
   /**
@@ -29,6 +29,6 @@ object DisconnectAbstraction {
    * receiving [[Disconnect]].
    */
   def trueOnDisconnect[F[_]: Applicative, A]
-    : PacketAbstraction[Disconnect, Boolean, F[List[A]]] = setOnDisconnect(true)
+    : TransportPacketAbstraction[Disconnect, Boolean, F[List[A]]] = setOnDisconnect(true)
 
 }

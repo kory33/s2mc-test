@@ -1,6 +1,6 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
-import io.github.kory33.s2mctest.core.client.PacketAbstraction
+import io.github.kory33.s2mctest.core.client.TransportPacketAbstraction
 import io.github.kory33.s2mctest.core.client.states.PositionAndOrientation
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.TeleportPlayer_WithConfirm
@@ -14,7 +14,7 @@ object PlayerPositionAbstraction {
    */
   def withConfirmPacket(transport: ProtocolBasedTransport[?, ?, ?])(
     using transport.protocolView.peerBound.CanEncode[TeleportConfirm]
-  ): PacketAbstraction[TeleportPlayer_WithConfirm, PositionAndOrientation, List[
+  ): TransportPacketAbstraction[TeleportPlayer_WithConfirm, PositionAndOrientation, List[
     transport.Response
   ]] = {
     case TeleportPlayer_WithConfirm(x, y, z, yaw, pitch, flags, teleportId) =>

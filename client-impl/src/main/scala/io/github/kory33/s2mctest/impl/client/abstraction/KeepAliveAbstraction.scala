@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.Applicative
-import io.github.kory33.s2mctest.core.client.PacketAbstraction
+import io.github.kory33.s2mctest.core.client.TransportPacketAbstraction
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{
   KeepAliveClientbound_VarInt,
@@ -38,7 +38,7 @@ object KeepAliveAbstraction {
   trait AbstractionEvidence[F[_], CBPacket <: Tuple, AbstractedPacket, ResponsePacket] {
     def abstraction(transport: ProtocolBasedTransport[F, CBPacket, ?])(
       using transport.protocolView.peerBound.CanEncode[ResponsePacket]
-    ): PacketAbstraction[AbstractedPacket, Unit, List[transport.Response]]
+    ): TransportPacketAbstraction[AbstractedPacket, Unit, List[transport.Response]]
   }
 
   import io.github.kory33.s2mctest.core.generic.compiletime.*
@@ -49,7 +49,9 @@ object KeepAliveAbstraction {
       new AbstractionEvidence[F, CBPacket, KeepAliveClientbound_i64, KeepAliveServerbound_i64] {
         def abstraction(transport: ProtocolBasedTransport[F, CBPacket, ?])(
           using transport.protocolView.peerBound.CanEncode[KeepAliveServerbound_i64]
-        ): PacketAbstraction[KeepAliveClientbound_i64, Unit, List[transport.Response]] = {
+        ): TransportPacketAbstraction[KeepAliveClientbound_i64, Unit, List[
+          transport.Response
+        ]] = {
           case KeepAliveClientbound_i64(id) =>
             Some { _ => ((), List(transport.Response(KeepAliveServerbound_i64(id)))) }
         }
@@ -60,7 +62,9 @@ object KeepAliveAbstraction {
       new AbstractionEvidence[F, CBPacket, KeepAliveClientbound_i32, KeepAliveServerbound_i32] {
         def abstraction(transport: ProtocolBasedTransport[F, CBPacket, ?])(
           using transport.protocolView.peerBound.CanEncode[KeepAliveServerbound_i32]
-        ): PacketAbstraction[KeepAliveClientbound_i32, Unit, List[transport.Response]] = {
+        ): TransportPacketAbstraction[KeepAliveClientbound_i32, Unit, List[
+          transport.Response
+        ]] = {
           case KeepAliveClientbound_i32(id) =>
             Some { _ => ((), List(transport.Response(KeepAliveServerbound_i32(id)))) }
         }
@@ -81,7 +85,9 @@ object KeepAliveAbstraction {
       ] {
         def abstraction(transport: ProtocolBasedTransport[F, CBPacket, ?])(
           using transport.protocolView.peerBound.CanEncode[KeepAliveServerbound_VarInt]
-        ): PacketAbstraction[KeepAliveClientbound_VarInt, Unit, List[transport.Response]] = {
+        ): TransportPacketAbstraction[KeepAliveClientbound_VarInt, Unit, List[
+          transport.Response
+        ]] = {
           case KeepAliveClientbound_VarInt(id) =>
             Some { _ => ((), List(transport.Response(KeepAliveServerbound_VarInt(id)))) }
         }
@@ -94,6 +100,6 @@ object KeepAliveAbstraction {
     using
     abstractionEvidence: AbstractionEvidence[F, CBPackets, AbstractedPacket, ResponsePacket],
     canEncode: transport.protocolView.peerBound.CanEncode[ResponsePacket]
-  ): PacketAbstraction[AbstractedPacket, Unit, F[List[transport.Response]]] =
+  ): TransportPacketAbstraction[AbstractedPacket, Unit, F[List[transport.Response]]] =
     abstractionEvidence.abstraction(transport).liftCmd[F, List[transport.Response]]
 }

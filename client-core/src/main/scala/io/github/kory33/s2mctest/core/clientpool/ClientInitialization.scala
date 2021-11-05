@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.core.clientpool
 
 import cats.effect.Resource
-import io.github.kory33.s2mctest.core.client.{PacketAbstraction, SightedClient}
+import io.github.kory33.s2mctest.core.client.{TransportPacketAbstraction, SightedClient}
 import io.github.kory33.s2mctest.core.connection.protocol.ProtocolView
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 

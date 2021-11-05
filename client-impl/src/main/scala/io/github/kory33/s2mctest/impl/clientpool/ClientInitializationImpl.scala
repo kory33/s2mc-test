@@ -4,7 +4,7 @@ import cats.MonadThrow
 import cats.effect.{IO, Ref, Resource}
 import com.comcast.ip4s.{Host, SocketAddress}
 import fs2.io.net.Network
-import io.github.kory33.s2mctest.core.client.{PacketAbstraction, SightedClient}
+import io.github.kory33.s2mctest.core.client.{TransportPacketAbstraction, SightedClient}
 import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, Protocol}
@@ -109,7 +109,7 @@ object ClientInitializationImpl {
       playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
       abstraction: (
         transport: ProtocolBasedTransport[F, PlayClientBoundPackets, PlayServerBoundPackets]
-      ) => PacketAbstraction[U, WorldView, F[List[transport.Response]]]
+      ) => TransportPacketAbstraction[U, WorldView, F[List[transport.Response]]]
     )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
       using TypeTest[Tuple.Union[PlayClientBoundPackets], U]
     ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =

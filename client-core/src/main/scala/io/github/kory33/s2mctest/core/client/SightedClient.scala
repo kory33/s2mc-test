@@ -26,7 +26,7 @@ class SightedClient[
 ](
    val transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
    viewRef: Ref[F, WorldView],
-   abstraction: PacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[List[transport.Response]]]
+   abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[List[transport.Response]]]
 ) {
   // format: on
 
@@ -98,7 +98,7 @@ object SightedClient {
   // format: on
     transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
     initialWorldView: WorldView,
-    abstraction: PacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[
+    abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[
       List[transport.Response]
     ]]
   ): F[SightedClient[F, SelfBoundPackets, PeerBoundPackets, WorldView]] =
