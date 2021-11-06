@@ -3,7 +3,7 @@ package io.github.kory33.s2mctest.examples
 import cats.Monad
 import cats.effect.IO
 import com.comcast.ip4s.SocketAddress
-import io.github.kory33.s2mctest.core.client.worldview.PositionAndOrientation
+import io.github.kory33.s2mctest.core.client.worldview.{PositionAndOrientation, WorldTime}
 import io.github.kory33.s2mctest.core.client.{
   ProtocolPacketAbstraction,
   TransportPacketAbstraction
@@ -12,15 +12,17 @@ import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
 import io.github.kory33.s2mctest.impl.client.abstraction.{
   DisconnectAbstraction,
   KeepAliveAbstraction,
-  PlayerPositionAbstraction
+  PlayerPositionAbstraction,
+  TimeUpdateAbstraction
 }
 import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
 import monocle.Lens
 import monocle.macros.GenLens
 
-private case class WorldView(position: PositionAndOrientation)
+private case class WorldView(position: PositionAndOrientation, worldTime: WorldTime)
 private object WorldView {
   val unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
+  val worldTimeLens: Lens[WorldView, WorldTime] = GenLens[WorldView](_.worldTime)
   val positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
 }
 
@@ -37,12 +39,13 @@ def simpleClient_1_12_2(): Unit = {
     .empty[IO, WorldView](playProtocol.asViewedFromClient)
     .thenAbstractWithLens(KeepAliveAbstraction.forProtocol, WorldView.unitLens)
     .thenAbstractWithLens(PlayerPositionAbstraction.forProtocol, WorldView.positionLens)
+    .thenAbstractWithLens(TimeUpdateAbstraction.forProtocol, WorldView.worldTimeLens)
 
   val accountPool = AccountPool.default[IO].unsafeRunSync()
   val clientPool = ClientPool
     .withInitData(
       accountPool,
-      WorldView(PositionAndOrientation(0, 0, 0, 0, 0)),
+      WorldView(PositionAndOrientation(0, 0, 0, 0, 0), WorldTime(0, 0)),
       ClientInitializationImpl
         .withAddress(address)
         .withEffectType[IO]
