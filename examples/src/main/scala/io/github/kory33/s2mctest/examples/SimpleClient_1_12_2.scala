@@ -36,10 +36,7 @@ def simpleClient_1_12_2(): Unit = {
   val packetAbstraction = ProtocolPacketAbstraction
     .empty[IO, WorldView](playProtocol.asViewedFromClient)
     .thenAbstractWithLens(KeepAliveAbstraction.forProtocol, WorldView.unitLens)
-    .thenAbstractWithLens(
-      ProtocolPacketAbstraction.pure(PlayerPositionAbstraction.forTransport(_)),
-      WorldView.positionLens
-    )
+    .thenAbstractWithLens(PlayerPositionAbstraction.forProtocol, WorldView.positionLens)
 
   val accountPool = AccountPool.default[IO].unsafeRunSync()
   val clientPool = ClientPool
