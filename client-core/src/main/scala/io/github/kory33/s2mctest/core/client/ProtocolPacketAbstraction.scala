@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.core.client
 
-import cats.Applicative
 import cats.data.NonEmptyList
+import cats.{Applicative, Functor}
 import io.github.kory33.s2mctest.core.connection.protocol.ProtocolView
 import io.github.kory33.s2mctest.core.connection.transport.{
   PacketTransport,
@@ -161,4 +161,22 @@ object ProtocolPacketAbstraction {
     ProtocolPacketAbstraction(transport =>
       onTransport(transport).liftCmd[F, List[transport.Response]]
     )
+
+  /**
+   * Define an abstraction which causes some side-effect on packet receipt.
+   */
+  def effectful[
+    // format: off
+    F[_]: Functor,
+    // format: on
+    SelfBoundPackets <: Tuple,
+    PeerBoundPackets <: Tuple,
+    Packet,
+    WorldView,
+    U
+  ](
+    abstraction: TransportPacketAbstraction[Packet, WorldView, F[U]]
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
+    ProtocolPacketAbstraction(_ => abstraction.mapCmd(Functor[F].as(_, Nil)))
+
 }
