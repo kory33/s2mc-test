@@ -127,7 +127,9 @@ object ClientInitializationImpl {
         WorldView
       ]
     )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
-      using TypeTest[Tuple.Union[PlayClientBoundPackets], U]
+      // because the abstraction should not abstract any packet outside the protocol...
+      using U <:< Tuple.Union[PlayClientBoundPackets],
+      TypeTest[Tuple.Union[PlayClientBoundPackets], U]
     ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
       (playerName: String, initialWorldView: WorldView) => {
         val networkTransportResource: Resource[F, PacketTransport[F]] =
