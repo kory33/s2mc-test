@@ -35,7 +35,7 @@ def simpleClient_1_12_2(): Unit = {
 
   val packetAbstraction = ProtocolPacketAbstraction
     .empty[IO, WorldView](playProtocol.asViewedFromClient)
-    .thenAbstractWithLens(KeepAliveAbstraction.forTransport(_), WorldView.unitLens)
+    .thenAbstractWithLens(KeepAliveAbstraction.forProtocol, WorldView.unitLens)
     .thenAbstractWithLens(
       ProtocolPacketAbstraction.pure(PlayerPositionAbstraction.forTransport(_)),
       WorldView.positionLens
