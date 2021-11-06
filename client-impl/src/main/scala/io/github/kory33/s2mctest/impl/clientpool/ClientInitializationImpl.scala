@@ -92,93 +92,81 @@ object ClientInitializationImpl {
               "Please check that encryption and compression is turned off for the target server"
           })
       }
-
   }
 
-  def withAddress(address: SocketAddress[Host]): WithAddressApplied =
-    WithAddressApplied(address)
-
-  case class WithAddressApplied(address: SocketAddress[Host]) {
-    def withEffectType[F[_]: MonadThrow: Ref.Make: Network]: WithWorldViewAndEffectApplied[F] =
-      WithWorldViewAndEffectApplied[F](address)
-  }
-
-  case class WithWorldViewAndEffectApplied[F[_]: MonadThrow: Ref.Make](
-    address: SocketAddress[Host]
-  )(using netF: Network[F]) {
-    import reflect.Selectable.reflectiveSelectable
-
-    def withCommonHandShake[
-      LoginServerBoundPackets <: Tuple,
-      LoginClientBoundPackets <: Tuple,
-      PlayServerBoundPackets <: Tuple,
-      PlayClientBoundPackets <: Tuple,
+  def apply[
+    // format: off
+    F[_]: MonadThrow: Ref.Make: Network,
+    // format: on
+    LoginServerBoundPackets <: Tuple,
+    LoginClientBoundPackets <: Tuple,
+    PlayServerBoundPackets <: Tuple,
+    PlayClientBoundPackets <: Tuple,
+    U,
+    WorldView
+  ](
+    address: SocketAddress[Host],
+    protocolVersion: VarInt,
+    loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets],
+    playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
+    abstraction: ProtocolPacketAbstraction[
+      F,
+      PlayClientBoundPackets,
+      PlayServerBoundPackets,
       U,
       WorldView
-    ](
-      protocolVersion: VarInt,
-      loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets],
-      playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
-      abstraction: ProtocolPacketAbstraction[
-        F,
-        PlayClientBoundPackets,
-        PlayServerBoundPackets,
-        U,
-        WorldView
-      ]
-    )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
-      // because the abstraction should not abstract any packet outside the protocol...
-      using U <:< Tuple.Union[PlayClientBoundPackets],
-      TypeTest[Tuple.Union[PlayClientBoundPackets], U]
-    ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
-      (playerName: String, initialWorldView: WorldView) => {
-        val networkTransportResource: Resource[F, PacketTransport[F]] =
-          netF.client(address).map { socket => NetworkTransport.noCompression(socket) }
+    ]
+  )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
+    // because the abstraction should not abstract any packet outside the protocol...
+    using U <:< Tuple.Union[PlayClientBoundPackets],
+    TypeTest[Tuple.Union[PlayClientBoundPackets], U]
+  ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
+    (playerName: String, initialWorldView: WorldView) => {
+      val networkTransportResource: Resource[F, PacketTransport[F]] =
+        Network[F].client(address).map { socket => NetworkTransport.noCompression(socket) }
 
-        networkTransportResource.flatMap { (networkTransport: PacketTransport[F]) =>
-          Resource.eval {
-            val doHandShake: F[Unit] = {
-              val transport = ProtocolBasedTransport(
-                networkTransport,
-                CommonProtocol.handshakeProtocol.asViewedFromClient
+      networkTransportResource.flatMap { (networkTransport: PacketTransport[F]) =>
+        Resource.eval {
+          val doHandShake: F[Unit] = {
+            val transport = ProtocolBasedTransport(
+              networkTransport,
+              CommonProtocol.handshakeProtocol.asViewedFromClient
+            )
+
+            transport.writePacket(
+              Handshake(
+                protocolVersion,
+                address.host.toString,
+                UShort(address.port.value),
+                // transition to Login state
+                VarInt(2)
               )
-
-              transport.writePacket(
-                Handshake(
-                  protocolVersion,
-                  address.host.toString,
-                  UShort(address.port.value),
-                  // transition to Login state
-                  VarInt(2)
-                )
-              )
-            }
-
-            val doLogin: F[Unit] = {
-              val transport =
-                ProtocolBasedTransport(networkTransport, loginProtocol.asViewedFromClient)
-
-              doLoginEv.doLoginWith(transport, playerName)
-            }
-
-            val initializeClient: F[
-              SightedClient[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView]
-            ] = {
-              val transport =
-                ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
-
-              SightedClient.withInitialWorldView(
-                transport,
-                initialWorldView,
-                abstraction
-                  .abstractOnTransport(transport)
-                  .widenPackets[Tuple.Union[PlayClientBoundPackets]]
-              )
-            }
-
-            doHandShake >> doLogin >> initializeClient
+            )
           }
+
+          val doLogin: F[Unit] = {
+            val transport =
+              ProtocolBasedTransport(networkTransport, loginProtocol.asViewedFromClient)
+
+            doLoginEv.doLoginWith(transport, playerName)
+          }
+
+          val initializeClient
+            : F[SightedClient[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView]] = {
+            val transport =
+              ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
+
+            SightedClient.withInitialWorldView(
+              transport,
+              initialWorldView,
+              abstraction
+                .abstractOnTransport(transport)
+                .widenPackets[Tuple.Union[PlayClientBoundPackets]]
+            )
+          }
+
+          doHandShake >> doLogin >> initializeClient
         }
       }
-  }
+    }
 }

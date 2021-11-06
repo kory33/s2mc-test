@@ -46,10 +46,13 @@ def simpleClient_1_12_2(): Unit = {
     .withInitData(
       accountPool,
       WorldView(PositionAndOrientation(0, 0, 0, 0, 0), WorldTime(0, 0)),
-      ClientInitializationImpl
-        .withAddress(address)
-        .withEffectType[IO]
-        .withCommonHandShake(protocolVersion, loginProtocol, playProtocol, packetAbstraction)
+      ClientInitializationImpl(
+        address,
+        protocolVersion,
+        loginProtocol,
+        playProtocol,
+        packetAbstraction
+      )
     )
     .cached(50)
     .unsafeRunSync()
