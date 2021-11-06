@@ -79,6 +79,19 @@ trait ProtocolPacketAbstraction[
     transport =>
       this.abstractOnTransport(transport).thenAbstract(another.abstractOnTransport(transport))
 
+  /**
+   * Combine this with another abstraction that deals with smaller view [[MagnifiedView]] of the
+   * world by applying [[thenAbstract]] to the [[defocus]]ed abstraction.
+   */
+  final def thenAbstractWithLens[P, MagnifiedView](
+    another: ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, P, MagnifiedView],
+    lens: Lens[WorldView, MagnifiedView]
+  )(
+    using ng: scala.util.NotGiven[P <:< Packet],
+    // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
+    ge: GivenEither[scala.reflect.Typeable[Packet], Packet =:= Nothing]
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, P | Packet, WorldView] =
+    thenAbstract[P](another.defocus[WorldView](lens))
 }
 
 object ProtocolPacketAbstraction {
@@ -103,7 +116,7 @@ object ProtocolPacketAbstraction {
      *   The protocol for determining packet tuple types. This argument is discarded by this
      *   function, and is present just to allow the type inference to happen.
      */
-    def onProtocol[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
+    def onProtocolView[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
       _protocol: ProtocolView[SelfBoundPackets, PeerBoundPackets]
     ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Nothing, Unit] =
       ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[Unit])

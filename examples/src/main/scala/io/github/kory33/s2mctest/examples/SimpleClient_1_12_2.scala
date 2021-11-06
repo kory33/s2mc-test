@@ -3,7 +3,10 @@ package io.github.kory33.s2mctest.examples
 import cats.Monad
 import cats.effect.IO
 import com.comcast.ip4s.SocketAddress
-import io.github.kory33.s2mctest.core.client.TransportPacketAbstraction
+import io.github.kory33.s2mctest.core.client.{
+  ProtocolPacketAbstraction,
+  TransportPacketAbstraction
+}
 import io.github.kory33.s2mctest.core.client.worldview.PositionAndOrientation
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
 import io.github.kory33.s2mctest.impl.client.abstraction.{
@@ -41,18 +44,15 @@ def simpleClient_1_12_2(): Unit = {
           protocolVersion,
           loginProtocol,
           playProtocol,
-          transport =>
-            TransportPacketAbstraction
-              .nothing[WorldView]
-              .thenAbstract {
-                KeepAliveAbstraction.forTransport(transport).defocus(WorldView.unitLens)
-              }
-              .thenAbstract {
-                PlayerPositionAbstraction
-                  .forTransport(transport)
-                  .defocus(WorldView.positionLens)
-                  .liftCmdCovariant[IO]
-              }
+          ProtocolPacketAbstraction
+            .empty[IO]
+            .onProtocolView(playProtocol.asViewedFromClient)
+            .defocus(WorldView.unitLens)
+            .thenAbstractWithLens(KeepAliveAbstraction.forTransport(_), WorldView.unitLens)
+            .thenAbstractWithLens(
+              PlayerPositionAbstraction.forTransport(_).liftCmdCovariant[IO],
+              WorldView.positionLens
+            )
         )
     )
     .cached(50)
