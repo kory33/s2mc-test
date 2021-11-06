@@ -32,6 +32,15 @@ def simpleClient_1_12_2(): Unit = {
   import cats.effect.unsafe.implicits.global
 
   val address = SocketAddress.fromString("localhost:25565").get
+
+  val packetAbstraction = ProtocolPacketAbstraction
+    .empty[IO, WorldView](playProtocol.asViewedFromClient)
+    .thenAbstractWithLens(KeepAliveAbstraction.forTransport(_), WorldView.unitLens)
+    .thenAbstractWithLens(
+      ProtocolPacketAbstraction.pure(PlayerPositionAbstraction.forTransport(_)),
+      WorldView.positionLens
+    )
+
   val accountPool = AccountPool.default[IO].unsafeRunSync()
   val clientPool = ClientPool
     .withInitData(
@@ -39,21 +48,8 @@ def simpleClient_1_12_2(): Unit = {
       WorldView(PositionAndOrientation(0, 0, 0, 0, 0)),
       ClientInitializationImpl
         .withAddress(address)
-        .withWorldViewAndEffectType[IO, WorldView]
-        .withCommonHandShake(
-          protocolVersion,
-          loginProtocol,
-          playProtocol,
-          ProtocolPacketAbstraction
-            .empty[IO]
-            .onProtocolView(playProtocol.asViewedFromClient)
-            .defocus(WorldView.unitLens)
-            .thenAbstractWithLens(KeepAliveAbstraction.forTransport(_), WorldView.unitLens)
-            .thenAbstractWithLens(
-              PlayerPositionAbstraction.forTransport(_).liftCmdCovariant[IO],
-              WorldView.positionLens
-            )
-        )
+        .withEffectType[IO]
+        .withCommonHandShake(protocolVersion, loginProtocol, playProtocol, packetAbstraction)
     )
     .cached(50)
     .unsafeRunSync()

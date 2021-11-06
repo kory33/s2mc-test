@@ -106,20 +106,21 @@ object ProtocolPacketAbstraction {
   ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
     onTransport(_)
 
-  def empty[F[_]]: EmptyPartiallyApplied[F] = EmptyPartiallyApplied()
-  case class EmptyPartiallyApplied[F[_]]() {
+  /**
+   * Define an abstraction which abstracts no packet in a protocol.
+   */
+  def empty[F[_], WorldView]: EmptyPartiallyApplied[F, WorldView] = EmptyPartiallyApplied()
+  case class EmptyPartiallyApplied[F[_], WorldView]() {
 
     /**
-     * Define an abstraction which abstracts no packet in a protocol.
-     *
      * @param _protocol
      *   The protocol for determining packet tuple types. This argument is discarded by this
      *   function, and is present just to allow the type inference to happen.
      */
-    def onProtocolView[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
+    def apply[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
       _protocol: ProtocolView[SelfBoundPackets, PeerBoundPackets]
-    ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Nothing, Unit] =
-      ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[Unit])
+    ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Nothing, WorldView] =
+      ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[WorldView])
   }
 
   /**

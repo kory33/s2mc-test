@@ -99,12 +99,11 @@ object ClientInitializationImpl {
     WithAddressApplied(address)
 
   case class WithAddressApplied(address: SocketAddress[Host]) {
-    def withWorldViewAndEffectType[F[_]: MonadThrow: Ref.Make: Network, WorldView]
-      : WithWorldViewAndEffectApplied[F, WorldView] =
-      WithWorldViewAndEffectApplied[F, WorldView](address)
+    def withEffectType[F[_]: MonadThrow: Ref.Make: Network]: WithWorldViewAndEffectApplied[F] =
+      WithWorldViewAndEffectApplied[F](address)
   }
 
-  case class WithWorldViewAndEffectApplied[F[_]: MonadThrow: Ref.Make, WorldView](
+  case class WithWorldViewAndEffectApplied[F[_]: MonadThrow: Ref.Make](
     address: SocketAddress[Host]
   )(using netF: Network[F]) {
     import reflect.Selectable.reflectiveSelectable
@@ -114,7 +113,8 @@ object ClientInitializationImpl {
       LoginClientBoundPackets <: Tuple,
       PlayServerBoundPackets <: Tuple,
       PlayClientBoundPackets <: Tuple,
-      U
+      U,
+      WorldView
     ](
       protocolVersion: VarInt,
       loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets],
