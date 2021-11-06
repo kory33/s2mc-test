@@ -1,34 +1,51 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.{Applicative, MonadError}
-import io.github.kory33.s2mctest.core.client.TransportPacketAbstraction
+import io.github.kory33.s2mctest.core.client.{
+  ProtocolPacketAbstraction,
+  TransportPacketAbstraction
+}
+import io.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes.ChatComponent
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.Disconnect
 
 object DisconnectAbstraction {
 
+  import io.github.kory33.s2mctest.core.generic.compiletime.*
+
   /**
-   * An abstraction of [[Disconnect]] packet that immediately throws upon receiving
-   * [[Disconnect]]. This is useful for testing features involving intended disconnections.
+   * An abstraction of [[Disconnect]] packet that throws an error of type [[E]] upon receiving
+   * [[Disconnect]].
    */
-  def throwOnDisconnect[F[_], A, E](error: E)(
+  def throwOnDisconnect[F[_], E, SelfBoundPackets <: Tuple: Includes[
+    Disconnect
+  ], PeerBoundPackets <: Tuple](errorOnMessage: ChatComponent => E)(
     using MonadError[F, E]
-  ): TransportPacketAbstraction[Disconnect, Unit, F[A]] =
-    _ => Some(_ => ((), MonadError[F, E].raiseError[A](error)))
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Disconnect, Unit] =
+    ProtocolPacketAbstraction.effectful(disconnection =>
+      Some(_ => ((), MonadError[F, E].raiseError(errorOnMessage(disconnection.reason))))
+    )
 
   /**
    * An abstraction of [[Disconnect]] packet that sets the state to [[value]] upon receiving
    * [[Disconnect]].
    */
-  def setOnDisconnect[F[_]: Applicative, A, B](
-    value: A
-  ): TransportPacketAbstraction[Disconnect, A, F[List[B]]] =
-    _ => Some(_ => (value, Applicative[F].pure(List.empty[B])))
+  def setOnDisconnect[F[_]: Applicative, A, SelfBoundPackets <: Tuple: Includes[
+    Disconnect
+  ], PeerBoundPackets <: Tuple](
+    valueOnMessage: ChatComponent => A
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Disconnect, Unit] =
+    ProtocolPacketAbstraction.silent(disconnection =>
+      Some(_ => (valueOnMessage(disconnection.reason), ()))
+    )
 
   /**
    * An abstraction of [[Disconnect]] packet that sets a [[Boolean]] value to true upon
    * receiving [[Disconnect]].
    */
-  def trueOnDisconnect[F[_]: Applicative, A]
-    : TransportPacketAbstraction[Disconnect, Boolean, F[List[A]]] = setOnDisconnect(true)
+  def trueOnDisconnect[F[_]: Applicative, SelfBoundPackets <: Tuple: Includes[
+    Disconnect
+  ], PeerBoundPackets <: Tuple]
+    : ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Disconnect, Unit] =
+    setOnDisconnect(_ => true)
 
 }
