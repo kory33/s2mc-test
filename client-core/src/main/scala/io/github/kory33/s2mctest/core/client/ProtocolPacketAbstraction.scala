@@ -2,6 +2,7 @@ package io.github.kory33.s2mctest.core.client
 
 import cats.Applicative
 import cats.data.NonEmptyList
+import io.github.kory33.s2mctest.core.connection.protocol.ProtocolView
 import io.github.kory33.s2mctest.core.connection.transport.{
   PacketTransport,
   ProtocolBasedTransport
@@ -58,10 +59,8 @@ trait ProtocolPacketAbstraction[
   final def orElseAbstract(
     another: ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView]
   ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
-    (packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]) =>
-      this
-        .abstractOnTransport(packetTransport)
-        .orElseAbstract(another.abstractOnTransport(packetTransport))
+    transport =>
+      this.abstractOnTransport(transport).orElseAbstract(another.abstractOnTransport(transport))
 
   /**
    * Combine this with another abstraction that deals with a packet type [[P]] that is not a
@@ -77,9 +76,54 @@ trait ProtocolPacketAbstraction[
     // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
     ge: GivenEither[scala.reflect.Typeable[Packet], Packet =:= Nothing]
   ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, P | Packet, WorldView] =
-    (packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]) =>
-      this
-        .abstractOnTransport(packetTransport)
-        .thenAbstract(another.abstractOnTransport(packetTransport))
+    transport =>
+      this.abstractOnTransport(transport).thenAbstract(another.abstractOnTransport(transport))
 
+}
+
+object ProtocolPacketAbstraction {
+
+  /**
+   * Define an abstraction of packets in a protocol.
+   */
+  def apply[F[_], SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, Packet, WorldView](
+    onTransport: (
+      packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]
+    ) => TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
+    onTransport(_)
+
+  def empty[F[_]]: EmptyPartiallyApplied[F] = EmptyPartiallyApplied()
+  case class EmptyPartiallyApplied[F[_]]() {
+
+    /**
+     * Define an abstraction which abstracts no packet in a protocol.
+     *
+     * @param _protocol
+     *   The protocol for determining packet tuple types. This argument is discarded by this
+     *   function, and is present just to allow the type inference to happen.
+     */
+    def onProtocol[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
+      _protocol: ProtocolView[SelfBoundPackets, PeerBoundPackets]
+    ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Nothing, Unit] =
+      ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[Unit])
+  }
+
+  /**
+   * Define an abstraction which does not send back peer-bound acknowledgements.
+   */
+  def silent[
+    // format: off
+    F[_]: Applicative,
+    // format: on
+    SelfBoundPackets <: Tuple,
+    PeerBoundPackets <: Tuple,
+    Packet,
+    WorldView
+  ](
+    abstraction: TransportPacketAbstraction[Packet, WorldView, Unit]
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
+    ProtocolPacketAbstraction(transport =>
+      abstraction.mapCmd[F[List[transport.Response]]](_ => Applicative[F].pure(Nil))
+    )
 }
