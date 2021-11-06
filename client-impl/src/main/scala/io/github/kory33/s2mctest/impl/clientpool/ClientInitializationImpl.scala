@@ -4,7 +4,11 @@ import cats.MonadThrow
 import cats.effect.{IO, Ref, Resource}
 import com.comcast.ip4s.{Host, SocketAddress}
 import fs2.io.net.Network
-import io.github.kory33.s2mctest.core.client.{TransportPacketAbstraction, SightedClient}
+import io.github.kory33.s2mctest.core.client.{
+  ProtocolPacketAbstraction,
+  SightedClient,
+  TransportPacketAbstraction
+}
 import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, Protocol}
@@ -26,6 +30,14 @@ import io.github.kory33.s2mctest.impl.connection.transport.NetworkTransport
 import java.io.IOException
 import scala.reflect.TypeTest
 
+/**
+ * The standard implementation for [[ClientInitialization]].
+ *
+ * Note: This mechanism is not placed inside the core module because we would rather wish to
+ * make the given instance search for [[ClientInitializationImpl.DoLoginEv]] automatic. I am
+ * happy to move this object to core if there is a way to seamlessly abstract the login
+ * procedure.
+ */
 object ClientInitializationImpl {
 
   /**
@@ -107,9 +119,13 @@ object ClientInitializationImpl {
       protocolVersion: VarInt,
       loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets],
       playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
-      abstraction: (
-        transport: ProtocolBasedTransport[F, PlayClientBoundPackets, PlayServerBoundPackets]
-      ) => TransportPacketAbstraction[U, WorldView, F[List[transport.Response]]]
+      abstraction: ProtocolPacketAbstraction[
+        F,
+        PlayClientBoundPackets,
+        PlayServerBoundPackets,
+        U,
+        WorldView
+      ]
     )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
       using TypeTest[Tuple.Union[PlayClientBoundPackets], U]
     ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
@@ -152,7 +168,9 @@ object ClientInitializationImpl {
               SightedClient.withInitialWorldView(
                 transport,
                 initialWorldView,
-                abstraction(transport).widenPackets[Tuple.Union[PlayClientBoundPackets]]
+                abstraction
+                  .abstractOnTransport(transport)
+                  .widenPackets[Tuple.Union[PlayClientBoundPackets]]
               )
             }
 
