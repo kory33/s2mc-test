@@ -24,6 +24,7 @@ private object WorldView {
 @main
 def simpleClient_1_12_2(): Unit = {
   import io.github.kory33.s2mctest.impl.connection.protocol.versions
+  import versions.v1_12_2.{protocolVersion, loginProtocol, playProtocol}
   import cats.implicits.given
   import cats.effect.unsafe.implicits.global
 
@@ -37,9 +38,9 @@ def simpleClient_1_12_2(): Unit = {
         .withAddress(address)
         .withWorldViewAndEffectType[IO, WorldView]
         .withCommonHandShake(
-          versions.v1_12_2.protocolVersion,
-          versions.v1_12_2.loginProtocol,
-          versions.v1_12_2.playProtocol,
+          protocolVersion,
+          loginProtocol,
+          playProtocol,
           transport =>
             TransportPacketAbstraction
               .nothing[WorldView]
