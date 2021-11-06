@@ -139,4 +139,25 @@ object ProtocolPacketAbstraction {
     ProtocolPacketAbstraction(transport =>
       abstraction.mapCmd[F[List[transport.Response]]](_ => Applicative[F].pure(Nil))
     )
+
+  /**
+   * Define an abstraction which sends back peer-bound acknowledgements without any other
+   * side-effect.
+   */
+  def pure[
+    // format: off
+    F[_]: Applicative,
+    // format: on
+    SelfBoundPackets <: Tuple,
+    PeerBoundPackets <: Tuple,
+    Packet,
+    WorldView
+  ](
+    onTransport: (
+      packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]
+    ) => TransportPacketAbstraction[Packet, WorldView, List[packetTransport.Response]]
+  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
+    ProtocolPacketAbstraction(transport =>
+      onTransport(transport).liftCmd[F, List[transport.Response]]
+    )
 }
