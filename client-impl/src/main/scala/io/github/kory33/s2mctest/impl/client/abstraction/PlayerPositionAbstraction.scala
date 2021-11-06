@@ -1,11 +1,11 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.Applicative
+import io.github.kory33.s2mctest.core.client.worldview.PositionAndOrientation
 import io.github.kory33.s2mctest.core.client.{
   ProtocolPacketAbstraction,
   TransportPacketAbstraction
 }
-import io.github.kory33.s2mctest.core.client.worldview.PositionAndOrientation
 import io.github.kory33.s2mctest.core.connection.protocol.CodecBinding
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 import io.github.kory33.s2mctest.impl.client.abstraction.KeepAliveAbstraction.AbstractionEvidence
