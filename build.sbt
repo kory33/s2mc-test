@@ -78,12 +78,12 @@ lazy val client_impl =
     .in(file("client-impl"))
     .settings(name := "s2mc-client-impl")
 
-lazy val examples =
+lazy val client_examples =
   project
     .dependsOn(protocol_impl, client_impl)
-    .in(file("examples"))
+    .in(file("client-examples"))
     .settings(
-      name := "s2mc-examples",
+      name := "s2mc-client-examples",
       libraryDependencies ++= Seq("dev.optics" %% "monocle-macro" % "3.0.0")
     )
 
