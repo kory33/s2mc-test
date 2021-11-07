@@ -192,7 +192,7 @@ object ClientInitializationImpl {
     LoginClientBoundPackets <: Tuple,
     PlayServerBoundPackets <: Tuple,
     PlayClientBoundPackets <: Tuple,
-    U,
+    PacketUnion,
     WorldView
   ](
     address: SocketAddress[Host],
@@ -203,13 +203,13 @@ object ClientInitializationImpl {
       F,
       PlayClientBoundPackets,
       PlayServerBoundPackets,
-      U,
+      PacketUnion,
       WorldView
     ]
   )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
     // because the abstraction should not abstract any packet outside the protocol...
-    using U <:< Tuple.Union[PlayClientBoundPackets],
-    TypeTest[Tuple.Union[PlayClientBoundPackets], U]
+    using PacketUnion <:< Tuple.Union[PlayClientBoundPackets],
+    TypeTest[Tuple.Union[PlayClientBoundPackets], PacketUnion]
   ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
     (playerName: String, initialWorldView: WorldView) => {
       val networkTransportResource: Resource[F, PacketTransport[F]] =
