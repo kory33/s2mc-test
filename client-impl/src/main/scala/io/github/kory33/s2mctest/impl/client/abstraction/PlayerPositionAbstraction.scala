@@ -6,7 +6,7 @@ import io.github.kory33.s2mctest.core.client.{
   ProtocolPacketAbstraction,
   TransportPacketAbstraction
 }
-import io.github.kory33.s2mctest.core.connection.protocol.CodecBinding
+import io.github.kory33.s2mctest.core.connection.protocol.HasCodecOf
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 import io.github.kory33.s2mctest.impl.client.abstraction.KeepAliveAbstraction.AbstractionEvidence
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{
@@ -44,9 +44,8 @@ object PlayerPositionAbstraction {
 
     inline given forTeleportPlayerWithConfirm[F[_]: Applicative, CBPackets <: Tuple: Includes[
       TeleportPlayer_WithConfirm
-    ], SBPackets <: Tuple](
-      using Includes[CodecBinding[TeleportConfirm]][Tuple.Map[SBPackets, CodecBinding]]
-    ): Aux[F, CBPackets, SBPackets, TeleportPlayer_WithConfirm] =
+    ], SBPackets <: Tuple: HasCodecOf[TeleportConfirm]]
+      : Aux[F, CBPackets, SBPackets, TeleportPlayer_WithConfirm] =
       new AbstractionEvidence[F, CBPackets, SBPackets] {
         type AbstractedPacket = TeleportPlayer_WithConfirm
         val ev: ProtocolPacketAbstraction[

@@ -2,7 +2,7 @@ package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.Applicative
 import io.github.kory33.s2mctest.core.client.ProtocolPacketAbstraction
-import io.github.kory33.s2mctest.core.connection.protocol.CodecBinding
+import io.github.kory33.s2mctest.core.connection.protocol.HasCodecOf
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{
   KeepAliveClientbound_VarInt,
@@ -35,9 +35,8 @@ object KeepAliveAbstraction {
 
     inline given forI32[F[_]: Applicative, CBPackets <: Tuple: Includes[
       KeepAliveClientbound_i32
-    ], SBPackets <: Tuple](
-      using Includes[CodecBinding[KeepAliveServerbound_i32]][Tuple.Map[SBPackets, CodecBinding]]
-    ): Aux[F, CBPackets, SBPackets, KeepAliveClientbound_i32] =
+    ], SBPackets <: Tuple: HasCodecOf[KeepAliveServerbound_i32]]
+      : Aux[F, CBPackets, SBPackets, KeepAliveClientbound_i32] =
       new AbstractionEvidence[F, CBPackets, SBPackets] {
         type AbstractedPacket = KeepAliveClientbound_i32
         val ev
@@ -52,9 +51,8 @@ object KeepAliveAbstraction {
 
     inline given forI64[F[_]: Applicative, CBPackets <: Tuple: Includes[
       KeepAliveClientbound_i64
-    ], SBPackets <: Tuple](
-      using Includes[CodecBinding[KeepAliveServerbound_i64]][Tuple.Map[SBPackets, CodecBinding]]
-    ): Aux[F, CBPackets, SBPackets, KeepAliveClientbound_i64] =
+    ], SBPackets <: Tuple: HasCodecOf[KeepAliveServerbound_i64]]
+      : Aux[F, CBPackets, SBPackets, KeepAliveClientbound_i64] =
       new AbstractionEvidence[F, CBPackets, SBPackets] {
         type AbstractedPacket = KeepAliveClientbound_i64
         val ev
@@ -69,10 +67,8 @@ object KeepAliveAbstraction {
 
     inline given forVarInt[F[_]: Applicative, CBPackets <: Tuple: Includes[
       KeepAliveClientbound_VarInt
-    ], SBPackets <: Tuple](
-      using
-      Includes[CodecBinding[KeepAliveServerbound_VarInt]][Tuple.Map[SBPackets, CodecBinding]]
-    ): Aux[F, CBPackets, SBPackets, KeepAliveClientbound_VarInt] =
+    ], SBPackets <: Tuple: HasCodecOf[KeepAliveServerbound_VarInt]]
+      : Aux[F, CBPackets, SBPackets, KeepAliveClientbound_VarInt] =
       new AbstractionEvidence[F, CBPackets, SBPackets] {
         type AbstractedPacket = KeepAliveClientbound_VarInt
         val ev: ProtocolPacketAbstraction[
