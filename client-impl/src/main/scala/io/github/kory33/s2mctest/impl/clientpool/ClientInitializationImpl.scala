@@ -55,26 +55,35 @@ object ClientInitializationImpl {
    * that kind of state modification is necessary, one has to reimplement [[apply]] method
    * entirely in order to allow login process to affect world-view initialization.
    */
-  trait HandleLoginPlugin {
+  trait LoginPluginRequestHandler {
 
     /**
      * The function to handle a channel-data pair from a [[LoginPluginRequest]] packet.
+     *
+     * This function returning a [[None]] indicates that the client has not understood the
+     * request from the server. Conversely, a `Some(array)` indicates that the client has
+     * understood the request and is ready to reply the server with `array`.
      */
     def handle(channel: String, data: Array[Byte]): Option[Array[Byte]]
 
-    final def orElseHandle(another: HandleLoginPlugin): HandleLoginPlugin =
+    /**
+     * Combine this with another [[LoginPluginRequestHandler]]. The returned
+     * [[LoginPluginRequestHandler]] will handle a request using `another` whenever `this` fails
+     * to understand the request.
+     */
+    final def orElseHandle(another: LoginPluginRequestHandler): LoginPluginRequestHandler =
       (channel, data) => this.handle(channel, data).orElse(another.handle(channel, data))
   }
 
-  object HandleLoginPlugin {
+  object LoginPluginRequestHandler {
 
     /**
-     * The [[HandleLoginPlugin]] object that handles no data from any channel. This is the
-     * scheme that Notchian clients adopt.
+     * The [[LoginPluginRequestHandler]] object that handles no data from any channel. This is
+     * the scheme that Notchian clients adopt.
      */
-    given handleNoPacket: HandleLoginPlugin = (_, _) => None
+    given handleNoPacket: LoginPluginRequestHandler = (_, _) => None
 
-    extension (h: HandleLoginPlugin)
+    extension (h: LoginPluginRequestHandler)
       def handleLoginPluginRequest(req: LoginPluginRequest): LoginPluginResponse = {
         val (understood, response) = h.handle(req.channel, req.data.asArray) match {
           case Some(array) => (true, UnspecifiedLengthByteArray(array))
@@ -129,7 +138,7 @@ object ClientInitializationImpl {
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]: Includes[LoginPluginRequest]
       // format: on
     ](
-      using handleLoginPlugin: HandleLoginPlugin
+      using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
       transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
       name: String
@@ -155,7 +164,7 @@ object ClientInitializationImpl {
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_UUID]: Includes[LoginPluginRequest]
       // format: on
     ](
-      using handleLoginPlugin: HandleLoginPlugin
+      using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
       transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
       name: String
