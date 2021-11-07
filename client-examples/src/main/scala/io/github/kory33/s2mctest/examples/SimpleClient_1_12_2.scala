@@ -19,19 +19,19 @@ import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
 import monocle.Lens
 import monocle.macros.GenLens
 
-private case class WorldView(position: PositionAndOrientation, worldTime: WorldTime)
-private object WorldView {
-  val unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
-  val worldTimeLens: Lens[WorldView, WorldTime] = GenLens[WorldView](_.worldTime)
-  val positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
-}
-
 @main
 def simpleClient_1_12_2(): Unit = {
   import io.github.kory33.s2mctest.impl.connection.protocol.versions
   import versions.v1_12_2.{protocolVersion, loginProtocol, playProtocol}
   import cats.implicits.given
   import cats.effect.unsafe.implicits.global
+
+  case class WorldView(position: PositionAndOrientation, worldTime: WorldTime)
+  object WorldView {
+    val unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
+    val worldTimeLens: Lens[WorldView, WorldTime] = GenLens[WorldView](_.worldTime)
+    val positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
+  }
 
   val address = SocketAddress.fromString("localhost:25565").get
 
