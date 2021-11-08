@@ -32,7 +32,7 @@ import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.Serv
   LoginPluginResponse,
   LoginStart
 }
-import io.github.kory33.s2mctest.impl.connection.protocol.{CommonProtocol, WithVersionNumber}
+import io.github.kory33.s2mctest.impl.connection.protocol.CommonProtocol
 import io.github.kory33.s2mctest.impl.connection.transport.NetworkTransport
 
 import java.io.IOException

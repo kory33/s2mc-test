@@ -3,12 +3,9 @@ package io.github.kory33.s2mctest.impl.connection.protocol.versions
 import io.github.kory33.s2mctest.core.connection.codec.ByteCodec
 import io.github.kory33.s2mctest.core.connection.protocol.{PacketIdBindings, Protocol}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.VarInt
-import io.github.kory33.s2mctest.impl.connection.protocol.{
-  PacketIntentCodecCache,
-  WithVersionNumber
-}
+import io.github.kory33.s2mctest.impl.connection.protocol.PacketIntentCodecCache
 
-object v1_10_2 extends WithVersionNumber {
+object v1_10_2 {
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.*
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.*
   import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.*
