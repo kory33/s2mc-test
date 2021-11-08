@@ -5,6 +5,7 @@ import cats.effect.{IO, Ref, Resource}
 import com.comcast.ip4s.{Host, SocketAddress}
 import fs2.io.net.Network
 import io.github.kory33.s2mctest.core.client.{
+  ClientIdentity,
   ProtocolPacketAbstraction,
   SightedClient,
   TransportPacketAbstraction
@@ -36,6 +37,7 @@ import io.github.kory33.s2mctest.impl.connection.protocol.CommonProtocol
 import io.github.kory33.s2mctest.impl.connection.transport.NetworkTransport
 
 import java.io.IOException
+import java.util.UUID
 import scala.reflect.TypeTest
 
 /**
@@ -103,12 +105,18 @@ object ClientInitializationImpl {
     def doLoginWith(
       transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
       name: String
-    ): F[Unit]
+    ): F[ClientIdentity]
   }
 
   import cats.implicits.given
 
   object DoLoginEv {
+
+    def identityFromStringPacket(packet: LoginSuccess_String): ClientIdentity =
+      ClientIdentity(packet.username, UUID.fromString(packet.uuid))
+
+    def identityFromUUIDPacket(packet: LoginSuccess_UUID): ClientIdentity =
+      ClientIdentity(packet.username, packet.uuid)
 
     inline given doLoginWithStringWithoutPluginLogin[
       // format: off
@@ -123,7 +131,8 @@ object ClientInitializationImpl {
       name: String
     ) =>
       transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
-        case ParseResult.Just(LoginSuccess_String(_, _)) => MonadThrow[F].unit
+        case ParseResult.Just(packet: LoginSuccess_String) =>
+          MonadThrow[F].pure(identityFromStringPacket(packet))
         case failure =>
           MonadThrow[F].raiseError(IOException {
             s"Received $failure but expected Just(LoginSuccess_String(_, _))." +
@@ -146,8 +155,9 @@ object ClientInitializationImpl {
       transport.writePacket(LoginStart(name)) >>
         MonadThrow[F].untilDefinedM {
           transport.nextPacket >>= {
-            case ParseResult.Just(LoginSuccess_String(_, _)) => MonadThrow[F].pure(Some(()))
-            case ParseResult.Just(req @ LoginPluginRequest(_, _, _)) =>
+            case ParseResult.Just(packet: LoginSuccess_String) =>
+              MonadThrow[F].pure(Some(identityFromStringPacket(packet)))
+            case ParseResult.Just(req: LoginPluginRequest) =>
               transport.writePacket(handleLoginPlugin.handleLoginPluginRequest(req)).as(None)
             case failure =>
               MonadThrow[F].raiseError(IOException {
@@ -172,8 +182,9 @@ object ClientInitializationImpl {
       transport.writePacket(LoginStart(name)) >>
         MonadThrow[F].untilDefinedM {
           transport.nextPacket >>= {
-            case ParseResult.Just(LoginSuccess_UUID(_, _)) => MonadThrow[F].pure(Some(()))
-            case ParseResult.Just(req @ LoginPluginRequest(_, _, _)) =>
+            case ParseResult.Just(packet: LoginSuccess_UUID) =>
+              MonadThrow[F].pure(Some(identityFromUUIDPacket(packet)))
+            case ParseResult.Just(req: LoginPluginRequest) =>
               transport.writePacket(handleLoginPlugin.handleLoginPluginRequest(req)).as(None)
             case failure =>
               MonadThrow[F].raiseError(IOException {
@@ -234,20 +245,22 @@ object ClientInitializationImpl {
             )
           }
 
-          val doLogin: F[Unit] = {
+          val doLogin: F[ClientIdentity] = {
             val transport =
               ProtocolBasedTransport(networkTransport, loginProtocol.asViewedFromClient)
 
             doLoginEv.doLoginWith(transport, playerName)
           }
 
-          val initializeClient
-            : F[SightedClient[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView]] = {
+          def initializeClient(
+            identity: ClientIdentity
+          ): F[SightedClient[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView]] = {
             val transport =
               ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
 
             SightedClient.withInitialWorldView(
               transport,
+              identity,
               initialWorldView,
               abstraction
                 .abstractOnTransport(transport)
@@ -255,7 +268,7 @@ object ClientInitializationImpl {
             )
           }
 
-          doHandShake >> doLogin >> initializeClient
+          doHandShake >> doLogin >>= initializeClient
         }
       }
     }

@@ -25,6 +25,7 @@ class SightedClient[
   WorldView
 ](
    val transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
+   val identity: ClientIdentity,
    viewRef: Ref[F, WorldView],
    abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[List[transport.Response]]]
 ) {
@@ -97,13 +98,14 @@ object SightedClient {
   def withInitialWorldView[F[_]: Ref.Make: MonadThrow, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView]( 
   // format: on
     transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
+    identity: ClientIdentity,
     initialWorldView: WorldView,
     abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[
       List[transport.Response]
     ]]
   ): F[SightedClient[F, SelfBoundPackets, PeerBoundPackets, WorldView]] =
     Monad[F].map(Ref.of[F, WorldView](initialWorldView)) { ref =>
-      new SightedClient(transport, ref, abstraction)
+      new SightedClient(transport, identity, ref, abstraction)
     }
 
 }
