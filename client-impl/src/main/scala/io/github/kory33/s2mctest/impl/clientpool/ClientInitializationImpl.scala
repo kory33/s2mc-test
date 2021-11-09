@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.impl.clientpool
 
 import cats.MonadThrow
-import cats.effect.{IO, Ref, Resource}
+import cats.effect.{GenConcurrent, IO, Ref, Resource}
 import com.comcast.ip4s.{Host, SocketAddress}
 import fs2.io.net.Network
 import io.github.kory33.s2mctest.core.client.{
@@ -197,7 +197,7 @@ object ClientInitializationImpl {
 
   def apply[
     // format: off
-    F[_]: MonadThrow: Ref.Make: Network,
+    F[_]: Ref.Make: Network,
     // format: on
     LoginServerBoundPackets <: Tuple,
     LoginClientBoundPackets <: Tuple,
@@ -220,11 +220,12 @@ object ClientInitializationImpl {
   )(using doLoginEv: DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets])(
     // because the abstraction should not abstract any packet outside the protocol...
     using PacketUnion <:< Tuple.Union[PlayClientBoundPackets],
-    TypeTest[Tuple.Union[PlayClientBoundPackets], PacketUnion]
+    TypeTest[Tuple.Union[PlayClientBoundPackets], PacketUnion],
+    GenConcurrent[F, Throwable]
   ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
     (playerName: String, initialWorldView: WorldView) => {
       val networkTransportResource: Resource[F, PacketTransport[F]] =
-        Network[F].client(address).map { socket => NetworkTransport.noCompression(socket) }
+        Network[F].client(address).evalMap { socket => NetworkTransport.noCompression(socket) }
 
       networkTransportResource.flatMap { (networkTransport: PacketTransport[F]) =>
         Resource.eval {
