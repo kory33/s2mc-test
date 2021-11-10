@@ -43,7 +43,7 @@ object NetworkTransport {
    * https://wiki.vg/index.php?title=Protocol&oldid=17019#Without_compression
    */
   def noCompression[F[_]](socket: Socket[F])(
-    using GenConcurrent[F, Throwable]
+    using F: GenConcurrent[F, Throwable]
   ): F[PacketTransport[F]] =
     given ReadBytes[F] = (n: Int) => socket.readN(n)
 
@@ -59,54 +59,64 @@ object NetworkTransport {
             readSemaphore
               .permit
               .use(_ =>
-                for {
-                  idAndDataChunkLengthResult <-
-                    DecodeBytesInterpreter.runProgramOnReadBytesMonad[F, Int](readPacketLength)
-                  idAndDataChunkLength <- idAndDataChunkLengthResult match {
-                    case Right(value) => Monad[F].pure(value)
-                    case Left(parseError) =>
-                      cats.MonadThrow[F].raiseError {
-                        parseError match {
-                          case ParseError.Raised(error) => error
-                          case ParseError.RanOutOfBytes =>
-                            RuntimeException(
-                              "unreachable (Sockets should not run out of bytes)"
-                            )
-                          case ParseError.GaveUp(reason) =>
-                            IOException(s"Parsing gave up while reading packet length: $reason")
+                F.uncancelable(poll =>
+                  for {
+                    idAndDataChunkLengthResult <-
+                      poll(
+                        DecodeBytesInterpreter.runProgramCancellably[F, Int](readPacketLength)
+                      )
+                    idAndDataChunkLength <- idAndDataChunkLengthResult match {
+                      case Right(value) => Monad[F].pure(value)
+                      case Left(parseError) =>
+                        cats.MonadThrow[F].raiseError {
+                          parseError match {
+                            case ParseError.Raised(error) => error
+                            case ParseError.RanOutOfBytes =>
+                              RuntimeException(
+                                "unreachable (Sockets should not run out of bytes)"
+                              )
+                            case ParseError.GaveUp(reason) =>
+                              IOException(
+                                s"Parsing gave up while reading packet length: $reason"
+                              )
+                          }
                         }
-                      }
-                  }
-                  idAndDataChunk <- socket.readN(idAndDataChunkLength)
-                  idAndDataResult = DecodeFiniteBytesInterpreter
-                    .runProgramOnChunk(idAndDataChunk, readPacketIdAndData)
-                  idAndData <- idAndDataResult match {
-                    case ParseResult.Just(idAndData) => Monad[F].pure(idAndData)
-                    case ParseResult.Errored(error, _) =>
-                      cats.MonadThrow[F].raiseError {
-                        error match {
-                          case ParseError.Raised(error) => error
-                          case ParseError.RanOutOfBytes =>
-                            IOException("Ran out of bytes while reading the packet ID")
-                          case ParseError.GaveUp(reason) =>
-                            IOException(s"Parsing gave up while reading the packet ID: $reason")
+                    }
+                    idAndDataChunk <- socket.readN(idAndDataChunkLength)
+                    idAndDataResult = DecodeFiniteBytesInterpreter
+                      .runProgramOnChunk(idAndDataChunk, readPacketIdAndData)
+                    idAndData <- idAndDataResult match {
+                      case ParseResult.Just(idAndData) => Monad[F].pure(idAndData)
+                      case ParseResult.Errored(error, _) =>
+                        cats.MonadThrow[F].raiseError {
+                          error match {
+                            case ParseError.Raised(error) => error
+                            case ParseError.RanOutOfBytes =>
+                              IOException("Ran out of bytes while reading the packet ID")
+                            case ParseError.GaveUp(reason) =>
+                              IOException(
+                                s"Parsing gave up while reading the packet ID: $reason"
+                              )
+                          }
                         }
-                      }
-                    case ParseResult.WithExcessBytes(_, _, _) =>
-                      cats.MonadThrow[F].raiseError {
-                        RuntimeException(
-                          "unreachable (readUntilTheEnd should not leave any excess bytes)"
-                        )
-                      }
-                  }
-                } yield idAndData
+                      case ParseResult.WithExcessBytes(_, _, _) =>
+                        cats.MonadThrow[F].raiseError {
+                          RuntimeException(
+                            "unreachable (readUntilTheEnd should not leave any excess bytes)"
+                          )
+                        }
+                    }
+                  } yield idAndData
+                )
               )
 
           override def write(id: PacketId, data: Chunk[Byte]): F[Unit] =
             val idChunk = VarNumEncodes.encodeIntAsVarInt.write(id)
             val idAndData = idChunk ++ data
             val lengthChunk = VarNumEncodes.encodeIntAsVarInt.write(idAndData.size)
-            writeSemaphore.permit.use(_ => socket.write(lengthChunk ++ idAndData))
+            writeSemaphore
+              .permit
+              .use(_ => F.uncancelable(_ => socket.write(lengthChunk ++ idAndData)))
         }
       }
     }

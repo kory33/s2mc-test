@@ -1,7 +1,6 @@
 package io.github.kory33.s2mctest.core.client
 
-import cats.effect.Ref
-import cats.{Monad, MonadThrow}
+import cats.effect.{Ref, Resource, MonadCancelThrow}
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 
@@ -16,14 +15,25 @@ import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTranspor
  * [[abstraction]], and cannot be observed by users of this class; they contribute to the
  * automatic update of the clients' view of the world. Visible packets are those that are not
  * filtered by the [[abstraction]].
+ *
+ * @param transport
+ *   INTERNAL, the transport that this client uses. Users should use nextPacketOrViewUpdate or
+ *   writePacket wherever possible.
+ * @param identity
+ *   the identity of this client
+ * @param viewRef
+ *   reference to a [[WorldView]] that this client keeps updating
+ * @param abstraction
+ *   the object abstracting packets from [[transport]].
  */
 // format: off
 class SightedClient[
-  F[_]: MonadThrow,
+  F[_]: MonadCancelThrow,
   SelfBoundPackets <: Tuple,
   PeerBoundPackets <: Tuple,
   WorldView
 ](
+   // INTERNAL. Users should use nextPacketOrViewUpdate or writePacket wherever possible 
    val transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
    val identity: ClientIdentity,
    viewRef: Ref[F, WorldView],
@@ -42,34 +52,38 @@ class SightedClient[
    *
    * As a consequence, the returned `Tuple.Union[SelfBoundPackets]` will not contain packets
    * abstracted away by the `abstraction`.
+   *
+   * This action is cancellable (when the client is waiting for next packet) and is atomic.
    */
   val nextPacketOrViewUpdate: F[Option[Tuple.Union[SelfBoundPackets]]] =
-    for {
-      result <- transport.nextPacket
-      packet <- result match {
-        case ParseResult.Just(packet) => Monad[F].pure(packet)
-        case ParseResult.WithExcessBytes(packet, excess, _) =>
-          MonadThrow[F].raiseError {
-            java
-              .io
-              .IOException(
-                s"Excess bytes while reading packets: parsed $packet but with excess $excess"
-              )
-          }
-        case ParseResult.Errored(error, input) =>
-          MonadThrow[F].raiseError {
-            java.io.IOException(s"Error while reading packets: got $error on $input")
-          }
-      }
-      updateFunction = abstraction.viewUpdate(packet)
-      _ <- updateFunction.traverse { f =>
-        for {
-          additionalAction <- viewRef.modify(f)
-          responses <- additionalAction
-          _ <- responses.traverse(transport.write)
-        } yield ()
-      }
-    } yield if updateFunction.isEmpty then Some(packet) else None
+    MonadCancelThrow[F].uncancelable { poll =>
+      for {
+        result <- poll(transport.nextPacket)
+        packet <- result match {
+          case ParseResult.Just(packet) => MonadCancelThrow[F].pure(packet)
+          case ParseResult.WithExcessBytes(packet, excess, _) =>
+            MonadCancelThrow[F].raiseError {
+              java
+                .io
+                .IOException(
+                  s"Excess bytes while reading packets: parsed $packet but with excess $excess"
+                )
+            }
+          case ParseResult.Errored(error, input) =>
+            MonadCancelThrow[F].raiseError {
+              java.io.IOException(s"Error while reading packets: got $error on $input")
+            }
+        }
+        updateFunction = abstraction.viewUpdate(packet)
+        _ <- updateFunction.traverse { f =>
+          for {
+            additionalAction <- viewRef.modify(f)
+            responses <- additionalAction
+            _ <- responses.traverse(transport.write)
+          } yield ()
+        }
+      } yield if updateFunction.isEmpty then Some(packet) else None
+    }
 
   /**
    * Read the current view of the world as seen from this client.
@@ -82,7 +96,7 @@ class SightedClient[
    * abstracted away by the `abstraction`.
    */
   val nextPacket: F[Tuple.Union[SelfBoundPackets]] =
-    Monad[F].untilDefinedM(nextPacketOrViewUpdate)
+    MonadCancelThrow[F].untilDefinedM(nextPacketOrViewUpdate)
 
   /**
    * Write a [[packet]] to the underlying transport.
@@ -95,7 +109,7 @@ class SightedClient[
 object SightedClient {
 
   // format: off
-  def withInitialWorldView[F[_]: Ref.Make: MonadThrow, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView]( 
+  def withInitialWorldView[F[_]: Ref.Make: MonadCancelThrow, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView]( 
   // format: on
     transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
     identity: ClientIdentity,
@@ -104,7 +118,7 @@ object SightedClient {
       List[transport.Response]
     ]]
   ): F[SightedClient[F, SelfBoundPackets, PeerBoundPackets, WorldView]] =
-    Monad[F].map(Ref.of[F, WorldView](initialWorldView)) { ref =>
+    MonadCancelThrow[F].map(Ref.of[F, WorldView](initialWorldView)) { ref =>
       new SightedClient(transport, identity, ref, abstraction)
     }
 

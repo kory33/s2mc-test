@@ -2,6 +2,7 @@ package io.github.kory33.s2mctest.core.connection.codec.interpreters
 
 import cats.Monad
 import cats.data.{EitherT, State}
+import cats.effect.{MonadCancel, Ref}
 import io.github.kory33.s2mctest.core.connection.algebra.ReadBytes
 import io.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeBytes, ReadBytesInstruction}
 
@@ -37,27 +38,37 @@ object DecodeBytesInterpreter {
     }
   }
 
-  def runProgramOnEitherTState[A](program: DecodeBytes[A]): EitherParseErrorTState[A] =
-    program.foldMap(runReadBytesInstruction)
-
-  def runInstructionOnReadBytesMonad[F[_]: Monad: ReadBytes]
-    : ReadBytesInstruction ~> EitherT[F, ParseError, _] =
-    toFunctionK {
-      [A] =>
-        (instruction: ReadBytesInstruction[A]) =>
-          instruction match {
-            case ReadBytesInstruction.ReadWithSize(n) =>
-              EitherT.liftF(ReadBytes[F].ofSize(n))
-            case ReadBytesInstruction.RaiseError(error) =>
-              EitherT.leftT(ParseError.Raised(error))
-            case ReadBytesInstruction.GiveUp(message) =>
-              EitherT.leftT(ParseError.GaveUp(message))
-          }: EitherT[F, ParseError, A] // help type inference
-    }
-
-  def runProgramOnReadBytesMonad[F[_]: Monad: ReadBytes, A](
+  /**
+   * Run a [[DecodeBytes]] in such a way that a cancellation may take place at any time before a
+   * first read completes, and not anywhere else.
+   */
+  def runProgramCancellably[F[_]: ReadBytes, A](
     program: DecodeBytes[A]
-  ): F[Either[ParseError, A]] =
-    program.foldMap(runInstructionOnReadBytesMonad[F]).value
+  )(using F: MonadCancel[F, ?])(using Ref.Make[F]): F[Either[ParseError, A]] = {
+    Ref[F].of(false).flatMap { (hasCompletedARead: Ref[F, Boolean]) =>
+      F.uncancelable { poll =>
+        def runInstruction: ReadBytesInstruction ~> EitherT[F, ParseError, _] =
+          toFunctionK {
+            [X] =>
+              (instruction: ReadBytesInstruction[X]) =>
+                instruction match {
+                  case ReadBytesInstruction.ReadWithSize(n) =>
+                    EitherT.liftF {
+                      Monad[F].ifM(hasCompletedARead.get)(
+                        poll(ReadBytes[F].ofSize(n)) <* hasCompletedARead.set(true),
+                        ReadBytes[F].ofSize(n)
+                      )
+                    }
+                  case ReadBytesInstruction.RaiseError(error) =>
+                    EitherT.leftT(ParseError.Raised(error))
+                  case ReadBytesInstruction.GiveUp(message) =>
+                    EitherT.leftT(ParseError.GaveUp(message))
+                }: EitherT[F, ParseError, X] // help type inference
+          }
+
+        program.foldMap(runInstruction).value
+      }
+    }
+  }
 
 }

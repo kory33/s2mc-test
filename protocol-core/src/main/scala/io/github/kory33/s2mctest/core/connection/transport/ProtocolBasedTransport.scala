@@ -27,6 +27,9 @@ case class ProtocolBasedTransport[F[_], SelfBoundPackets <: Tuple, PeerBoundPack
    * Read next packet from the underlying transport and parse the id-chunk pair so obtained. The
    * result is given as a [[ParseResult]], which may or may not contain successfully parsed
    * packet data.
+   *
+   * This action only maps a result obtained from `transport.readOnePacket`, so all concurrent
+   * specifications (atomicity, cancellability etc.) from that method are inherited.
    */
   def nextPacket: F[ParseResult[Tuple.Union[SelfBoundPackets]]] =
     F.map(transport.readOnePacket) {
