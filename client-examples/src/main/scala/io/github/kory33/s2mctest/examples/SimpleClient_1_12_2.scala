@@ -45,7 +45,7 @@ def simpleClient_1_12_2(): Unit = {
   val clientPool = ClientPool
     .withInitData(
       accountPool,
-      WorldView(PositionAndOrientation(0, 0, 0, 0, 0), WorldTime(0, 0)),
+      WorldView(PositionAndOrientation.zero, WorldTime.zero),
       ClientInitializationImpl(
         address,
         protocolVersion,

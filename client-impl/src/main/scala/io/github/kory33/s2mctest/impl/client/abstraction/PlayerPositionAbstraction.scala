@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.Applicative
-import io.github.kory33.s2mctest.core.client.worldview.PositionAndOrientation
+import io.github.kory33.s2mctest.core.client.worldview.{PositionAndOrientation, Vector3D}
 import io.github.kory33.s2mctest.core.client.{
   ProtocolPacketAbstraction,
   TransportPacketAbstraction
@@ -58,26 +58,29 @@ object PlayerPositionAbstraction {
           ProtocolPacketAbstraction.pure { transport =>
             {
               case TeleportPlayer_WithConfirm(x, y, z, yaw, pitch, flags, teleportId) =>
-                Some { original =>
-                  val rawFlags = flags.asRawByte
-                  val newPositionAndOrientation = {
-                    // see https://wiki.vg/index.php?title=Protocol&oldid=16681#Player_Position_And_Look_.28clientbound.29
-                    // for details
-                    PositionAndOrientation(
-                    // format: off
-                    if (rawFlags & 0x01) == 0 then x else original.x + x,
-                    if (rawFlags & 0x02) == 0 then y else original.y + y,
-                    if (rawFlags & 0x04) == 0 then z else original.z + z,
-                    if (rawFlags & 0x08) == 0 then yaw else original.yaw + yaw,
-                    if (rawFlags & 0x010) == 0 then pitch else original.pitch + pitch
-                    // format: on
-                    )
-                  }
+                Some {
+                  case p @ PositionAndOrientation(Vector3D(x0, y0, z0), yaw0, pitch0) =>
+                    val rawFlags = flags.asRawByte
+                    val newPositionAndOrientation = {
+                      // see https://wiki.vg/index.php?title=Protocol&oldid=16681#Player_Position_And_Look_.28clientbound.29
+                      // for details
+                      PositionAndOrientation(
+                        Vector3D(
+                          if (rawFlags & 0x01) == 0 then x else x0 + x,
+                          if (rawFlags & 0x02) == 0 then y else y0 + y,
+                          if (rawFlags & 0x04) == 0 then z else z0 + z
+                        ),
+                        // format: off
+                        if (rawFlags & 0x08)  == 0 then yaw   else yaw0 + yaw,
+                        if (rawFlags & 0x010) == 0 then pitch else pitch0 + pitch
+                        // format: on
+                      )
+                    }
 
-                  (
-                    newPositionAndOrientation,
-                    List(transport.Response(TeleportConfirm(teleportId)))
-                  )
+                    (
+                      newPositionAndOrientation,
+                      List(transport.Response(TeleportConfirm(teleportId)))
+                    )
                 }
             }
           }

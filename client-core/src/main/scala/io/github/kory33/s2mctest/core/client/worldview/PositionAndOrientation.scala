@@ -3,4 +3,10 @@ package io.github.kory33.s2mctest.core.client.worldview
 /**
  * The datatype describing the position and orientation of an entity.
  */
-case class PositionAndOrientation(x: Double, y: Double, z: Double, yaw: Float, pitch: Float)
+case class PositionAndOrientation(absPosition: Vector3D, yaw: Float, pitch: Float) {}
+
+object PositionAndOrientation {
+
+  val zero: PositionAndOrientation = PositionAndOrientation(Vector3D.zero, 0.0, 0.0)
+
+}

@@ -5,3 +5,9 @@ package io.github.kory33.s2mctest.core.client.worldview
  * with the current time of day.
  */
 case class WorldTime(worldAge: Long, timeOfDay: Long)
+
+object WorldTime {
+
+  val zero: WorldTime = WorldTime(0, 0)
+
+}
