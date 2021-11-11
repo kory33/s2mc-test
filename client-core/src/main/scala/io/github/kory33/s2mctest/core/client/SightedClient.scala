@@ -1,6 +1,7 @@
 package io.github.kory33.s2mctest.core.client
 
-import cats.effect.{MonadCancelThrow, Ref, Resource}
+import cats.{Monad, MonadThrow}
+import cats.effect.{Fiber, MonadCancelThrow, Outcome, Ref, Resource, Spawn}
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 
@@ -28,7 +29,7 @@ import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTranspor
  */
 // format: off
 class SightedClient[
-  F[_]: MonadCancelThrow,
+  F[_]: Spawn,
   SelfBoundPackets <: Tuple,
   PeerBoundPackets <: Tuple,
   WorldView
@@ -60,9 +61,9 @@ class SightedClient[
       for {
         result <- poll(transport.nextPacket)
         packet <- result match {
-          case ParseResult.Just(packet) => MonadCancelThrow[F].pure(packet)
+          case ParseResult.Just(packet) => Monad[F].pure(packet)
           case ParseResult.WithExcessBytes(packet, excess, _) =>
-            MonadCancelThrow[F].raiseError {
+            MonadThrow[F].raiseError {
               java
                 .io
                 .IOException(
@@ -70,7 +71,7 @@ class SightedClient[
                 )
             }
           case ParseResult.Errored(error, input) =>
-            MonadCancelThrow[F].raiseError {
+            MonadThrow[F].raiseError {
               java.io.IOException(s"Error while reading packets: got $error on $input")
             }
         }
@@ -99,6 +100,17 @@ class SightedClient[
     MonadCancelThrow[F].untilDefinedM(nextPacketOrViewUpdate)
 
   /**
+   * The resource of process that keeps reading packets from the transport, discarding the
+   * result. Acquiring this resource has an effect of letting packets go through the
+   * abstraction, meaning that auto-responses by abstractions will be made while this resource
+   * is being held.
+   *
+   * When this resource goes out of scope, the packet-reading process is cancelled.
+   */
+  val keepReadingPackets: Resource[F, Unit] =
+    Spawn[F].background(Monad[F].foreverM(nextPacket)).map(_ => ())
+
+  /**
    * Write a [[packet]] to the underlying transport.
    */
   def writePacket[P: transport.protocolView.peerBound.CanEncode](packet: P): F[Unit] =
@@ -109,7 +121,7 @@ class SightedClient[
 object SightedClient {
 
   // format: off
-  def withInitialWorldView[F[_]: Ref.Make: MonadCancelThrow, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView]( 
+  def withInitialWorldView[F[_]: Ref.Make: Spawn, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView]( 
   // format: on
     transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
     identity: ClientIdentity,
