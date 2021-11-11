@@ -47,13 +47,6 @@ object ClientPool {
     init: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, State]
   ) {
 
-    private case class PoolState(
-      clientsInUse: Int,
-      dormantClients: List[SightedClient[F, SelfBoundPackets, PeerBoundPackets, State]]
-    ) {
-      val totalClients: Int = clientsInUse + dormantClients.size
-    }
-
     final type PoolWith[AccountPool] =
       ClientPool[F, SelfBoundPackets, PeerBoundPackets, State] {
         val accountPool: AccountPool
@@ -67,40 +60,84 @@ object ClientPool {
      * reaches [[softBound]].
      */
     def cached(softBound: Int): F[PoolWith[_accountPool.type]] = {
+
+      /**
+       * A dormant client cached inside the pool.
+       *
+       * Because we must let clients respond to KeepAlive packets and hence let packets go
+       * through abstraction of each client, we are holding a cancel-token of a fiber in which
+       * the client keeps reading packets. To yield the control back to the user of clients, we
+       * cancel this fiber whenever a user requests the client a resource.
+       *
+       * @param client
+       *   client that has been put in a dormant state
+       * @param cancelPacketReadLoop
+       *   cancellation token of a fiber in which the client keeps reading packets
+       * @param cleanUpClient
+       *   the finalizer of the client, should only be invoked when we are throwing away the
+       *   client
+       */
+      case class DormantClient(
+        client: SightedClient[F, SelfBoundPackets, PeerBoundPackets, State],
+        cancelPacketReadLoop: F[Unit],
+        cleanUpClient: F[Unit]
+      )
+
+      case class PoolState(clientsInUse: Int, dormantClients: List[DormantClient]) {
+        def popHead: (PoolState, Option[DormantClient]) =
+          dormantClients match {
+            case head :: tail => (PoolState(clientsInUse + 1, tail), Some(head))
+            case Nil          => (this, None)
+          }
+
+        val totalClients: Int = clientsInUse + dormantClients.size
+      }
+
       for {
         stateRef <- Ref.of[F, PoolState](PoolState(0, Nil))
       } yield new ClientPool[F, SelfBoundPackets, PeerBoundPackets, State] {
-        private val recycleOne: F[Option[Client]] =
-          stateRef.modify {
-            case st @ PoolState(inUse, reusableClients) =>
-              reusableClients match {
-                case head :: tail => (PoolState(inUse + 1, tail), Some(head))
-                case Nil          => (st, None)
+        private def finalizeUsedClient(client: Client, clientFinalizer: F[Unit]): F[Unit] =
+          for {
+            // we are not yet sure if we should cache this client,
+            // but start packet-read-loop process anyway, because it can be cancelled later on
+            packetReadLoopResource <- client.keepReadingPackets.allocated
+            (_, cancelPacketReadLoop) = packetReadLoopResource
+            cached <- stateRef.modify { st =>
+              if st.totalClients < softBound then {
+                val dormant = DormantClient(client, cancelPacketReadLoop, clientFinalizer)
+                (PoolState(st.clientsInUse - 1, dormant :: st.dormantClients), true)
+              } else {
+                (PoolState(st.clientsInUse - 1, st.dormantClients), false)
               }
-          }
-
-        private def finalizeUsedClient(client: Client): F[Unit] =
-          stateRef.update { st =>
-            if st.totalClients < softBound then {
-              PoolState(st.clientsInUse - 1, client :: st.dormantClients)
-            } else {
-              PoolState(st.clientsInUse - 1, st.dormantClients)
             }
-          }
+            _ <- if cached then Monad[F].unit else cancelPacketReadLoop >> clientFinalizer
+          } yield ()
 
         override val accountPool: _accountPool.type = _accountPool
 
         override val freshClient: Resource[F, Client] = {
-          Resource.make(
-            // FIXME do not throw away the finalizer... or can we? (we don't necessarily have to close all connections ourselves)
-            accountPool.getFresh >>=
-              (init.initializeFresh(_, initialState).allocated[Client].map(_._1))
-          )(finalizeUsedClient)
+          val allocate: F[(Client, F[Unit])] =
+            accountPool.getFresh >>= (init.initializeFresh(_, initialState).allocated[Client])
+
+          Resource.make(allocate)((finalizeUsedClient _).tupled).map(_._1)
         }
 
         override val recycledClient: Resource[F, Client] = {
-          val recycledResource =
-            Resource.make[F, Option[Client]](recycleOne)(_.traverse(finalizeUsedClient).void)
+          val recycledResource: Resource[F, Option[Client]] = {
+            val make: F[Option[DormantClient]] = stateRef.modify(_.popHead)
+            val finalize: Option[DormantClient] => F[Unit] = _.traverse {
+              // cancelReadLoop has already been invoked on resource creation, so ignore
+              case DormantClient(client, _, finalize) => finalizeUsedClient(client, finalize)
+            }.void
+
+            Resource.make[F, Option[DormantClient]](make)(finalize).evalMap {
+              case Some(DormantClient(client, cancelReadLoop, _)) =>
+                // we are bringing back the client from dormant state to used state,
+                // so cancel read-loop
+                cancelReadLoop.as(Some(client))
+              case None => Monad[F].pure(None)
+            }
+          }
 
           recycledResource.flatMap {
             case Some(client) => Resource.pure(client)

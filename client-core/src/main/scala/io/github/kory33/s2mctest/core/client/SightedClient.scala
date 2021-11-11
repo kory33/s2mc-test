@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.core.client
 
+import cats.effect._
 import cats.{Monad, MonadThrow}
-import cats.effect.{Fiber, MonadCancelThrow, Outcome, Ref, Resource, Spawn}
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
 
