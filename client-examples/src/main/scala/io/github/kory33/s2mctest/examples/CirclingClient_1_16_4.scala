@@ -21,10 +21,10 @@ import io.github.kory33.s2mctest.impl.client.abstraction.{
 }
 import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{
-  PlayerPosition,
-  PlayerPositionLook,
+  Player,
   PlayerLook,
-  Player
+  PlayerPosition,
+  PlayerPositionLook
 }
 import monocle.Lens
 import monocle.macros.GenLens
