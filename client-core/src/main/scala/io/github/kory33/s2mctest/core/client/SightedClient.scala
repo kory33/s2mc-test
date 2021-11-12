@@ -1,7 +1,9 @@
 package io.github.kory33.s2mctest.core.client
 
-import cats.effect._
+import cats.effect.*
+import cats.effect.std.Semaphore
 import cats.{Monad, MonadThrow}
+import fs2.concurrent.Topic
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.transport.{
   ProtocolBasedReadTransport,
@@ -32,12 +34,13 @@ import io.github.kory33.s2mctest.core.connection.transport.{
  */
 // format: off
 class SightedClient[
-  F[_]: Spawn,
+  F[_]: Concurrent,
   ServerBoundPackets <: Tuple,
   ClientBoundPackets <: Tuple,
   WorldView
 ](
    val writeTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets],
+   readSemaphore: Semaphore[F],
    readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
    val identity: ClientIdentity,
    viewRef: Ref[F, WorldView],
@@ -46,6 +49,11 @@ class SightedClient[
   // format: on
 
   import cats.implicits.given
+
+  /**
+   * Read the current view of the world as seen from this client.
+   */
+  val worldView: F[WorldView] = viewRef.get
 
   /**
    * Read the next packet, either internal or visible, and return the result.
@@ -59,7 +67,7 @@ class SightedClient[
    *
    * This action is cancellable (when the client is waiting for next packet) and is atomic.
    */
-  val nextPacketOrViewUpdate: F[Option[Tuple.Union[ClientBoundPackets]]] =
+  private val nextPacketOrViewUpdate: F[Option[Tuple.Union[ClientBoundPackets]]] =
     MonadCancelThrow[F].uncancelable { poll =>
       for {
         result <- poll(readTransport.nextPacket)
@@ -90,28 +98,48 @@ class SightedClient[
     }
 
   /**
-   * Read the current view of the world as seen from this client.
-   */
-  val worldView: F[WorldView] = viewRef.get
-
-  /**
-   * Keep reading packets from the transport, until we see a visible packet, and return. By
-   * definition, the returned `Tuple.Union[SelfBoundPackets]` will not contain packets
-   * abstracted away by the `abstraction`.
-   */
-  val nextPacket: F[Tuple.Union[ClientBoundPackets]] =
-    MonadCancelThrow[F].untilDefinedM(nextPacketOrViewUpdate)
-
-  /**
-   * The resource of process that keeps reading packets from the transport, discarding the
-   * result. Acquiring this resource has an effect of letting packets go through the
-   * abstraction, meaning that auto-responses by abstractions will be made while this resource
-   * is being held.
+   * Result of a read-loop, provided by the [[beginReadLoop]] resource.
    *
+   * @param stream
+   *   the [[Topic]] which keeps sending one of updated [[WorldView]] or a packet of type
+   *   `Tuple.Union[ClientBoundPackets]` while the read-loop is active (determined by the
+   *   lifetime of the read-loop resource).
+   */
+  case class ReadLoopUpdates(
+    stream: fs2.Stream[F, Either[WorldView, Tuple.Union[ClientBoundPackets]]]
+  )
+
+  /**
+   * The resource of process that keeps reading packets from the transport, sending the results
+   * into the exposed [[Topic]]. The exposed [[Topic]] notifies all updates originating from
+   * incoming packets; abstracted packets that may modify [[WorldView]] appear as an updated
+   * [[WorldView]], while non-abstracted, visible packets arise as
+   * `Tuple.Union[ClientBoundPackets]`.
+   *
+   * This resource is guarded by a semaphore of a single permit. Trying to acquire this resource
+   * twice in a row will result in a deadlock.
+   *
+   * Acquiring this resource has an effect of letting packets go through the abstraction,
+   * meaning that auto-responses by abstractions will be made while this resource is being held.
    * When this resource goes out of scope, the packet-reading process is cancelled.
    */
-  val keepReadingPackets: Resource[F, Unit] =
-    Spawn[F].background(Monad[F].foreverM(nextPacket)).map(_ => ())
+  // FIXME: All Updates before the completion of the first subscription are lost.
+  //        We probably need a more general interface to catch such use-cases,
+  //        but until one is demanded, we shall keep the read-loop in this form.
+  val beginReadLoop: Resource[F, ReadLoopUpdates] =
+    for {
+      _ <- readSemaphore.permit
+      topic <- Resource
+        .make(Topic[F, Either[WorldView, Tuple.Union[ClientBoundPackets]]])(_.close.void)
+      _ <- Spawn[F].background {
+        Monad[F].foreverM {
+          nextPacketOrViewUpdate >>= {
+            case Some(packet) => topic.publish1(Right(packet))
+            case None         => worldView >>= (view => topic.publish1(Left(view)))
+          }
+        }
+      }
+    } yield ReadLoopUpdates(topic.subscribe(Int.MaxValue))
 
   /**
    * Write a [[packet]] to the underlying transport.
@@ -123,8 +151,10 @@ class SightedClient[
 
 object SightedClient {
 
+  import cats.implicits.given
+
   // format: off
-  def withInitialWorldView[F[_]: Ref.Make: Spawn, ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView](
+  def withInitialWorldView[F[_]: Ref.Make: Concurrent, ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView](
   // format: on
     writeTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets],
     readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
@@ -134,8 +164,16 @@ object SightedClient {
       List[writeTransport.Response]
     ]]
   ): F[SightedClient[F, ServerBoundPackets, ClientBoundPackets, WorldView]] =
-    MonadCancelThrow[F].map(Ref.of[F, WorldView](initialWorldView)) { ref =>
-      new SightedClient(writeTransport, readTransport, identity, ref, abstraction)
-    }
+    for {
+      ref <- Ref.of[F, WorldView](initialWorldView)
+      readSemaphore <- Semaphore[F](1)
+    } yield new SightedClient(
+      writeTransport,
+      readSemaphore,
+      readTransport,
+      identity,
+      ref,
+      abstraction
+    )
 
 }

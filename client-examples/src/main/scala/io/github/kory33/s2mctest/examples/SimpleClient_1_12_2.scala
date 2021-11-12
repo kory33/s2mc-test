@@ -57,15 +57,19 @@ def simpleClient_1_12_2(): Unit = {
     .cached(50)
     .unsafeRunSync()
 
-  val program: IO[Unit] = clientPool.recycledClient.use { client =>
-    Monad[IO].foreverM {
-      for {
-        packet <- client.nextPacket
-        state <- client.worldView
-        _ <- IO(println((packet, state)))
-      } yield ()
+  val program: IO[Unit] =
+    clientPool.recycledClient.flatMap(_.beginReadLoop).use { updates =>
+      updates
+        .stream
+        .evalMap {
+          case Left(worldView) =>
+            IO(println(s"WorldView updated: $worldView"))
+          case Right(packet) =>
+            IO(println(s"Visible packet: $packet"))
+        }
+        .compile
+        .drain
     }
-  }
 
   program.unsafeRunSync()
 }

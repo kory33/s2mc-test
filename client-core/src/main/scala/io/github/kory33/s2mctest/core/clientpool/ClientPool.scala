@@ -100,7 +100,7 @@ object ClientPool {
           for {
             // we are not yet sure if we should cache this client,
             // but start packet-read-loop process anyway, because it can be cancelled later on
-            packetReadLoopResource <- client.keepReadingPackets.allocated
+            packetReadLoopResource <- client.beginReadLoop.allocated
             (_, cancelPacketReadLoop) = packetReadLoopResource
             cached <- stateRef.modify { st =>
               if st.totalClients < softBound then {
