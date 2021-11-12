@@ -15,7 +15,7 @@ import org.scalatest.matchers.should
 
 import scala.compiletime.ops.int.S
 
-class ProtocolBasedTransportSpec extends AnyFlatSpec with should.Matchers {
+class ProtocolBasedWriteTransportSpec extends AnyFlatSpec with should.Matchers {
   import cats.implicits.given
 
   val mockedProtocol: Protocol[(Unit, Int), EmptyTuple] =
@@ -27,28 +27,22 @@ class ProtocolBasedTransportSpec extends AnyFlatSpec with should.Matchers {
       PacketIdBindings(EmptyTuple)
     )
 
-  val writeOnlyTransport: PacketTransport[Writer[Chunk[Byte], _]] =
-    new PacketTransport[Writer[Chunk[Byte], _]] {
-      override def readOnePacket: Writer[Chunk[Byte], (PacketId, Chunk[Byte])] =
-        Writer.value((1, Chunk.empty)) // some meaningless value
+  val writeOnlyTransport: PacketWriteTransport[Writer[Chunk[Byte], _]] =
+    (id: PacketId, data: Chunk[Byte]) =>
+      Writer.tell(Chunk[Byte](id.toByte)) >> Writer.tell(data)
 
-      override def write(id: PacketId, data: Chunk[Byte]): Writer[Chunk[Byte], Unit] =
-        // write id then data
-        Writer.tell(Chunk[Byte](id.toByte)) >> Writer.tell(data)
-    }
-
-  "ProtocolBasedTransportSpec.writePacket" should "allow writing stuff in binding tuple" in {
+  "writePacket" should "allow writing stuff in binding tuple" in {
     val protocolBasedTransport =
-      ProtocolBasedTransport(writeOnlyTransport, mockedProtocol.asViewedFromClient)
+      ProtocolBasedWriteTransport(writeOnlyTransport, mockedProtocol.serverBoundFragment)
 
     protocolBasedTransport.writePacket(0).run._1 should equal(Chunk(42: Byte, 0: Byte))
     protocolBasedTransport.writePacket(10).run._1 should equal(Chunk(42: Byte, 10: Byte))
     protocolBasedTransport.writePacket(()).run._1 should equal(Chunk(3: Byte))
   }
 
-  "ProtocolBasedTransportSpec.writePacket" should "not allow writing stuff not in binding tuple" in {
+  "writePacket" should "not allow writing stuff not in binding tuple" in {
     val protocolBasedTransport =
-      ProtocolBasedTransport(writeOnlyTransport, mockedProtocol.asViewedFromClient)
+      ProtocolBasedWriteTransport(writeOnlyTransport, mockedProtocol.serverBoundFragment)
 
     "protocolBasedTransport.writePacket('').run._1" shouldNot compile
     "protocolBasedTransport.writePacket(0.0).run._1" shouldNot compile

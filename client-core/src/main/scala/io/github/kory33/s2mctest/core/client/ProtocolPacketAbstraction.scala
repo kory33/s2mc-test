@@ -2,10 +2,10 @@ package io.github.kory33.s2mctest.core.client
 
 import cats.data.NonEmptyList
 import cats.{Applicative, Functor}
-import io.github.kory33.s2mctest.core.connection.protocol.ProtocolView
+import io.github.kory33.s2mctest.core.connection.protocol.Protocol
 import io.github.kory33.s2mctest.core.connection.transport.{
-  PacketTransport,
-  ProtocolBasedTransport
+  PacketWriteTransport,
+  ProtocolBasedWriteTransport
 }
 import io.github.kory33.s2mctest.core.generic.givens.GivenEither
 import monocle.Lens
@@ -31,7 +31,7 @@ trait ProtocolPacketAbstraction[
 ] {
 
   def abstractOnTransport(
-    packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]
+    packetTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets]
   ): TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
 
   /**
@@ -101,7 +101,7 @@ object ProtocolPacketAbstraction {
    */
   def apply[F[_], SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, Packet, WorldView](
     onTransport: (
-      packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]
+      packetTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets]
     ) => TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
   ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
     onTransport(_)
@@ -118,7 +118,7 @@ object ProtocolPacketAbstraction {
      *   function, and is present just to allow the type inference to happen.
      */
     def apply[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
-      _protocol: ProtocolView[SelfBoundPackets, PeerBoundPackets]
+      _protocol: Protocol[PeerBoundPackets, SelfBoundPackets]
     ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Nothing, WorldView] =
       ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[WorldView])
   }
@@ -155,7 +155,7 @@ object ProtocolPacketAbstraction {
     WorldView
   ](
     onTransport: (
-      packetTransport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets]
+      packetTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets]
     ) => TransportPacketAbstraction[Packet, WorldView, List[packetTransport.Response]]
   ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Packet, WorldView] =
     ProtocolPacketAbstraction(transport =>

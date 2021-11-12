@@ -36,7 +36,7 @@ def simpleClient_1_12_2(): Unit = {
   val address = SocketAddress.fromString("localhost:25565").get
 
   val packetAbstraction = ProtocolPacketAbstraction
-    .empty[IO, WorldView](playProtocol.asViewedFromClient)
+    .empty[IO, WorldView](playProtocol)
     .thenAbstractWithLens(KeepAliveAbstraction.forProtocol, WorldView.unitLens)
     .thenAbstractWithLens(PlayerPositionAbstraction.forProtocol, WorldView.positionLens)
     .thenAbstractWithLens(TimeUpdateAbstraction.forProtocol, WorldView.worldTimeLens)
