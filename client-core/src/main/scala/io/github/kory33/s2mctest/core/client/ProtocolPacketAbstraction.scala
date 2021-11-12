@@ -2,7 +2,7 @@ package io.github.kory33.s2mctest.core.client
 
 import cats.data.NonEmptyList
 import cats.{Applicative, Functor}
-import io.github.kory33.s2mctest.core.connection.protocol.ProtocolView
+import io.github.kory33.s2mctest.core.connection.protocol.Protocol
 import io.github.kory33.s2mctest.core.connection.transport.{
   PacketWriteTransport,
   ProtocolBasedWriteTransport
@@ -118,7 +118,7 @@ object ProtocolPacketAbstraction {
      *   function, and is present just to allow the type inference to happen.
      */
     def apply[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
-      _protocol: ProtocolView[SelfBoundPackets, PeerBoundPackets]
+      _protocol: Protocol[PeerBoundPackets, SelfBoundPackets]
     ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Nothing, WorldView] =
       ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[WorldView])
   }

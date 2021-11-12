@@ -12,12 +12,6 @@ class Protocol[ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple](
   val clientBound: PacketIdBindings[Tuple.Map[ClientBoundPackets, CodecBinding]]
 ) {
 
-  def asViewedFromClient: ProtocolView[ClientBoundPackets, ServerBoundPackets] =
-    ProtocolView(clientBound, serverBound)
-
-  def asViewedFromServer: ProtocolView[ServerBoundPackets, ClientBoundPackets] =
-    asViewedFromClient.invert
-
   def clientBoundFragment: ProtocolFragment[ClientBoundPackets] = ProtocolFragment(clientBound)
 
   def serverBoundFragment: ProtocolFragment[ServerBoundPackets] = ProtocolFragment(serverBound)
@@ -40,21 +34,6 @@ object Protocol {
       clientBound.ev.substituteCoBounded(clientBound)
     )
   }
-}
-
-/**
- * The symmetric view of the [[Protocol]] that has forgotten which side of server or client we
- * are on. These objects have the [[invert]] method that allows flipping the sides of protocol
- * definition.
- */
-case class ProtocolView[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
-  selfBound: PacketIdBindings[Tuple.Map[SelfBoundPackets, CodecBinding]],
-  peerBound: PacketIdBindings[Tuple.Map[PeerBoundPackets, CodecBinding]]
-) {
-
-  def invert: ProtocolView[PeerBoundPackets, SelfBoundPackets] =
-    ProtocolView(peerBound, selfBound)
-
 }
 
 /**

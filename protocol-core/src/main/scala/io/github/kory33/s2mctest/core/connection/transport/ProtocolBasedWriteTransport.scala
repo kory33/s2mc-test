@@ -9,8 +9,7 @@ import io.github.kory33.s2mctest.core.connection.codec.interpreters.{
 import io.github.kory33.s2mctest.core.connection.protocol.{
   CodecBinding,
   PacketIn,
-  ProtocolFragment,
-  ProtocolView
+  ProtocolFragment
 }
 
 /**
