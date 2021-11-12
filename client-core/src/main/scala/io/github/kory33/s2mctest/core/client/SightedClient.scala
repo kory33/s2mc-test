@@ -15,7 +15,7 @@ import io.github.kory33.s2mctest.core.connection.transport.{
  * assumptions (view) about the external environment using those incoming data.
  *
  * These clients make a distinction between hidden "internal" packets and "visible" packets
- * within [[SelfBoundPackets]]. Internal packets are packets that are abstracted away by
+ * within [[ClientBoundPackets]]. Internal packets are packets that are abstracted away by
  * [[abstraction]], and cannot be observed by users of this class; they contribute to the
  * automatic update of the clients' view of the world. Visible packets are those that are not
  * filtered by the [[abstraction]].
@@ -33,15 +33,15 @@ import io.github.kory33.s2mctest.core.connection.transport.{
 // format: off
 class SightedClient[
   F[_]: Spawn,
-  SelfBoundPackets <: Tuple,
-  PeerBoundPackets <: Tuple,
+  ServerBoundPackets <: Tuple,
+  ClientBoundPackets <: Tuple,
   WorldView
 ](
-   val writeTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets],
-   readTransport: ProtocolBasedReadTransport[F, SelfBoundPackets],
+   val writeTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets],
+   readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
    val identity: ClientIdentity,
    viewRef: Ref[F, WorldView],
-   abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[List[writeTransport.Response]]]
+   abstraction: TransportPacketAbstraction[Tuple.Union[ClientBoundPackets], WorldView, F[List[writeTransport.Response]]]
 ) {
   // format: on
 
@@ -59,7 +59,7 @@ class SightedClient[
    *
    * This action is cancellable (when the client is waiting for next packet) and is atomic.
    */
-  val nextPacketOrViewUpdate: F[Option[Tuple.Union[SelfBoundPackets]]] =
+  val nextPacketOrViewUpdate: F[Option[Tuple.Union[ClientBoundPackets]]] =
     MonadCancelThrow[F].uncancelable { poll =>
       for {
         result <- poll(readTransport.nextPacket)
@@ -99,7 +99,7 @@ class SightedClient[
    * definition, the returned `Tuple.Union[SelfBoundPackets]` will not contain packets
    * abstracted away by the `abstraction`.
    */
-  val nextPacket: F[Tuple.Union[SelfBoundPackets]] =
+  val nextPacket: F[Tuple.Union[ClientBoundPackets]] =
     MonadCancelThrow[F].untilDefinedM(nextPacketOrViewUpdate)
 
   /**
@@ -124,16 +124,16 @@ class SightedClient[
 object SightedClient {
 
   // format: off
-  def withInitialWorldView[F[_]: Ref.Make: Spawn, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView](
+  def withInitialWorldView[F[_]: Ref.Make: Spawn, ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView](
   // format: on
-    writeTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets],
-    readTransport: ProtocolBasedReadTransport[F, SelfBoundPackets],
+    writeTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets],
+    readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
     identity: ClientIdentity,
     initialWorldView: WorldView,
-    abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[
+    abstraction: TransportPacketAbstraction[Tuple.Union[ClientBoundPackets], WorldView, F[
       List[writeTransport.Response]
     ]]
-  ): F[SightedClient[F, SelfBoundPackets, PeerBoundPackets, WorldView]] =
+  ): F[SightedClient[F, ServerBoundPackets, ClientBoundPackets, WorldView]] =
     MonadCancelThrow[F].map(Ref.of[F, WorldView](initialWorldView)) { ref =>
       new SightedClient(writeTransport, readTransport, identity, ref, abstraction)
     }

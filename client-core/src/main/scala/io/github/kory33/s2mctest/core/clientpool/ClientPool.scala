@@ -5,9 +5,9 @@ import cats.effect.kernel.{Ref, Resource}
 import cats.{Monad, MonadThrow}
 import io.github.kory33.s2mctest.core.client.SightedClient
 
-trait ClientPool[F[_], SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView] {
+trait ClientPool[F[_], ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView] {
 
-  final type Client = SightedClient[F, SelfBoundPackets, PeerBoundPackets, WorldView]
+  final type Client = SightedClient[F, ServerBoundPackets, ClientBoundPackets, WorldView]
 
   /**
    * The account pool from which client usernames are atomically generated.
@@ -39,16 +39,16 @@ object ClientPool {
 
   // format: off
   case class WithAccountPoolAndInitialization[
-    F[_]: MonadCancelThrow: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State
+    F[_]: MonadCancelThrow: Ref.Make, ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, State
   ](
   // format: on
     _accountPool: AccountPool[F],
     initialState: State,
-    init: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, State]
+    init: ClientInitialization[F, ServerBoundPackets, ClientBoundPackets, State]
   ) {
 
     final type PoolWith[AccountPool] =
-      ClientPool[F, SelfBoundPackets, PeerBoundPackets, State] {
+      ClientPool[F, ServerBoundPackets, ClientBoundPackets, State] {
         val accountPool: AccountPool
       }
 
@@ -78,7 +78,7 @@ object ClientPool {
        *   client
        */
       case class DormantClient(
-        client: SightedClient[F, SelfBoundPackets, PeerBoundPackets, State],
+        client: SightedClient[F, ServerBoundPackets, ClientBoundPackets, State],
         cancelPacketReadLoop: F[Unit],
         cleanUpClient: F[Unit]
       )
@@ -95,7 +95,7 @@ object ClientPool {
 
       for {
         stateRef <- Ref.of[F, PoolState](PoolState(0, Nil))
-      } yield new ClientPool[F, SelfBoundPackets, PeerBoundPackets, State] {
+      } yield new ClientPool[F, ServerBoundPackets, ClientBoundPackets, State] {
         private def finalizeUsedClient(client: Client, clientFinalizer: F[Unit]): F[Unit] =
           for {
             // we are not yet sure if we should cache this client,
@@ -149,12 +149,17 @@ object ClientPool {
   }
 
   // format: off
-  def withInitData[F[_]: MonadCancelThrow: Ref.Make, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView](
+  def withInitData[F[_]: MonadCancelThrow: Ref.Make, ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView](
   // format: on
     accountPool: AccountPool[F],
     initialState: WorldView,
-    clientInitialization: ClientInitialization[F, SelfBoundPackets, PeerBoundPackets, WorldView]
-  ): WithAccountPoolAndInitialization[F, SelfBoundPackets, PeerBoundPackets, WorldView] =
+    clientInitialization: ClientInitialization[
+      F,
+      ClientBoundPackets,
+      ServerBoundPackets,
+      WorldView
+    ]
+  ): WithAccountPoolAndInitialization[F, ClientBoundPackets, ServerBoundPackets, WorldView] =
     WithAccountPoolAndInitialization(accountPool, initialState, clientInitialization)
 
 }

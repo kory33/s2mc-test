@@ -9,7 +9,14 @@ import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedWriteTra
  * connection target and the play protocol to use, and it has an ability to create a fresh
  * [[SightedClient]] given the client's player-name and the initial state.
  */
-trait ClientInitialization[F[_], SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, State] {
+trait ClientInitialization[
+  // format: off
+  F[_],
+  // format: on
+  ServerBoundPackets <: Tuple,
+  ClientBoundPackets <: Tuple,
+  State
+] {
 
   /**
    * Initialize a fresh client that has [[initialState]] as its initial state.
@@ -19,6 +26,6 @@ trait ClientInitialization[F[_], SelfBoundPackets <: Tuple, PeerBoundPackets <: 
     playerName: String,
     initialState: State
     // format: on
-  ): Resource[F, SightedClient[F, SelfBoundPackets, PeerBoundPackets, State]]
+  ): Resource[F, SightedClient[F, ServerBoundPackets, ClientBoundPackets, State]]
 
 }

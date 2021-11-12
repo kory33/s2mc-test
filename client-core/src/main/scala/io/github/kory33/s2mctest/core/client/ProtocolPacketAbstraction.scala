@@ -14,8 +14,8 @@ import scala.reflect.TypeTest
 
 /**
  * Partially applied factory of [[TransportPacketAbstraction]] which is able to produce
- * [[TransportPacketAbstraction]] when given a packet transport of [[SelfBoundPackets]] and
- * [[PeerBoundPackets]].
+ * [[TransportPacketAbstraction]] when given a packet transport of [[ClientBoundPackets]] and
+ * [[ServerBoundPackets]].
  *
  * These objects are better suited for composing packet abstractions compared to dealing with
  * [[TransportPacketAbstraction]] directly.
@@ -24,14 +24,14 @@ trait ProtocolPacketAbstraction[
   // format: off
   F[_],
   // format: on
-  PeerBoundPackets <: Tuple,
-  SelfBoundPackets <: Tuple,
+  ServerBoundPackets <: Tuple,
+  ClientBoundPackets <: Tuple,
   Packet,
   WorldView
 ] {
 
   def abstractOnTransport(
-    packetTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets]
+    packetTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets]
   ): TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
 
   /**
@@ -40,7 +40,7 @@ trait ProtocolPacketAbstraction[
    */
   final def defocus[BroaderView](
     lens: Lens[BroaderView, WorldView]
-  ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Packet, BroaderView] =
+  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, BroaderView] =
     abstractOnTransport(_).defocus(lens)
 
   /**
@@ -48,7 +48,7 @@ trait ProtocolPacketAbstraction[
    * debugging purposes.
    */
   final def keepTrackOfViewChanges
-    : ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Packet, NonEmptyList[
+    : ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, NonEmptyList[
       WorldView
     ]] = abstractOnTransport(_).keepTrackOfViewChanges
 
@@ -57,8 +57,14 @@ trait ProtocolPacketAbstraction[
    * view using [[another]] if this object rejects to update the view.
    */
   final def orElseAbstract(
-    another: ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Packet, WorldView]
-  ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Packet, WorldView] =
+    another: ProtocolPacketAbstraction[
+      F,
+      ServerBoundPackets,
+      ClientBoundPackets,
+      Packet,
+      WorldView
+    ]
+  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
     transport =>
       this.abstractOnTransport(transport).orElseAbstract(another.abstractOnTransport(transport))
 
@@ -70,12 +76,18 @@ trait ProtocolPacketAbstraction[
    *   - if otherwise `p: P`, then `another.viewUpdate(p)`
    */
   final def thenAbstract[P](
-    another: ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, P, WorldView]
+    another: ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, P, WorldView]
   )(
     using ng: scala.util.NotGiven[P <:< Packet],
     // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
     ge: GivenEither[scala.reflect.Typeable[Packet], Packet =:= Nothing]
-  ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, P | Packet, WorldView] =
+  ): ProtocolPacketAbstraction[
+    F,
+    ServerBoundPackets,
+    ClientBoundPackets,
+    P | Packet,
+    WorldView
+  ] =
     transport =>
       this.abstractOnTransport(transport).thenAbstract(another.abstractOnTransport(transport))
 
@@ -84,13 +96,25 @@ trait ProtocolPacketAbstraction[
    * world by applying [[thenAbstract]] to the [[defocus]]ed abstraction.
    */
   final def thenAbstractWithLens[P, MagnifiedView](
-    another: ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, P, MagnifiedView],
+    another: ProtocolPacketAbstraction[
+      F,
+      ServerBoundPackets,
+      ClientBoundPackets,
+      P,
+      MagnifiedView
+    ],
     lens: Lens[WorldView, MagnifiedView]
   )(
     using ng: scala.util.NotGiven[P <:< Packet],
     // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
     ge: GivenEither[scala.reflect.Typeable[Packet], Packet =:= Nothing]
-  ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, P | Packet, WorldView] =
+  ): ProtocolPacketAbstraction[
+    F,
+    ServerBoundPackets,
+    ClientBoundPackets,
+    P | Packet,
+    WorldView
+  ] =
     thenAbstract[P](another.defocus[WorldView](lens))
 }
 
@@ -99,11 +123,11 @@ object ProtocolPacketAbstraction {
   /**
    * Define an abstraction of packets in a protocol.
    */
-  def apply[F[_], PeerBoundPackets <: Tuple, SelfBoundPackets <: Tuple, Packet, WorldView](
+  def apply[F[_], ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, Packet, WorldView](
     onTransport: (
-      packetTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets]
+      packetTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets]
     ) => TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
-  ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Packet, WorldView] =
+  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
     onTransport(_)
 
   /**
@@ -117,9 +141,15 @@ object ProtocolPacketAbstraction {
      *   The protocol for determining packet tuple types. This argument is discarded by this
      *   function, and is present just to allow the type inference to happen.
      */
-    def apply[PeerBoundPackets <: Tuple, SelfBoundPackets <: Tuple](
-      _protocol: Protocol[PeerBoundPackets, SelfBoundPackets]
-    ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Nothing, WorldView] =
+    def apply[ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple](
+      _protocol: Protocol[ServerBoundPackets, ClientBoundPackets]
+    ): ProtocolPacketAbstraction[
+      F,
+      ServerBoundPackets,
+      ClientBoundPackets,
+      Nothing,
+      WorldView
+    ] =
       ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[WorldView])
   }
 
@@ -130,13 +160,13 @@ object ProtocolPacketAbstraction {
     // format: off
     F[_]: Applicative,
     // format: on
-    PeerBoundPackets <: Tuple,
-    SelfBoundPackets <: Tuple,
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple,
     Packet,
     WorldView
   ](
     abstraction: TransportPacketAbstraction[Packet, WorldView, Unit]
-  ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Packet, WorldView] =
+  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
     ProtocolPacketAbstraction(transport =>
       abstraction.mapCmd[F[List[transport.Response]]](_ => Applicative[F].pure(Nil))
     )
@@ -149,15 +179,15 @@ object ProtocolPacketAbstraction {
     // format: off
     F[_]: Applicative,
     // format: on
-    PeerBoundPackets <: Tuple,
-    SelfBoundPackets <: Tuple,
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple,
     Packet,
     WorldView
   ](
     onTransport: (
-      packetTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets]
+      packetTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets]
     ) => TransportPacketAbstraction[Packet, WorldView, List[packetTransport.Response]]
-  ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Packet, WorldView] =
+  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
     ProtocolPacketAbstraction(transport =>
       onTransport(transport).liftCmd[F, List[transport.Response]]
     )
@@ -169,14 +199,14 @@ object ProtocolPacketAbstraction {
     // format: off
     F[_]: Functor,
     // format: on
-    PeerBoundPackets <: Tuple,
-    SelfBoundPackets <: Tuple,
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple,
     Packet,
     WorldView,
     U
   ](
     abstraction: TransportPacketAbstraction[Packet, WorldView, F[U]]
-  ): ProtocolPacketAbstraction[F, PeerBoundPackets, SelfBoundPackets, Packet, WorldView] =
+  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
     ProtocolPacketAbstraction(_ => abstraction.mapCmd(Functor[F].as(_, Nil)))
 
 }

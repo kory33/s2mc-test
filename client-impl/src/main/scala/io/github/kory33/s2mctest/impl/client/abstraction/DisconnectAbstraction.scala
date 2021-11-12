@@ -16,11 +16,16 @@ object DisconnectAbstraction {
    * An abstraction of [[Disconnect]] packet that throws an error of type [[E]] upon receiving
    * [[Disconnect]].
    */
-  def throwOnDisconnect[F[_], E, SelfBoundPackets <: Tuple: Includes[
-    Disconnect
-  ], PeerBoundPackets <: Tuple](errorOnMessage: ChatComponent => E)(
+  def throwOnDisconnect[
+    // format: off
+    F[_],
+    // format: on
+    E,
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple: Includes[Disconnect]
+  ](errorOnMessage: ChatComponent => E)(
     using MonadError[F, E]
-  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Disconnect, Unit] =
+  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Disconnect, Unit] =
     ProtocolPacketAbstraction.effectful(disconnection =>
       Some(_ => ((), MonadError[F, E].raiseError(errorOnMessage(disconnection.reason))))
     )
@@ -29,11 +34,16 @@ object DisconnectAbstraction {
    * An abstraction of [[Disconnect]] packet that sets the state to [[value]] upon receiving
    * [[Disconnect]].
    */
-  def setOnDisconnect[F[_]: Applicative, A, SelfBoundPackets <: Tuple: Includes[
-    Disconnect
-  ], PeerBoundPackets <: Tuple](
+  def setOnDisconnect[
+    // format: off
+    F[_]: Applicative,
+    // format: on
+    A,
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple: Includes[Disconnect]
+  ](
     valueOnMessage: ChatComponent => A
-  ): ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Disconnect, Unit] =
+  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Disconnect, Unit] =
     ProtocolPacketAbstraction.silent(disconnection =>
       Some(_ => (valueOnMessage(disconnection.reason), ()))
     )
@@ -42,10 +52,13 @@ object DisconnectAbstraction {
    * An abstraction of [[Disconnect]] packet that sets a [[Boolean]] value to true upon
    * receiving [[Disconnect]].
    */
-  def trueOnDisconnect[F[_]: Applicative, SelfBoundPackets <: Tuple: Includes[
-    Disconnect
-  ], PeerBoundPackets <: Tuple]
-    : ProtocolPacketAbstraction[F, SelfBoundPackets, PeerBoundPackets, Disconnect, Unit] =
+  def trueOnDisconnect[
+    // format: off
+    F[_]: Applicative,
+    // format: on
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple: Includes[Disconnect]
+  ]: ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Disconnect, Unit] =
     setOnDisconnect(_ => true)
 
 }

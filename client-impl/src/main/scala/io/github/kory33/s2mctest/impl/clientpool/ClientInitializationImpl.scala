@@ -105,8 +105,8 @@ object ClientInitializationImpl {
    */
   trait DoLoginEv[F[_], LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple] {
     def doLoginWith(
-      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
       writeTransport: ProtocolBasedWriteTransport[F, LoginServerBoundPackets],
+      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
       name: String
     ): F[ClientIdentity]
   }
@@ -130,8 +130,8 @@ object ClientInitializationImpl {
     ](
       using scala.util.NotGiven[Includes[LoginPluginRequest][LoginClientBoundPackets]]
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
-      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
       writeTransport: ProtocolBasedWriteTransport[F, LoginServerBoundPackets],
+      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
       name: String
     ) =>
       writeTransport.writePacket(LoginStart(name)) >> readTransport.nextPacket >>= {
@@ -153,8 +153,8 @@ object ClientInitializationImpl {
     ](
       using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
-      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
       writeTransport: ProtocolBasedWriteTransport[F, LoginServerBoundPackets],
+      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
       name: String
     ) =>
       writeTransport.writePacket(LoginStart(name)) >>
@@ -183,8 +183,8 @@ object ClientInitializationImpl {
     ](
       using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
-      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
       writeTransport: ProtocolBasedWriteTransport[F, LoginServerBoundPackets],
+      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
       name: String
     ) =>
       writeTransport.writePacket(LoginStart(name)) >>
@@ -232,7 +232,7 @@ object ClientInitializationImpl {
     using PacketUnion <:< Tuple.Union[PlayClientBoundPackets],
     TypeTest[Tuple.Union[PlayClientBoundPackets], PacketUnion],
     GenConcurrent[F, Throwable]
-  ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
+  ): ClientInitialization[F, PlayServerBoundPackets, PlayClientBoundPackets, WorldView] =
     (playerName: String, initialWorldView: WorldView) => {
       val networkTransportResource
         : Resource[F, (PacketWriteTransport[F], PacketReadTransport[F])] =
@@ -260,19 +260,19 @@ object ClientInitializationImpl {
 
             val doLogin: F[ClientIdentity] =
               doLoginEv.doLoginWith(
-                ProtocolBasedReadTransport(
-                  packetReadTransport,
-                  loginProtocol.clientBoundFragment
-                ),
                 ProtocolBasedWriteTransport(
                   packetWriteTransport,
                   loginProtocol.serverBoundFragment
+                ),
+                ProtocolBasedReadTransport(
+                  packetReadTransport,
+                  loginProtocol.clientBoundFragment
                 ),
                 playerName
               )
 
             def initializeClient(identity: ClientIdentity): F[
-              SightedClient[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView]
+              SightedClient[F, PlayServerBoundPackets, PlayClientBoundPackets, WorldView]
             ] = {
               val readTransport =
                 ProtocolBasedReadTransport(
