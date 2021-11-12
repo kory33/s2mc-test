@@ -6,8 +6,8 @@ import com.comcast.ip4s.SocketAddress
 import fs2.io.net.Network
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.transport.{
-  PacketTransport,
-  ProtocolBasedTransport
+  ProtocolBasedReadTransport,
+  ProtocolBasedWriteTransport
 }
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.{UShort, VarInt}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent
@@ -32,65 +32,72 @@ def lowLevelClient_1_12_2(): Unit = {
     Network[IO].client(address).evalMap { socket => NetworkTransport.noCompression(socket) }
 
   val program = for {
-    _ <- transportResource.use { (networkTransport: PacketTransport[IO]) =>
-      import io.github.kory33.s2mctest.impl.connection.protocol.versions.v1_12_2.*
+    _ <- transportResource.use {
+      case (packetWrite, packetRead) =>
+        import io.github.kory33.s2mctest.impl.connection.protocol.versions.v1_12_2.*
 
-      {
-        val transport = ProtocolBasedTransport(
-          networkTransport,
-          CommonProtocol.handshakeProtocol.asViewedFromClient
-        )
-
-        val handshakePacket =
-          Handshake(
-            protocolVersion,
-            address.host.toString,
-            UShort(address.port.value),
-            VarInt(2)
+        {
+          val transport = ProtocolBasedWriteTransport(
+            packetWrite,
+            CommonProtocol.handshakeProtocol.serverBoundFragment
           )
 
-        transport.writePacket(handshakePacket)
-      } >> {
-        val transport =
-          ProtocolBasedTransport(networkTransport, loginProtocol.asViewedFromClient)
+          val handshakePacket =
+            Handshake(
+              protocolVersion,
+              address.host.toString,
+              UShort(address.port.value),
+              VarInt(2)
+            )
 
-        val loginStartPacket = LoginStart("s2mc-client")
+          transport.writePacket(handshakePacket)
+        } >> {
+          val writeTransport =
+            ProtocolBasedWriteTransport(packetWrite, loginProtocol.serverBoundFragment)
+          val readTransport =
+            ProtocolBasedReadTransport(packetRead, loginProtocol.clientBoundFragment)
 
-        transport.writePacket(loginStartPacket) >> Monad[IO].untilDefinedM {
-          transport.nextPacket >>= {
-            case ParseResult.Just(x) =>
-              x match {
-                case success: LoginSuccess_String => IO(println(success)) >> IO(Some(()))
-                case other                        => IO(println(other)) >> IO(None)
-              }
-            case err => IO(println(s"Errored: $err")) >> IO(None)
+          val loginStartPacket = LoginStart("s2mc-client")
+
+          writeTransport.writePacket(loginStartPacket) >> Monad[IO].untilDefinedM {
+            readTransport.nextPacket >>= {
+              case ParseResult.Just(x) =>
+                x match {
+                  case success: LoginSuccess_String => IO(println(success)) >> IO(Some(()))
+                  case other                        => IO(println(other)) >> IO(None)
+                }
+              case err => IO(println(s"Errored: $err")) >> IO(None)
+            }
+          }
+        } >> {
+          val writeTransport =
+            ProtocolBasedWriteTransport(packetWrite, playProtocol.serverBoundFragment)
+          val readTransport =
+            ProtocolBasedReadTransport(packetRead, playProtocol.clientBoundFragment)
+
+          Monad[IO].untilDefinedM {
+            readTransport.nextPacket >>= {
+              case ParseResult.Just(x) =>
+                (x match {
+                  case TeleportPlayer_WithConfirm(_, _, _, _, _, _, teleportId) =>
+                    IO(println(s"read: $x")) >> writeTransport.writePacket(
+                      TeleportConfirm(teleportId)
+                    )
+                  case KeepAliveClientbound_i64(id) =>
+                    IO(println(s"read: $x")) >> writeTransport.writePacket(
+                      KeepAliveServerbound_i64(id)
+                    )
+                  case _ =>
+                    IO(println(s"packet: ${x.getClass.getName}"))
+                }) >> IO.pure(None)
+              case err =>
+                IO {
+                  println(s"Errored!: $err")
+                  None
+                }
+            }
           }
         }
-      } >> {
-        val transport =
-          ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
-
-        Monad[IO].untilDefinedM {
-          transport.nextPacket >>= {
-            case ParseResult.Just(x) =>
-              (x match {
-                case TeleportPlayer_WithConfirm(_, _, _, _, _, _, teleportId) =>
-                  IO(println(s"read: $x")) >> transport.writePacket(TeleportConfirm(teleportId))
-                case KeepAliveClientbound_i64(id) =>
-                  IO(println(s"read: $x")) >> transport.writePacket(
-                    KeepAliveServerbound_i64(id)
-                  )
-                case _ =>
-                  IO(println(s"packet: ${x.getClass.getName}"))
-              }) >> IO.pure(None)
-            case err =>
-              IO {
-                println(s"Errored!: $err")
-                None
-              }
-          }
-        }
-      }
     }
   } yield ()
 

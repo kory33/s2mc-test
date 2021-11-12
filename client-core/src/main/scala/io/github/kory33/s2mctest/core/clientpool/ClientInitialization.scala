@@ -2,8 +2,7 @@ package io.github.kory33.s2mctest.core.clientpool
 
 import cats.effect.Resource
 import io.github.kory33.s2mctest.core.client.{SightedClient, TransportPacketAbstraction}
-import io.github.kory33.s2mctest.core.connection.protocol.ProtocolView
-import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
+import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedWriteTransport
 
 /**
  * A trait of factory objects of clients. A [[ClientInitialization]] object internally knows the

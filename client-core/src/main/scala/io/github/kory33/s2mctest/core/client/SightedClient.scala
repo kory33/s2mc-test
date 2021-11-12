@@ -3,7 +3,10 @@ package io.github.kory33.s2mctest.core.client
 import cats.effect._
 import cats.{Monad, MonadThrow}
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
-import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
+import io.github.kory33.s2mctest.core.connection.transport.{
+  ProtocolBasedReadTransport,
+  ProtocolBasedWriteTransport
+}
 
 /**
  * The class of Minecraft clients that associate incoming packets to updates of state of the
@@ -17,7 +20,7 @@ import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTranspor
  * automatic update of the clients' view of the world. Visible packets are those that are not
  * filtered by the [[abstraction]].
  *
- * @param transport
+ * @param writeTransport
  *   INTERNAL, the transport that this client uses. Users should use nextPacketOrViewUpdate or
  *   writePacket wherever possible.
  * @param identity
@@ -25,7 +28,7 @@ import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTranspor
  * @param viewRef
  *   reference to a [[WorldView]] that this client keeps updating
  * @param abstraction
- *   the object abstracting packets from [[transport]].
+ *   the object abstracting packets from [[writeTransport]].
  */
 // format: off
 class SightedClient[
@@ -34,11 +37,11 @@ class SightedClient[
   PeerBoundPackets <: Tuple,
   WorldView
 ](
-   // INTERNAL. Users should use nextPacketOrViewUpdate or writePacket wherever possible 
-   val transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
+   val writeTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets],
+   readTransport: ProtocolBasedReadTransport[F, SelfBoundPackets],
    val identity: ClientIdentity,
    viewRef: Ref[F, WorldView],
-   abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[List[transport.Response]]]
+   abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[List[writeTransport.Response]]]
 ) {
   // format: on
 
@@ -59,7 +62,7 @@ class SightedClient[
   val nextPacketOrViewUpdate: F[Option[Tuple.Union[SelfBoundPackets]]] =
     MonadCancelThrow[F].uncancelable { poll =>
       for {
-        result <- poll(transport.nextPacket)
+        result <- poll(readTransport.nextPacket)
         packet <- result match {
           case ParseResult.Just(packet) => Monad[F].pure(packet)
           case ParseResult.WithExcessBytes(packet, excess, _) =>
@@ -80,7 +83,7 @@ class SightedClient[
           for {
             additionalAction <- viewRef.modify(f)
             responses <- additionalAction
-            _ <- responses.traverse(transport.write)
+            _ <- responses.traverse(writeTransport.write)
           } yield ()
         }
       } yield if updateFunction.isEmpty then Some(packet) else None
@@ -113,25 +116,26 @@ class SightedClient[
   /**
    * Write a [[packet]] to the underlying transport.
    */
-  def writePacket[P: transport.protocolView.peerBound.CanEncode](packet: P): F[Unit] =
-    transport.writePacket(packet)
+  def writePacket[P: writeTransport.peerBoundFragment.bindings.CanEncode](packet: P): F[Unit] =
+    writeTransport.writePacket(packet)
 
 }
 
 object SightedClient {
 
   // format: off
-  def withInitialWorldView[F[_]: Ref.Make: Spawn, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView]( 
+  def withInitialWorldView[F[_]: Ref.Make: Spawn, SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple, WorldView](
   // format: on
-    transport: ProtocolBasedTransport[F, SelfBoundPackets, PeerBoundPackets],
+    writeTransport: ProtocolBasedWriteTransport[F, PeerBoundPackets],
+    readTransport: ProtocolBasedReadTransport[F, SelfBoundPackets],
     identity: ClientIdentity,
     initialWorldView: WorldView,
     abstraction: TransportPacketAbstraction[Tuple.Union[SelfBoundPackets], WorldView, F[
-      List[transport.Response]
+      List[writeTransport.Response]
     ]]
   ): F[SightedClient[F, SelfBoundPackets, PeerBoundPackets, WorldView]] =
     MonadCancelThrow[F].map(Ref.of[F, WorldView](initialWorldView)) { ref =>
-      new SightedClient(transport, identity, ref, abstraction)
+      new SightedClient(writeTransport, readTransport, identity, ref, abstraction)
     }
 
 }

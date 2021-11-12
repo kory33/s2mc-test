@@ -3,12 +3,33 @@ package io.github.kory33.s2mctest.core.connection.transport
 import io.github.kory33.s2mctest.core.connection.protocol.PacketId
 
 /**
- * The interface providing read/write operations on serialized packet data.
+ * The interface providing write operations on serialized packet data.
  *
  * The minecraft protocol has optional compression and encryption, and this interface is there
  * to abstract away details about how packet data is transmitted between client and server.
  */
-trait PacketTransport[F[_]] {
+trait PacketWriteTransport[F[_]] {
+
+  /**
+   * Write data of a single packet to the peer.
+   *
+   * This action
+   *   - must acquire mutex guard of the underlying write buffer to avoid multiple writes
+   *     occurring at once
+   *   - must be atomic within cancellation semnatics. When it is cancelled, it must write the
+   *     entire chunk or nothing at all, provided that no error is raised
+   */
+  def write(id: PacketId, data: fs2.Chunk[Byte]): F[Unit]
+
+}
+
+/**
+ * The interface providing read operations on serialized packet data.
+ *
+ * The minecraft protocol has optional compression and encryption, and this interface is there
+ * to abstract away details about how packet data is transmitted between client and server.
+ */
+trait PacketReadTransport[F[_]] {
 
   /**
    * Read data of a single packet from the underlying data source.
@@ -25,16 +46,5 @@ trait PacketTransport[F[_]] {
    *   - must acquire mutex guard of the data source to avoid multiple reads occurring at once
    */
   def readOnePacket: F[(PacketId, fs2.Chunk[Byte])]
-
-  /**
-   * Write data of a single packet to the peer.
-   *
-   * This action
-   *   - must acquire mutex guard of the underlying write buffer to avoid multiple writes
-   *     occurring at once
-   *   - must be atomic within cancellation semnatics. When it is cancelled, it must write the
-   *     entire chunk or nothing at all, provided that no error is raised
-   */
-  def write(id: PacketId, data: fs2.Chunk[Byte]): F[Unit]
 
 }

@@ -3,7 +3,7 @@ package io.github.kory33.s2mctest.impl.client.abstraction
 import cats.Applicative
 import io.github.kory33.s2mctest.core.client.ProtocolPacketAbstraction
 import io.github.kory33.s2mctest.core.connection.protocol.HasCodecOf
-import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
+import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedWriteTransport
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{
   KeepAliveClientbound_VarInt,
   KeepAliveClientbound_i32,

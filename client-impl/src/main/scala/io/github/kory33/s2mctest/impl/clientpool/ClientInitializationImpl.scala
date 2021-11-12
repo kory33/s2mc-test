@@ -14,8 +14,10 @@ import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, HasCodecOf, Protocol}
 import io.github.kory33.s2mctest.core.connection.transport.{
-  PacketTransport,
-  ProtocolBasedTransport
+  PacketReadTransport,
+  PacketWriteTransport,
+  ProtocolBasedReadTransport,
+  ProtocolBasedWriteTransport
 }
 import io.github.kory33.s2mctest.core.generic.compiletime.*
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.{
@@ -103,7 +105,8 @@ object ClientInitializationImpl {
    */
   trait DoLoginEv[F[_], LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple] {
     def doLoginWith(
-      transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
+      writeTransport: ProtocolBasedWriteTransport[F, LoginServerBoundPackets],
       name: String
     ): F[ClientIdentity]
   }
@@ -127,10 +130,11 @@ object ClientInitializationImpl {
     ](
       using scala.util.NotGiven[Includes[LoginPluginRequest][LoginClientBoundPackets]]
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
-      transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
+      writeTransport: ProtocolBasedWriteTransport[F, LoginServerBoundPackets],
       name: String
     ) =>
-      transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
+      writeTransport.writePacket(LoginStart(name)) >> readTransport.nextPacket >>= {
         case ParseResult.Just(packet: LoginSuccess_String) =>
           MonadThrow[F].pure(identityFromStringPacket(packet))
         case failure =>
@@ -149,16 +153,19 @@ object ClientInitializationImpl {
     ](
       using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
-      transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
+      writeTransport: ProtocolBasedWriteTransport[F, LoginServerBoundPackets],
       name: String
     ) =>
-      transport.writePacket(LoginStart(name)) >>
+      writeTransport.writePacket(LoginStart(name)) >>
         MonadThrow[F].untilDefinedM {
-          transport.nextPacket >>= {
+          readTransport.nextPacket >>= {
             case ParseResult.Just(packet: LoginSuccess_String) =>
               MonadThrow[F].pure(Some(identityFromStringPacket(packet)))
             case ParseResult.Just(req: LoginPluginRequest) =>
-              transport.writePacket(handleLoginPlugin.handleLoginPluginRequest(req)).as(None)
+              writeTransport
+                .writePacket(handleLoginPlugin.handleLoginPluginRequest(req))
+                .as(None)
             case failure =>
               MonadThrow[F].raiseError(IOException {
                 s"Received $failure but expected Just(LoginPluginRequest(_, _, _)) or Just(LoginSuccess_String(_, _))." +
@@ -176,16 +183,19 @@ object ClientInitializationImpl {
     ](
       using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
-      transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+      readTransport: ProtocolBasedReadTransport[F, LoginClientBoundPackets],
+      writeTransport: ProtocolBasedWriteTransport[F, LoginServerBoundPackets],
       name: String
     ) =>
-      transport.writePacket(LoginStart(name)) >>
+      writeTransport.writePacket(LoginStart(name)) >>
         MonadThrow[F].untilDefinedM {
-          transport.nextPacket >>= {
+          readTransport.nextPacket >>= {
             case ParseResult.Just(packet: LoginSuccess_UUID) =>
               MonadThrow[F].pure(Some(identityFromUUIDPacket(packet)))
             case ParseResult.Just(req: LoginPluginRequest) =>
-              transport.writePacket(handleLoginPlugin.handleLoginPluginRequest(req)).as(None)
+              writeTransport
+                .writePacket(handleLoginPlugin.handleLoginPluginRequest(req))
+                .as(None)
             case failure =>
               MonadThrow[F].raiseError(IOException {
                 s"Received $failure but expected Just(LoginPluginRequest(_, _, _)) or Just(LoginSuccess_UUID(_, _))." +
@@ -224,53 +234,71 @@ object ClientInitializationImpl {
     GenConcurrent[F, Throwable]
   ): ClientInitialization[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView] =
     (playerName: String, initialWorldView: WorldView) => {
-      val networkTransportResource: Resource[F, PacketTransport[F]] =
+      val networkTransportResource
+        : Resource[F, (PacketWriteTransport[F], PacketReadTransport[F])] =
         Network[F].client(address).evalMap { socket => NetworkTransport.noCompression(socket) }
 
-      networkTransportResource.flatMap { (networkTransport: PacketTransport[F]) =>
-        Resource.eval {
-          val doHandShake: F[Unit] = {
-            val transport = ProtocolBasedTransport(
-              networkTransport,
-              CommonProtocol.handshakeProtocol.asViewedFromClient
-            )
-
-            transport.writePacket(
-              Handshake(
-                protocolVersion,
-                address.host.toString,
-                UShort(address.port.value),
-                // transition to Login state
-                VarInt(2)
+      networkTransportResource.flatMap {
+        case (packetWriteTransport, packetReadTransport) =>
+          Resource.eval {
+            val doHandShake: F[Unit] = {
+              val transport = ProtocolBasedWriteTransport(
+                packetWriteTransport,
+                CommonProtocol.handshakeProtocol.serverBoundFragment
               )
-            )
+
+              transport.writePacket(
+                Handshake(
+                  protocolVersion,
+                  address.host.toString,
+                  UShort(address.port.value),
+                  // transition to Login state
+                  VarInt(2)
+                )
+              )
+            }
+
+            val doLogin: F[ClientIdentity] =
+              doLoginEv.doLoginWith(
+                ProtocolBasedReadTransport(
+                  packetReadTransport,
+                  loginProtocol.clientBoundFragment
+                ),
+                ProtocolBasedWriteTransport(
+                  packetWriteTransport,
+                  loginProtocol.serverBoundFragment
+                ),
+                playerName
+              )
+
+            def initializeClient(identity: ClientIdentity): F[
+              SightedClient[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView]
+            ] = {
+              val readTransport =
+                ProtocolBasedReadTransport(
+                  packetReadTransport,
+                  playProtocol.clientBoundFragment
+                )
+
+              val writeTransport =
+                ProtocolBasedWriteTransport(
+                  packetWriteTransport,
+                  playProtocol.serverBoundFragment
+                )
+
+              SightedClient.withInitialWorldView(
+                writeTransport,
+                readTransport,
+                identity,
+                initialWorldView,
+                abstraction
+                  .abstractOnTransport(writeTransport)
+                  .widenPackets[Tuple.Union[PlayClientBoundPackets]]
+              )
+            }
+
+            doHandShake >> doLogin >>= initializeClient
           }
-
-          val doLogin: F[ClientIdentity] = {
-            val transport =
-              ProtocolBasedTransport(networkTransport, loginProtocol.asViewedFromClient)
-
-            doLoginEv.doLoginWith(transport, playerName)
-          }
-
-          def initializeClient(
-            identity: ClientIdentity
-          ): F[SightedClient[F, PlayClientBoundPackets, PlayServerBoundPackets, WorldView]] = {
-            val transport =
-              ProtocolBasedTransport(networkTransport, playProtocol.asViewedFromClient)
-
-            SightedClient.withInitialWorldView(
-              transport,
-              identity,
-              initialWorldView,
-              abstraction
-                .abstractOnTransport(transport)
-                .widenPackets[Tuple.Union[PlayClientBoundPackets]]
-            )
-          }
-
-          doHandShake >> doLogin >>= initializeClient
-        }
       }
     }
 }

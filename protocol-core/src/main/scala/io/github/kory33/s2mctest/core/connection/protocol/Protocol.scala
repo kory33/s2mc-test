@@ -18,6 +18,10 @@ class Protocol[ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple](
   def asViewedFromServer: ProtocolView[ServerBoundPackets, ClientBoundPackets] =
     asViewedFromClient.invert
 
+  def clientBoundFragment: ProtocolFragment[ClientBoundPackets] = ProtocolFragment(clientBound)
+
+  def serverBoundFragment: ProtocolFragment[ServerBoundPackets] = ProtocolFragment(serverBound)
+
 }
 
 object Protocol {
@@ -52,3 +56,11 @@ case class ProtocolView[SelfBoundPackets <: Tuple, PeerBoundPackets <: Tuple](
     ProtocolView(peerBound, selfBound)
 
 }
+
+/**
+ * A fragment of a [[Protocol]] that only contains bindings for one direction (either
+ * serverbound or clientbound).
+ */
+case class ProtocolFragment[Packets <: Tuple](
+  bindings: PacketIdBindings[Tuple.Map[Packets, CodecBinding]]
+)

@@ -19,7 +19,10 @@ import io.github.kory33.s2mctest.core.connection.codec.interpreters.{
   ParseResult
 }
 import io.github.kory33.s2mctest.core.connection.protocol.PacketId
-import io.github.kory33.s2mctest.core.connection.transport.PacketTransport
+import io.github.kory33.s2mctest.core.connection.transport.{
+  PacketReadTransport,
+  PacketWriteTransport
+}
 import io.github.kory33.s2mctest.impl.connection.codec.decode.VarNumDecodes
 import io.github.kory33.s2mctest.impl.connection.codec.encode.VarNumEncodes
 
@@ -30,21 +33,20 @@ object NetworkTransport {
   import cats.implicits.given
 
   /**
-   * Wrap a [[Socket]] resource into a [[PacketTransport]] which only sends/receives packets
-   * without compression.
+   * Wrap a [[Socket]] resource into a pair of [[PacketWriteTransport]] and
+   * [[PacketReadTransport]] which only sends/receives packets without compression.
    *
-   * CAUTION: Given [[socket]] should not be shared among fibers or among multiple
-   * [[PacketTransport]]; two concurrent read or write operations on different
-   * [[PacketTransport]]s can corrupt the connection. Concurrent reads or writes are only safe
-   * if done against the same instance of [[PacketTransport]], which guards read / write actions
-   * with a semaphore.
+   * CAUTION: Given [[socket]] should not be shared among fibers or among multiple transport
+   * objects; two concurrent read or write operations on different transport objects can corrupt
+   * the connection. Concurrent reads or writes are only safe if done against the same instance
+   * of transport, which guards read / write actions with a semaphore.
    *
-   * This version of [[PacketTransport]] expects packets to be in "Without compression" format:
+   * This version of transport expects packets to be in "Without compression" format:
    * https://wiki.vg/index.php?title=Protocol&oldid=17019#Without_compression
    */
   def noCompression[F[_]](socket: Socket[F])(
     using F: GenConcurrent[F, Throwable]
-  ): F[PacketTransport[F]] =
+  ): F[(PacketWriteTransport[F], PacketReadTransport[F])] =
     given ReadBytes[F] = (n: Int) => socket.readN(n)
 
     // decode programs to use
@@ -52,9 +54,22 @@ object NetworkTransport {
     val readPacketIdAndData: DecodeFiniteBytes[(Int, Chunk[Byte])] = Monad[DecodeFiniteBytes]
       .product(VarNumDecodes.decodeVarIntAsInt.inject, DecodeFiniteBytes.readUntilTheEnd)
 
-    Semaphore[F](1).flatMap { readSemaphore =>
+    val newWriteTransport: F[PacketWriteTransport[F]] =
       Semaphore[F](1).map { writeSemaphore =>
-        new PacketTransport[F] {
+        new PacketWriteTransport[F] {
+          override def write(id: PacketId, data: Chunk[Byte]): F[Unit] =
+            val idChunk = VarNumEncodes.encodeIntAsVarInt.write(id)
+            val idAndData = idChunk ++ data
+            val lengthChunk = VarNumEncodes.encodeIntAsVarInt.write(idAndData.size)
+            writeSemaphore
+              .permit
+              .use(_ => F.uncancelable(_ => socket.write(lengthChunk ++ idAndData)))
+        }
+      }
+
+    val newReadTransport: F[PacketReadTransport[F]] =
+      Semaphore[F](1).map { readSemaphore =>
+        new PacketReadTransport[F] {
           override val readOnePacket: F[(PacketId, Chunk[Byte])] =
             readSemaphore
               .permit
@@ -109,15 +124,8 @@ object NetworkTransport {
                   } yield idAndData
                 )
               )
-
-          override def write(id: PacketId, data: Chunk[Byte]): F[Unit] =
-            val idChunk = VarNumEncodes.encodeIntAsVarInt.write(id)
-            val idAndData = idChunk ++ data
-            val lengthChunk = VarNumEncodes.encodeIntAsVarInt.write(idAndData.size)
-            writeSemaphore
-              .permit
-              .use(_ => F.uncancelable(_ => socket.write(lengthChunk ++ idAndData)))
         }
       }
-    }
+
+    F.product(newWriteTransport, newReadTransport)
 }
