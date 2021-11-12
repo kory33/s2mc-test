@@ -77,11 +77,11 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
     ): CanEncode[P] = {
       val idxP = scala.compiletime.constValue[IndexOfT[CodecBinding[P], BindingTup]]
 
-      // PeerBoundBindings & NonEmptyTuple is guaranteed to be a concrete tuple type,
-      // because CodecBinding[P] is included in PeerBoundBindings so it must be nonempty.
+      // BindingTup & NonEmptyTuple is guaranteed to be a concrete tuple type,
+      // because CodecBinding[P] is included in BindingTup so it must be nonempty.
       //
-      // By Require[IncludedInT[...]] constraint, IndexOfT[CodecBinding[P], PeerBoundBindings]
-      // reduces to a singleton type of integer at which PeerBoundBindings has CodecBinding[P],
+      // By Require[IncludedInT[...]] constraint, IndexOfT[CodecBinding[P], BindingTup]
+      // reduces to a singleton type of integer at which BindingTup has CodecBinding[P],
       // so this summoning succeeds.
       val ev: Tuple.Elem[
         BindingTup & NonEmptyTuple,
@@ -89,7 +89,7 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
       ] =:= CodecBinding[P] =
         scala.compiletime.summonInline
 
-      // We know that IndexOfT[CodecBinding[P], PeerBoundBindings] and idx.type will reduce to
+      // We know that IndexOfT[CodecBinding[P], BindingTup] and idx.type will reduce to
       // the same integer types, but somehow Scala 3.0.1 compiler does not seem to recognize this.
       // Hence the asInstanceOf cast.
       // TODO can we get rid of this?
