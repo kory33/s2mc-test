@@ -222,8 +222,8 @@ object ClientInitializationImpl {
     playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
     abstraction: ProtocolPacketAbstraction[
       F,
-      PlayClientBoundPackets,
       PlayServerBoundPackets,
+      PlayClientBoundPackets,
       PacketUnion,
       WorldView
     ]

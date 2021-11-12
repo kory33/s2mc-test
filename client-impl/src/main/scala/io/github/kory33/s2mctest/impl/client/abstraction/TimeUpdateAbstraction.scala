@@ -14,23 +14,24 @@ object TimeUpdateAbstraction {
   /**
    * A helper trait that can help the compiler resolve abstraction pattern automatically.
    */
-  trait AbstractionEvidence[F[_], CBPackets <: Tuple, SBPackets <: Tuple] {
+  trait AbstractionEvidence[F[_], SBPackets <: Tuple, CBPackets <: Tuple] {
     type AbstractedPacket
-    val ev: ProtocolPacketAbstraction[F, CBPackets, SBPackets, AbstractedPacket, WorldTime]
+    val ev: ProtocolPacketAbstraction[F, SBPackets, CBPackets, AbstractedPacket, WorldTime]
   }
 
   object AbstractionEvidence {
-    type Aux[F[_], CBPackets <: Tuple, SBPackets <: Tuple, _AbstractedPacket] =
-      AbstractionEvidence[F, CBPackets, SBPackets] {
+    type Aux[F[_], SBPackets <: Tuple, CBPackets <: Tuple, _AbstractedPacket] =
+      AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = _AbstractedPacket
       }
 
-    inline given forTeleportPlayerWithConfirm[F[_]: Applicative, CBPackets <: Tuple: Includes[
-      TimeUpdate
-    ], SBPackets <: Tuple]: Aux[F, CBPackets, SBPackets, TimeUpdate] =
-      new AbstractionEvidence[F, CBPackets, SBPackets] {
+    inline given forTeleportPlayerWithConfirm[F[
+      _
+    ]: Applicative, SBPackets <: Tuple, CBPackets <: Tuple: Includes[TimeUpdate]]
+      : Aux[F, SBPackets, CBPackets, TimeUpdate] =
+      new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = TimeUpdate
-        val ev: ProtocolPacketAbstraction[F, CBPackets, SBPackets, TimeUpdate, WorldTime] =
+        val ev: ProtocolPacketAbstraction[F, SBPackets, CBPackets, TimeUpdate, WorldTime] =
           ProtocolPacketAbstraction.pure { transport =>
             {
               case TimeUpdate(worldAge, timeOfDay) =>
@@ -43,8 +44,8 @@ object TimeUpdateAbstraction {
   /**
    * An abstraction of time update packets.
    */
-  def forProtocol[F[_]: Applicative, CBPackets <: Tuple, SBPackets <: Tuple](
-    using evidence: AbstractionEvidence[F, CBPackets, SBPackets]
-  ): ProtocolPacketAbstraction[F, CBPackets, SBPackets, evidence.AbstractedPacket, WorldTime] =
+  def forProtocol[F[_]: Applicative, SBPackets <: Tuple, CBPackets <: Tuple](
+    using evidence: AbstractionEvidence[F, SBPackets, CBPackets]
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, evidence.AbstractedPacket, WorldTime] =
     evidence.ev
 }

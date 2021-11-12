@@ -22,25 +22,25 @@ object KeepAliveAbstraction {
   /**
    * A helper trait that can help the compiler resolve abstraction pattern automatically.
    */
-  trait AbstractionEvidence[F[_], CBPackets <: Tuple, SBPackets <: Tuple] {
+  trait AbstractionEvidence[F[_], SBPackets <: Tuple, CBPackets <: Tuple] {
     type AbstractedPacket
-    val ev: ProtocolPacketAbstraction[F, CBPackets, SBPackets, AbstractedPacket, Unit]
+    val ev: ProtocolPacketAbstraction[F, SBPackets, CBPackets, AbstractedPacket, Unit]
   }
 
   object AbstractionEvidence {
-    type Aux[F[_], CBPackets <: Tuple, SBPackets <: Tuple, _AbstractedPacket] =
-      AbstractionEvidence[F, CBPackets, SBPackets] {
+    type Aux[F[_], SBPackets <: Tuple, CBPackets <: Tuple, _AbstractedPacket] =
+      AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = _AbstractedPacket
       }
 
-    inline given forI32[F[_]: Applicative, CBPackets <: Tuple: Includes[
-      KeepAliveClientbound_i32
-    ], SBPackets <: Tuple: HasCodecOf[KeepAliveServerbound_i32]]
-      : Aux[F, CBPackets, SBPackets, KeepAliveClientbound_i32] =
-      new AbstractionEvidence[F, CBPackets, SBPackets] {
+    inline given forI32[F[_]: Applicative, SBPackets <: Tuple: HasCodecOf[
+      KeepAliveServerbound_i32
+    ], CBPackets <: Tuple: Includes[KeepAliveClientbound_i32]]
+      : Aux[F, SBPackets, CBPackets, KeepAliveClientbound_i32] =
+      new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = KeepAliveClientbound_i32
         val ev
-          : ProtocolPacketAbstraction[F, CBPackets, SBPackets, KeepAliveClientbound_i32, Unit] =
+          : ProtocolPacketAbstraction[F, SBPackets, CBPackets, KeepAliveClientbound_i32, Unit] =
           ProtocolPacketAbstraction.pure { transport =>
             {
               case KeepAliveClientbound_i32(id) =>
@@ -49,14 +49,14 @@ object KeepAliveAbstraction {
           }
       }
 
-    inline given forI64[F[_]: Applicative, CBPackets <: Tuple: Includes[
-      KeepAliveClientbound_i64
-    ], SBPackets <: Tuple: HasCodecOf[KeepAliveServerbound_i64]]
-      : Aux[F, CBPackets, SBPackets, KeepAliveClientbound_i64] =
-      new AbstractionEvidence[F, CBPackets, SBPackets] {
+    inline given forI64[F[_]: Applicative, SBPackets <: Tuple: HasCodecOf[
+      KeepAliveServerbound_i64
+    ], CBPackets <: Tuple: Includes[KeepAliveClientbound_i64]]
+      : Aux[F, SBPackets, CBPackets, KeepAliveClientbound_i64] =
+      new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = KeepAliveClientbound_i64
         val ev
-          : ProtocolPacketAbstraction[F, CBPackets, SBPackets, KeepAliveClientbound_i64, Unit] =
+          : ProtocolPacketAbstraction[F, SBPackets, CBPackets, KeepAliveClientbound_i64, Unit] =
           ProtocolPacketAbstraction.pure { transport =>
             {
               case KeepAliveClientbound_i64(id) =>
@@ -65,16 +65,16 @@ object KeepAliveAbstraction {
           }
       }
 
-    inline given forVarInt[F[_]: Applicative, CBPackets <: Tuple: Includes[
-      KeepAliveClientbound_VarInt
-    ], SBPackets <: Tuple: HasCodecOf[KeepAliveServerbound_VarInt]]
-      : Aux[F, CBPackets, SBPackets, KeepAliveClientbound_VarInt] =
-      new AbstractionEvidence[F, CBPackets, SBPackets] {
+    inline given forVarInt[F[_]: Applicative, SBPackets <: Tuple: HasCodecOf[
+      KeepAliveServerbound_VarInt
+    ], CBPackets <: Tuple: Includes[KeepAliveClientbound_VarInt]]
+      : Aux[F, SBPackets, CBPackets, KeepAliveClientbound_VarInt] =
+      new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = KeepAliveClientbound_VarInt
         val ev: ProtocolPacketAbstraction[
           F,
-          CBPackets,
           SBPackets,
+          CBPackets,
           KeepAliveClientbound_VarInt,
           Unit
         ] =
@@ -87,8 +87,8 @@ object KeepAliveAbstraction {
       }
   }
 
-  def forProtocol[F[_]: Applicative, CBPackets <: Tuple, SBPackets <: Tuple](
-    using evidence: AbstractionEvidence[F, CBPackets, SBPackets]
-  ): ProtocolPacketAbstraction[F, CBPackets, SBPackets, evidence.AbstractedPacket, Unit] =
+  def forProtocol[F[_]: Applicative, SBPackets <: Tuple, CBPackets <: Tuple](
+    using evidence: AbstractionEvidence[F, SBPackets, CBPackets]
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, evidence.AbstractedPacket, Unit] =
     evidence.ev
 }

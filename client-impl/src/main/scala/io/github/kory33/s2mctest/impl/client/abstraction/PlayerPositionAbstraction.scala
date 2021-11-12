@@ -25,33 +25,33 @@ object PlayerPositionAbstraction {
   /**
    * A helper trait that can help the compiler resolve abstraction pattern automatically.
    */
-  trait AbstractionEvidence[F[_], CBPackets <: Tuple, SBPackets <: Tuple] {
+  trait AbstractionEvidence[F[_], SBPackets <: Tuple, CBPackets <: Tuple] {
     type AbstractedPacket
     val ev: ProtocolPacketAbstraction[
       F,
-      CBPackets,
       SBPackets,
+      CBPackets,
       AbstractedPacket,
       PositionAndOrientation
     ]
   }
 
   object AbstractionEvidence {
-    type Aux[F[_], CBPackets <: Tuple, SBPackets <: Tuple, _AbstractedPacket] =
-      AbstractionEvidence[F, CBPackets, SBPackets] {
+    type Aux[F[_], SBPackets <: Tuple, CBPackets <: Tuple, _AbstractedPacket] =
+      AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = _AbstractedPacket
       }
 
-    inline given forTeleportPlayerWithConfirm[F[_]: Applicative, CBPackets <: Tuple: Includes[
-      TeleportPlayer_WithConfirm
-    ], SBPackets <: Tuple: HasCodecOf[TeleportConfirm]]
-      : Aux[F, CBPackets, SBPackets, TeleportPlayer_WithConfirm] =
-      new AbstractionEvidence[F, CBPackets, SBPackets] {
+    inline given forTeleportPlayerWithConfirm[F[_]: Applicative, SBPackets <: Tuple: HasCodecOf[
+      TeleportConfirm
+    ], CBPackets <: Tuple: Includes[TeleportPlayer_WithConfirm]]
+      : Aux[F, SBPackets, CBPackets, TeleportPlayer_WithConfirm] =
+      new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = TeleportPlayer_WithConfirm
         val ev: ProtocolPacketAbstraction[
           F,
-          CBPackets,
           SBPackets,
+          CBPackets,
           TeleportPlayer_WithConfirm,
           PositionAndOrientation
         ] =
@@ -91,12 +91,12 @@ object PlayerPositionAbstraction {
    * An abstraction of player teleport packets that automatically updates
    * [[PositionAndOrientation]] of the client.
    */
-  def forProtocol[F[_]: Applicative, CBPackets <: Tuple, SBPackets <: Tuple](
-    using evidence: AbstractionEvidence[F, CBPackets, SBPackets]
+  def forProtocol[F[_]: Applicative, SBPackets <: Tuple, CBPackets <: Tuple](
+    using evidence: AbstractionEvidence[F, SBPackets, CBPackets]
   ): ProtocolPacketAbstraction[
     F,
-    CBPackets,
     SBPackets,
+    CBPackets,
     evidence.AbstractedPacket,
     PositionAndOrientation
   ] =
