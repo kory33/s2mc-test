@@ -98,9 +98,9 @@ object ClientPool {
       } yield new ClientPool[F, ServerBoundPackets, ClientBoundPackets, State] {
         private def finalizeUsedClient(client: Client, clientFinalizer: F[Unit]): F[Unit] =
           for {
-            // we are not yet sure if we should cache this client,
+            // at this point we are not yet sure if we should cache this client,
             // but start packet-read-loop process anyway, because it can be cancelled later on
-            packetReadLoopResource <- client.beginReadLoop.allocated
+            packetReadLoopResource <- client.readLoopAndDiscard.allocated
             (_, cancelPacketReadLoop) = packetReadLoopResource
             cached <- stateRef.modify { st =>
               if st.totalClients < softBound then {

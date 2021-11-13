@@ -74,10 +74,10 @@ def circlingClient_1_16_4(): Unit = {
     .recycledClient
     .use { client =>
       for {
-        _ <- client.beginReadLoop.use { _ => IO.sleep(3.seconds) }
+        _ <- client.readLoopAndDiscard.use { _ => IO.sleep(3.seconds) }
         initView <- client.worldView
         initRealTime <- IO.realTime
-        _ <- client.beginReadLoop.use { _ =>
+        _ <- client.readLoopAndDiscard.use { _ =>
           val radius = 5.0
           val velocity = 5.0
           val angularVelocity = velocity / radius

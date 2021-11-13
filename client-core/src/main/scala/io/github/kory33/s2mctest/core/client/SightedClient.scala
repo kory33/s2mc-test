@@ -40,7 +40,6 @@ class SightedClient[
   WorldView
 ](
    val writeTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets],
-   readSemaphore: Semaphore[F],
    readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
    val identity: ClientIdentity,
    viewRef: Ref[F, WorldView],
@@ -98,48 +97,36 @@ class SightedClient[
     }
 
   /**
-   * Result of a read-loop, provided by the [[beginReadLoop]] resource.
-   *
-   * @param stream
-   *   the [[Topic]] which keeps sending one of updated [[WorldView]] or a packet of type
-   *   `Tuple.Union[ClientBoundPackets]` while the read-loop is active (determined by the
-   *   lifetime of the read-loop resource).
+   * Result of an iteration of read-loop, provided by the [[beginReadLoop]] resource.
    */
-  case class ReadLoopUpdates(
-    stream: fs2.Stream[F, Either[WorldView, Tuple.Union[ClientBoundPackets]]]
-  )
+  enum ReadLoopStepResult:
+    case WorldUpdate(view: WorldView)
+    case PacketArrived(packet: Tuple.Union[ClientBoundPackets])
 
   /**
-   * The resource of process that keeps reading packets from the transport, sending the results
-   * into the exposed [[Topic]]. The exposed [[Topic]] notifies all updates originating from
-   * incoming packets; abstracted packets that may modify [[WorldView]] appear as an updated
-   * [[WorldView]], while non-abstracted, visible packets arise as
-   * `Tuple.Union[ClientBoundPackets]`.
+   * An action that repeatedly runs `f` using a result of reading a packet until we get a
+   * defined value of [[A]].
    *
-   * This resource is guarded by a semaphore of a single permit. Trying to acquire this resource
-   * twice in a row will result in a deadlock.
-   *
-   * Acquiring this resource has an effect of letting packets go through the abstraction,
-   * meaning that auto-responses by abstractions will be made while this resource is being held.
-   * When this resource goes out of scope, the packet-reading process is cancelled.
+   * In testing context, this method can be used in "expecting" a certain sequence of world
+   * states, for example,
+   *   - by checking the world time every time a result comes in (Minecraft protocol guarantees
+   *     that some packet arrives after some time), or
+   *   - by throwing (using `MonadThrow[F].raiseError`) when certain condition is met
    */
-  // FIXME: All Updates before the completion of the first subscription are lost.
-  //        We probably need a more general interface to catch such use-cases,
-  //        but until one is demanded, we shall keep the read-loop in this form.
-  val beginReadLoop: Resource[F, ReadLoopUpdates] =
-    for {
-      _ <- readSemaphore.permit
-      topic <- Resource
-        .make(Topic[F, Either[WorldView, Tuple.Union[ClientBoundPackets]]])(_.close.void)
-      _ <- Spawn[F].background {
-        Monad[F].foreverM {
-          nextPacketOrViewUpdate >>= {
-            case Some(packet) => topic.publish1(Right(packet))
-            case None         => worldView >>= (view => topic.publish1(Left(view)))
-          }
-        }
+  def readLoopUntilDefined[A](f: ReadLoopStepResult => F[Option[A]]): F[A] =
+    Monad[F].untilDefinedM {
+      nextPacketOrViewUpdate >>= {
+        case Some(packet) => f(ReadLoopStepResult.PacketArrived(packet))
+        case None         => worldView >>= (world => f(ReadLoopStepResult.WorldUpdate(world)))
       }
-    } yield ReadLoopUpdates(topic.subscribe(Int.MaxValue))
+    }
+
+  /**
+   * A resource that manages the concurrent execution of [[readLoopUntilDefined]] that is
+   * executed endlessly until the resource gets out of scope.
+   */
+  def readLoopAndDiscard: Resource[F, Unit] =
+    Spawn[F].background(readLoopUntilDefined[Nothing](_ => Monad[F].pure(None))).map(_ => ())
 
   /**
    * Write a [[packet]] to the underlying transport.
@@ -166,14 +153,6 @@ object SightedClient {
   ): F[SightedClient[F, ServerBoundPackets, ClientBoundPackets, WorldView]] =
     for {
       ref <- Ref.of[F, WorldView](initialWorldView)
-      readSemaphore <- Semaphore[F](1)
-    } yield new SightedClient(
-      writeTransport,
-      readSemaphore,
-      readTransport,
-      identity,
-      ref,
-      abstraction
-    )
+    } yield new SightedClient(writeTransport, readTransport, identity, ref, abstraction)
 
 }

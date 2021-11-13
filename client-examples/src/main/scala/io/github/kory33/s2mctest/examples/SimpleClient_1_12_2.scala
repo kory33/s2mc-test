@@ -58,17 +58,13 @@ def simpleClient_1_12_2(): Unit = {
     .unsafeRunSync()
 
   val program: IO[Unit] =
-    clientPool.recycledClient.flatMap(_.beginReadLoop).use { updates =>
-      updates
-        .stream
-        .evalMap {
-          case Left(worldView) =>
-            IO(println(s"WorldView updated: $worldView"))
-          case Right(packet) =>
-            IO(println(s"Visible packet: $packet"))
-        }
-        .compile
-        .drain
+    clientPool.recycledClient.use { client =>
+      client.readLoopUntilDefined[Nothing] {
+        case client.ReadLoopStepResult.WorldUpdate(worldView) =>
+          IO(println(s"WorldView updated: $worldView")) >> IO.pure(None)
+        case client.ReadLoopStepResult.PacketArrived(packet) =>
+          IO(println(s"Visible packet: $packet")) >> IO.pure(None)
+      }
     }
 
   program.unsafeRunSync()
