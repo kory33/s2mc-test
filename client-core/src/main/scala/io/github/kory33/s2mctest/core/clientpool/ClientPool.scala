@@ -7,6 +7,8 @@ import io.github.kory33.s2mctest.core.client.SightedClient
 
 trait ClientPool[F[_], ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView] {
 
+  final type AssociatedServerBoundPackets = ServerBoundPackets
+  final type AssociatedClientBoundPackets = ClientBoundPackets
   final type Client = SightedClient[F, ServerBoundPackets, ClientBoundPackets, WorldView]
 
   /**
