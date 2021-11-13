@@ -27,8 +27,8 @@ case class Vector3D(x: Double, y: Double, z: Double) {
     this multiply (1 / l)
 
   /**
-   * Yaw of an entity whose face direction is collinear to this vector. Requires that this
-   * vector has nonzero projection onto XZ plane.
+   * Yaw of an entity whose face direction is collinear to this vector, clamped to the interval
+   * `[0, 360)`. Requires that this vector has nonzero projection onto XZ plane.
    *
    * See https://wiki.vg/index.php?title=Protocol&oldid=16681#Player_Rotation for details.
    */
