@@ -88,7 +88,16 @@ lazy val client_examples =
     )
 
 lazy val testing =
-  project.dependsOn(client_impl).in(file("testing")).settings(name := "s2mc-testing")
+  project
+    .dependsOn(client_impl)
+    .in(file("testing"))
+    .settings(
+      name := "s2mc-testing",
+      libraryDependencies ++= Seq(
+        "org.scalatest" %% "scalatest" % "3.2.10",
+        "org.typelevel" %% "cats-effect-testing-scalatest" % "1.3.0"
+      )
+    )
 
 // region publishing configuration
 
