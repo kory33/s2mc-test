@@ -80,12 +80,15 @@ lazy val client_impl =
 
 lazy val client_examples =
   project
-    .dependsOn(protocol_impl, client_impl)
+    .dependsOn(client_impl)
     .in(file("client-examples"))
     .settings(
       name := "s2mc-client-examples",
       libraryDependencies ++= Seq("dev.optics" %% "monocle-macro" % "3.0.0")
     )
+
+lazy val testing =
+  project.dependsOn(client_impl).in(file("testing")).settings(name := "s2mc-testing")
 
 // region publishing configuration
 
