@@ -1,4 +1,4 @@
-package io.github.kory33.s3mctest.testing
+package io.github.kory33.s2mctest.testing
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
