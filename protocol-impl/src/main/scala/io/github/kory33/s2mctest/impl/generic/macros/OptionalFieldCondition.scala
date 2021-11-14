@@ -3,6 +3,10 @@ package io.github.kory33.s2mctest.impl.generic.macros
 import scala.annotation.tailrec
 import scala.quoted.{Expr, Quotes}
 
+/**
+ * A condition (written with an `assert`) specifying that the field with [[fieldName]] is
+ * nonempty precisely when [[condition]] is true.
+ */
 case class OptionalFieldCondition(fieldName: String, condition: Expr[Boolean])
 
 object OptionalFieldCondition:
@@ -33,27 +37,14 @@ object OptionalFieldCondition:
         case _ => None
       }
 
-  private def conjunctNonzeroClauses(using quotes: Quotes)(
-    clauses: List[Expr[Boolean]]
-  ): Option[Expr[Boolean]] =
-    @tailrec def conjunctClauses(
-      accum: Expr[Boolean],
-      rest: List[Expr[Boolean]]
-    ): Expr[Boolean] = rest match {
-      case first :: newRest => conjunctClauses('{ ${ accum } && ${ first } }, newRest)
-      case Nil              => accum
-    }
-
-    clauses match {
-      case first :: rest => Some(conjunctClauses(first, rest))
-      case Nil           => None
-    }
-
   extension (conditions: List[OptionalFieldCondition])
-    def conditionOn(using Quotes)(fieldName: String): Option[Expr[Boolean]] =
+    def uniqueConditionOn(using Quotes)(fieldName: String): Option[Expr[Boolean]] =
       val conditionsExprs: List[Expr[Boolean]] = conditions.flatMap {
         case OptionalFieldCondition(n, c) if n == fieldName => Some(c)
         case _                                              => None
       }
 
-      conjunctNonzeroClauses(conditionsExprs)
+      conditionsExprs match {
+        case head :: Nil => Some(head)
+        case _           => None
+      }

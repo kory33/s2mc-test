@@ -105,9 +105,9 @@ object GenByteDecode {
           case '[scala.Option[ut]] =>
             val condition =
               fieldConditions
-                .conditionOn(fieldName)
+                .uniqueConditionOn(fieldName)
                 .getOrElse(report.throwError {
-                  s"\tExpected nonemptyness test for the optional field $fieldName.\n" +
+                  s"\tExpected single nonemptyness test for the optional field $fieldName.\n" +
                     "\tIt is possible that the macro could not inspect the class definition body.\n" +
                     "\tMake sure to:\n" +
                     "\t - add -Yretain-trees compiler flag" +
