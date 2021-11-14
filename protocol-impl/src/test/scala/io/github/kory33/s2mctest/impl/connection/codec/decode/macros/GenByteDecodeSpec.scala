@@ -1,12 +1,14 @@
 package io.github.kory33.s2mctest.impl.connection.codec.decode.macros
 
 import fs2.Chunk
+import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
+import io.github.kory33.s2mctest.core.connection.codec.interpreters.{
+  DecodeFiniteBytesInterpreter,
+  ParseResult
+}
+import org.scalatest.Assertion
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
-import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
-import io.github.kory33.s2mctest.core.connection.codec.interpreters.DecodeFiniteBytesInterpreter
-import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
-import org.scalatest.Assertion
 
 class GenByteDecodeSpec extends AnyFlatSpec with should.Matchers {
 
