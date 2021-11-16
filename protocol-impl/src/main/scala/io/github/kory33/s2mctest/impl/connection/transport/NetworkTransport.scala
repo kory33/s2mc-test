@@ -6,7 +6,6 @@ import cats.effect.kernel.GenConcurrent
 import cats.effect.std.Semaphore
 import fs2.Chunk
 import fs2.io.net.Socket
-import io.github.kory33.s2mctest.core.connection.algebra.ReadBytes
 import io.github.kory33.s2mctest.core.connection.codec.dsl.{
   DecodeBytes,
   DecodeFiniteBytes,
@@ -47,8 +46,6 @@ object NetworkTransport {
   def noCompression[F[_]](socket: Socket[F])(
     using F: GenConcurrent[F, Throwable]
   ): F[(PacketWriteTransport[F], PacketReadTransport[F])] =
-    given ReadBytes[F] = (n: Int) => socket.readN(n)
-
     // decode programs to use
     val readPacketLength: DecodeBytes[Int] = VarNumDecodes.decodeVarIntAsInt
     val readPacketIdAndData: DecodeFiniteBytes[(Int, Chunk[Byte])] = Monad[DecodeFiniteBytes]
@@ -78,7 +75,8 @@ object NetworkTransport {
                   for {
                     idAndDataChunkLengthResult <-
                       poll(
-                        DecodeBytesInterpreter.runProgramCancellably[F, Int](readPacketLength)
+                        DecodeBytesInterpreter
+                          .runProgramCancellably[F, Int](socket.readN, readPacketLength)
                       )
                     idAndDataChunkLength <- idAndDataChunkLengthResult match {
                       case Right(value) => Monad[F].pure(value)

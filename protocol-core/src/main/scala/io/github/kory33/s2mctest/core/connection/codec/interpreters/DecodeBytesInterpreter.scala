@@ -3,7 +3,6 @@ package io.github.kory33.s2mctest.core.connection.codec.interpreters
 import cats.Monad
 import cats.data.{EitherT, State}
 import cats.effect.{MonadCancel, Ref}
-import io.github.kory33.s2mctest.core.connection.algebra.ReadBytes
 import io.github.kory33.s2mctest.core.connection.codec.dsl.{DecodeBytes, ReadBytesInstruction}
 
 object DecodeBytesInterpreter {
@@ -42,7 +41,8 @@ object DecodeBytesInterpreter {
    * Run a [[DecodeBytes]] in such a way that a cancellation may take place at any time before a
    * first read completes, and not anywhere else.
    */
-  def runProgramCancellably[F[_]: ReadBytes, A](
+  def runProgramCancellably[F[_], A](
+    readBytes: Int => F[fs2.Chunk[Byte]],
     program: DecodeBytes[A]
   )(using F: MonadCancel[F, ?])(using Ref.Make[F]): F[Either[ParseError, A]] = {
     Ref[F].of(false).flatMap { (hasCompletedARead: Ref[F, Boolean]) =>
@@ -55,8 +55,8 @@ object DecodeBytesInterpreter {
                   case ReadBytesInstruction.ReadWithSize(n) =>
                     EitherT.liftF {
                       Monad[F].ifM(hasCompletedARead.get)(
-                        poll(ReadBytes[F].ofSize(n)) <* hasCompletedARead.set(true),
-                        ReadBytes[F].ofSize(n)
+                        poll(readBytes(n)) <* hasCompletedARead.set(true),
+                        readBytes(n)
                       )
                     }
                   case ReadBytesInstruction.RaiseError(error) =>
