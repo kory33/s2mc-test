@@ -236,7 +236,7 @@ object ClientInitializationImpl {
     (playerName: String, initialWorldView: WorldView) => {
       val networkTransportResource
         : Resource[F, (PacketWriteTransport[F], PacketReadTransport[F])] =
-        Network[F].client(address).evalMap { socket => NetworkTransport.noCompression(socket) }
+        NetworkTransport.noCompression(Network[F].client(address))
 
       networkTransportResource.flatMap {
         case (packetWriteTransport, packetReadTransport) =>

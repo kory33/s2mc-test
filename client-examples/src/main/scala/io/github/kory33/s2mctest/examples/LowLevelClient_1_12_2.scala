@@ -29,7 +29,7 @@ def lowLevelClient_1_12_2(): Unit = {
 
   val address = SocketAddress.fromString("localhost:25565").get
   val transportResource =
-    Network[IO].client(address).evalMap { socket => NetworkTransport.noCompression(socket) }
+    NetworkTransport.noCompression(Network[IO].client(address))
 
   val program = for {
     _ <- transportResource.use {
