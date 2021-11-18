@@ -1,8 +1,8 @@
 package io.github.kory33.s2mctest.impl.generic.net
 
-import cats.effect.{Deferred, MonadCancelThrow, Resource}
 import cats.effect.kernel.{Concurrent, Ref}
 import cats.effect.std.Semaphore
+import cats.effect.{Deferred, MonadCancelThrow, Resource}
 import cats.{Monad, MonadThrow}
 import fs2.Chunk
 import fs2.concurrent.SignallingRef
