@@ -24,6 +24,7 @@ import io.github.kory33.s2mctest.core.connection.transport.{
 }
 import io.github.kory33.s2mctest.impl.connection.codec.decode.VarNumDecodes
 import io.github.kory33.s2mctest.impl.connection.codec.encode.VarNumEncodes
+import io.github.kory33.s2mctest.impl.generic.net.AtomicSocket
 
 import java.io.IOException
 
@@ -46,7 +47,7 @@ object NetworkTransport {
     val readPacketIdAndData: DecodeFiniteBytes[(Int, Chunk[Byte])] = Monad[DecodeFiniteBytes]
       .product(VarNumDecodes.decodeVarIntAsInt.inject, DecodeFiniteBytes.readUntilTheEnd)
 
-    socketResource.evalMap { socket =>
+    AtomicSocket.fromFs2Socket(socketResource).evalMap { socket =>
       val newWriteTransport: F[PacketWriteTransport[F]] =
         Semaphore[F](1).map { writeSemaphore =>
           new PacketWriteTransport[F] {
