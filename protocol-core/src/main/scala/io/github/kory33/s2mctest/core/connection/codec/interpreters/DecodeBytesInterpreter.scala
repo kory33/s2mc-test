@@ -55,8 +55,8 @@ object DecodeBytesInterpreter {
                   case ReadBytesInstruction.ReadWithSize(n) =>
                     EitherT.liftF {
                       Monad[F].ifM(hasCompletedARead.get)(
-                        poll(readBytes(n)) <* hasCompletedARead.set(true),
-                        readBytes(n)
+                        readBytes(n),
+                        poll(readBytes(n)) <* hasCompletedARead.set(true)
                       )
                     }
                   case ReadBytesInstruction.RaiseError(error) =>
