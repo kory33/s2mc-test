@@ -145,7 +145,9 @@ object ClientInitializationImpl {
     inline given doLoginWithStringAndPluginLogin[
       F[_]: MonadThrow,
       LoginServerBoundPackets <: Tuple: HasCodecOf[LoginStart]: HasCodecOf[LoginPluginResponse],
-      LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]: Includes[LoginPluginRequest]
+      LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]: Includes[
+        LoginPluginRequest
+      ]
     ](
       using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
@@ -173,7 +175,9 @@ object ClientInitializationImpl {
     inline given doLoginWithUUIDAndPluginLogin[
       F[_]: MonadThrow,
       LoginServerBoundPackets <: Tuple: HasCodecOf[LoginStart]: HasCodecOf[LoginPluginResponse],
-      LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_UUID]: Includes[LoginPluginRequest]
+      LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_UUID]: Includes[
+        LoginPluginRequest
+      ]
     ](
       using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
@@ -263,9 +267,8 @@ object ClientInitializationImpl {
                 playerName
               )
 
-            def initializeClient(identity: ClientIdentity): F[
-              SightedClient[F, PlayServerBoundPackets, PlayClientBoundPackets, WorldView]
-            ] = {
+            def initializeClient(identity: ClientIdentity)
+              : F[SightedClient[F, PlayServerBoundPackets, PlayClientBoundPackets, WorldView]] = {
               val readTransport =
                 ProtocolBasedReadTransport(
                   packetReadTransport,

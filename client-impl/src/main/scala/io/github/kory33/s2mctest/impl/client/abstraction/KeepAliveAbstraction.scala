@@ -71,13 +71,8 @@ object KeepAliveAbstraction {
       : Aux[F, SBPackets, CBPackets, KeepAliveClientbound_VarInt] =
       new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = KeepAliveClientbound_VarInt
-        val ev: ProtocolPacketAbstraction[
-          F,
-          SBPackets,
-          CBPackets,
-          KeepAliveClientbound_VarInt,
-          Unit
-        ] =
+        val ev
+          : ProtocolPacketAbstraction[F, SBPackets, CBPackets, KeepAliveClientbound_VarInt, Unit] =
           ProtocolPacketAbstraction.pure { transport =>
             {
               case KeepAliveClientbound_VarInt(id) =>

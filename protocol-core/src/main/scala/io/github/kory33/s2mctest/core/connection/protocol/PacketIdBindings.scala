@@ -83,10 +83,8 @@ class PacketIdBindings[BindingTup <: Tuple](bindings: BindingTup)(
       // By Require[IncludedInT[...]] constraint, IndexOfT[CodecBinding[P], BindingTup]
       // reduces to a singleton type of integer at which BindingTup has CodecBinding[P],
       // so this summoning succeeds.
-      val ev: Tuple.Elem[
-        BindingTup & NonEmptyTuple,
-        IndexOfT[CodecBinding[P], BindingTup]
-      ] =:= CodecBinding[P] =
+      val ev
+        : Tuple.Elem[BindingTup & NonEmptyTuple, IndexOfT[CodecBinding[P], BindingTup]] =:= CodecBinding[P] =
         scala.compiletime.summonInline
 
       // We know that IndexOfT[CodecBinding[P], BindingTup] and idx.type will reduce to

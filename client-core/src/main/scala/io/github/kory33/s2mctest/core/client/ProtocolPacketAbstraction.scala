@@ -14,22 +14,22 @@ import scala.reflect.TypeTest
 
 /**
  * Partially applied factory of [[TransportPacketAbstraction]] which is able to produce
- * [[TransportPacketAbstraction]] when given a packet transport of [[ClientBoundPackets]] and
- * [[ServerBoundPackets]].
+ * [[TransportPacketAbstraction]] when given a packet transport of [[CBPackets]] and
+ * [[SBPackets]].
  *
  * These objects are better suited for composing packet abstractions compared to dealing with
  * [[TransportPacketAbstraction]] directly.
  */
 trait ProtocolPacketAbstraction[
   F[_],
-  ServerBoundPackets <: Tuple,
-  ClientBoundPackets <: Tuple,
+  SBPackets <: Tuple,
+  CBPackets <: Tuple,
   Packet,
   WorldView
 ] {
 
   def abstractOnTransport(
-    packetTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets]
+    packetTransport: ProtocolBasedWriteTransport[F, SBPackets]
   ): TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
 
   /**
@@ -38,7 +38,7 @@ trait ProtocolPacketAbstraction[
    */
   final def defocus[BroaderView](
     lens: Lens[BroaderView, WorldView]
-  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, BroaderView] =
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, BroaderView] =
     abstractOnTransport(_).defocus(lens)
 
   /**
@@ -46,9 +46,8 @@ trait ProtocolPacketAbstraction[
    * debugging purposes.
    */
   final def keepTrackOfViewChanges
-    : ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, NonEmptyList[
-      WorldView
-    ]] = abstractOnTransport(_).keepTrackOfViewChanges
+    : ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, NonEmptyList[WorldView]] =
+    abstractOnTransport(_).keepTrackOfViewChanges
 
   /**
    * Combine this abstraction with another. The obtained abstraction will attempt to update the
@@ -57,12 +56,12 @@ trait ProtocolPacketAbstraction[
   final def orElseAbstract(
     another: ProtocolPacketAbstraction[
       F,
-      ServerBoundPackets,
-      ClientBoundPackets,
+      SBPackets,
+      CBPackets,
       Packet,
       WorldView
     ]
-  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, WorldView] =
     transport =>
       this.abstractOnTransport(transport).orElseAbstract(another.abstractOnTransport(transport))
 
@@ -74,18 +73,12 @@ trait ProtocolPacketAbstraction[
    *   - if otherwise `p: P`, then `another.viewUpdate(p)`
    */
   final def thenAbstract[P](
-    another: ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, P, WorldView]
+    another: ProtocolPacketAbstraction[F, SBPackets, CBPackets, P, WorldView]
   )(
     using ng: scala.util.NotGiven[P <:< Packet],
     // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
     ge: GivenEither[scala.reflect.Typeable[Packet], Packet =:= Nothing]
-  ): ProtocolPacketAbstraction[
-    F,
-    ServerBoundPackets,
-    ClientBoundPackets,
-    P | Packet,
-    WorldView
-  ] =
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, P | Packet, WorldView] =
     transport =>
       this.abstractOnTransport(transport).thenAbstract(another.abstractOnTransport(transport))
 
@@ -96,8 +89,8 @@ trait ProtocolPacketAbstraction[
   final def thenAbstractWithLens[P, MagnifiedView](
     another: ProtocolPacketAbstraction[
       F,
-      ServerBoundPackets,
-      ClientBoundPackets,
+      SBPackets,
+      CBPackets,
       P,
       MagnifiedView
     ],
@@ -106,13 +99,7 @@ trait ProtocolPacketAbstraction[
     using ng: scala.util.NotGiven[P <:< Packet],
     // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
     ge: GivenEither[scala.reflect.Typeable[Packet], Packet =:= Nothing]
-  ): ProtocolPacketAbstraction[
-    F,
-    ServerBoundPackets,
-    ClientBoundPackets,
-    P | Packet,
-    WorldView
-  ] =
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, P | Packet, WorldView] =
     thenAbstract[P](another.defocus[WorldView](lens))
 }
 
@@ -141,13 +128,7 @@ object ProtocolPacketAbstraction {
      */
     def apply[ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple](
       _protocol: Protocol[ServerBoundPackets, ClientBoundPackets]
-    ): ProtocolPacketAbstraction[
-      F,
-      ServerBoundPackets,
-      ClientBoundPackets,
-      Nothing,
-      WorldView
-    ] =
+    ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Nothing, WorldView] =
       ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[WorldView])
   }
 
@@ -185,7 +166,7 @@ object ProtocolPacketAbstraction {
     ProtocolPacketAbstraction(transport =>
       onTransport(transport).liftCmd[F, List[transport.Response]]
     )
-    
+
   /**
    * Define an abstraction which causes some side-effect on packet receipt.
    */

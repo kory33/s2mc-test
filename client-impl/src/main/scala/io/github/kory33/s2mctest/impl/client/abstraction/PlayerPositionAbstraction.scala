@@ -48,13 +48,8 @@ object PlayerPositionAbstraction {
       : Aux[F, SBPackets, CBPackets, TeleportPlayer_WithConfirm] =
       new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = TeleportPlayer_WithConfirm
-        val ev: ProtocolPacketAbstraction[
-          F,
-          SBPackets,
-          CBPackets,
-          TeleportPlayer_WithConfirm,
-          PositionAndOrientation
-        ] =
+        val ev
+          : ProtocolPacketAbstraction[F, SBPackets, CBPackets, TeleportPlayer_WithConfirm, PositionAndOrientation] =
           ProtocolPacketAbstraction.pure { transport =>
             {
               case TeleportPlayer_WithConfirm(x, y, z, yaw, pitch, flags, teleportId) =>
@@ -93,12 +88,6 @@ object PlayerPositionAbstraction {
    */
   def forProtocol[F[_]: Applicative, SBPackets <: Tuple, CBPackets <: Tuple](
     using evidence: AbstractionEvidence[F, SBPackets, CBPackets]
-  ): ProtocolPacketAbstraction[
-    F,
-    SBPackets,
-    CBPackets,
-    evidence.AbstractedPacket,
-    PositionAndOrientation
-  ] =
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, evidence.AbstractedPacket, PositionAndOrientation] =
     evidence.ev
 }

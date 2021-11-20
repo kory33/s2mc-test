@@ -23,10 +23,7 @@ object Protocol {
   def apply[ServerBoundBindings <: Tuple, ClientBoundBindings <: Tuple](
     serverBound: PacketIdBindings[ServerBoundBindings],
     clientBound: PacketIdBindings[ClientBoundBindings]
-  ): Protocol[
-    Tuple.InverseMap[ServerBoundBindings, CodecBinding],
-    Tuple.InverseMap[ClientBoundBindings, CodecBinding]
-  ] = {
+  ): Protocol[Tuple.InverseMap[ServerBoundBindings, CodecBinding], Tuple.InverseMap[ClientBoundBindings, CodecBinding]] = {
     import io.github.kory33.s2mctest.core.generic.extensions.TypeEqExt.substituteCoBounded
 
     new Protocol(
