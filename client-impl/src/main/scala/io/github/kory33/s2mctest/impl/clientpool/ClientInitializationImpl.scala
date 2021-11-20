@@ -122,11 +122,9 @@ object ClientInitializationImpl {
       ClientIdentity(packet.username, packet.uuid)
 
     inline given doLoginWithStringWithoutPluginLogin[
-      // format: off
       F[_]: MonadThrow,
       LoginServerBoundPackets <: Tuple: HasCodecOf[LoginStart],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]
-      // format: on
     ](
       using scala.util.NotGiven[Includes[LoginPluginRequest][LoginClientBoundPackets]]
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
@@ -145,11 +143,9 @@ object ClientInitializationImpl {
       }
 
     inline given doLoginWithStringAndPluginLogin[
-      // format: off
       F[_]: MonadThrow,
       LoginServerBoundPackets <: Tuple: HasCodecOf[LoginStart]: HasCodecOf[LoginPluginResponse],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]: Includes[LoginPluginRequest]
-      // format: on
     ](
       using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
@@ -175,11 +171,9 @@ object ClientInitializationImpl {
         }
 
     inline given doLoginWithUUIDAndPluginLogin[
-      // format: off
       F[_]: MonadThrow,
       LoginServerBoundPackets <: Tuple: HasCodecOf[LoginStart]: HasCodecOf[LoginPluginResponse],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_UUID]: Includes[LoginPluginRequest]
-      // format: on
     ](
       using handleLoginPlugin: LoginPluginRequestHandler
     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
@@ -206,9 +200,7 @@ object ClientInitializationImpl {
   }
 
   def apply[
-    // format: off
     F[_]: Ref.Make: Network,
-    // format: on
     LoginServerBoundPackets <: Tuple,
     LoginClientBoundPackets <: Tuple,
     PlayServerBoundPackets <: Tuple,

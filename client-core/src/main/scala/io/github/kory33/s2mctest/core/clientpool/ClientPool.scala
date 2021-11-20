@@ -39,11 +39,12 @@ trait ClientPool[F[_], ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple,
 
 object ClientPool {
 
-  // format: off
   case class WithAccountPoolAndInitialization[
-    F[_]: MonadCancelThrow: Ref.Make, ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, State
+    F[_]: MonadCancelThrow: Ref.Make,
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple,
+    State
   ](
-  // format: on
     _accountPool: AccountPool[F],
     initialState: State,
     init: ClientInitialization[F, ServerBoundPackets, ClientBoundPackets, State]
@@ -150,9 +151,12 @@ object ClientPool {
     }
   }
 
-  // format: off
-  def withInitData[F[_]: MonadCancelThrow: Ref.Make, ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView](
-  // format: on
+  def withInitData[
+    F[_]: MonadCancelThrow: Ref.Make,
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple,
+    WorldView
+  ](
     accountPool: AccountPool[F],
     initialState: WorldView,
     clientInitialization: ClientInitialization[

@@ -21,9 +21,7 @@ import scala.reflect.TypeTest
  * [[TransportPacketAbstraction]] directly.
  */
 trait ProtocolPacketAbstraction[
-  // format: off
   F[_],
-  // format: on
   ServerBoundPackets <: Tuple,
   ClientBoundPackets <: Tuple,
   Packet,
@@ -157,9 +155,7 @@ object ProtocolPacketAbstraction {
    * Define an abstraction which does not send back peer-bound acknowledgements.
    */
   def silent[
-    // format: off
     F[_]: Applicative,
-    // format: on
     ServerBoundPackets <: Tuple,
     ClientBoundPackets <: Tuple,
     Packet,
@@ -176,9 +172,7 @@ object ProtocolPacketAbstraction {
    * side-effect.
    */
   def pure[
-    // format: off
     F[_]: Applicative,
-    // format: on
     ServerBoundPackets <: Tuple,
     ClientBoundPackets <: Tuple,
     Packet,
@@ -191,14 +185,12 @@ object ProtocolPacketAbstraction {
     ProtocolPacketAbstraction(transport =>
       onTransport(transport).liftCmd[F, List[transport.Response]]
     )
-
+    
   /**
    * Define an abstraction which causes some side-effect on packet receipt.
    */
   def effectful[
-    // format: off
     F[_]: Functor,
-    // format: on
     ServerBoundPackets <: Tuple,
     ClientBoundPackets <: Tuple,
     Packet,

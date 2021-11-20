@@ -10,9 +10,7 @@ import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedWriteTra
  * [[SightedClient]] given the client's player-name and the initial state.
  */
 trait ClientInitialization[
-  // format: off
   F[_],
-  // format: on
   ServerBoundPackets <: Tuple,
   ClientBoundPackets <: Tuple,
   State
@@ -22,10 +20,8 @@ trait ClientInitialization[
    * Initialize a fresh client that has [[initialState]] as its initial state.
    */
   def initializeFresh(
-    // format: off
     playerName: String,
     initialState: State
-    // format: on
   ): Resource[F, SightedClient[F, ServerBoundPackets, ClientBoundPackets, State]]
 
 }

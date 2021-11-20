@@ -32,20 +32,22 @@ import io.github.kory33.s2mctest.core.connection.transport.{
  * @param abstraction
  *   the object abstracting packets from [[writeTransport]].
  */
-// format: off
 class SightedClient[
   F[_]: Concurrent,
   ServerBoundPackets <: Tuple,
   ClientBoundPackets <: Tuple,
   WorldView
 ](
-   val writeTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets],
-   readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
-   val identity: ClientIdentity,
-   viewRef: Ref[F, WorldView],
-   abstraction: TransportPacketAbstraction[Tuple.Union[ClientBoundPackets], WorldView, F[List[writeTransport.Response]]]
+  val writeTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets],
+  readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
+  val identity: ClientIdentity,
+  viewRef: Ref[F, WorldView],
+  abstraction: TransportPacketAbstraction[
+    Tuple.Union[ClientBoundPackets],
+    WorldView,
+    F[List[writeTransport.Response]]
+  ]
 ) {
-  // format: on
 
   import cats.implicits.given
 
@@ -140,9 +142,12 @@ object SightedClient {
 
   import cats.implicits.given
 
-  // format: off
-  def withInitialWorldView[F[_]: Ref.Make: Concurrent, ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView](
-  // format: on
+  def withInitialWorldView[
+    F[_]: Ref.Make: Concurrent,
+    ServerBoundPackets <: Tuple,
+    ClientBoundPackets <: Tuple,
+    WorldView
+  ](
     writeTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets],
     readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
     identity: ClientIdentity,

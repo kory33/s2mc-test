@@ -17,9 +17,7 @@ object DisconnectAbstraction {
    * [[Disconnect]].
    */
   def throwOnDisconnect[
-    // format: off
     F[_],
-    // format: on
     E,
     ServerBoundPackets <: Tuple,
     ClientBoundPackets <: Tuple: Includes[Disconnect]
@@ -35,9 +33,7 @@ object DisconnectAbstraction {
    * [[Disconnect]].
    */
   def setOnDisconnect[
-    // format: off
     F[_]: Applicative,
-    // format: on
     A,
     ServerBoundPackets <: Tuple,
     ClientBoundPackets <: Tuple: Includes[Disconnect]
@@ -53,9 +49,7 @@ object DisconnectAbstraction {
    * receiving [[Disconnect]].
    */
   def trueOnDisconnect[
-    // format: off
     F[_]: Applicative,
-    // format: on
     ServerBoundPackets <: Tuple,
     ClientBoundPackets <: Tuple: Includes[Disconnect]
   ]: ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Disconnect, Unit] =
