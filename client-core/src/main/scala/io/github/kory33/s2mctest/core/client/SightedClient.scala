@@ -133,7 +133,7 @@ class SightedClient[
   /**
    * Write a [[packet]] to the underlying transport.
    */
-  def writePacket[P: writeTransport.peerBoundFragment.bindings.CanEncode](packet: P): F[Unit] =
+  def writePacket[P: writeTransport.peerBoundBindings.CanEncode](packet: P): F[Unit] =
     writeTransport.writePacket(packet)
 
 }

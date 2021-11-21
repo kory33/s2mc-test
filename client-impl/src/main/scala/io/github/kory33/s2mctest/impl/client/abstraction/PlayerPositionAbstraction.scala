@@ -42,10 +42,11 @@ object PlayerPositionAbstraction {
         type AbstractedPacket = _AbstractedPacket
       }
 
-    inline given forTeleportPlayerWithConfirm[F[_]: Applicative, SBPackets <: Tuple: HasCodecOf[
-      TeleportConfirm
-    ], CBPackets <: Tuple: Includes[TeleportPlayer_WithConfirm]]
-      : Aux[F, SBPackets, CBPackets, TeleportPlayer_WithConfirm] =
+    inline given forTeleportPlayerWithConfirm[
+      F[_]: Applicative,
+      SBPackets <: Tuple: Includes[TeleportConfirm],
+      CBPackets <: Tuple: Includes[TeleportPlayer_WithConfirm]
+    ]: Aux[F, SBPackets, CBPackets, TeleportPlayer_WithConfirm] =
       new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = TeleportPlayer_WithConfirm
         val ev

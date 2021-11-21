@@ -123,7 +123,7 @@ object ClientInitializationImpl {
 
     inline given doLoginWithStringWithoutPluginLogin[
       F[_]: MonadThrow,
-      LoginServerBoundPackets <: Tuple: HasCodecOf[LoginStart],
+      LoginServerBoundPackets <: Tuple: Includes[LoginStart],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]
     ](
       using scala.util.NotGiven[Includes[LoginPluginRequest][LoginClientBoundPackets]]
@@ -144,7 +144,7 @@ object ClientInitializationImpl {
 
     inline given doLoginWithStringAndPluginLogin[
       F[_]: MonadThrow,
-      LoginServerBoundPackets <: Tuple: HasCodecOf[LoginStart]: HasCodecOf[LoginPluginResponse],
+      LoginServerBoundPackets <: Tuple: Includes[LoginStart]: Includes[LoginPluginResponse],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]: Includes[
         LoginPluginRequest
       ]
@@ -174,7 +174,7 @@ object ClientInitializationImpl {
 
     inline given doLoginWithUUIDAndPluginLogin[
       F[_]: MonadThrow,
-      LoginServerBoundPackets <: Tuple: HasCodecOf[LoginStart]: HasCodecOf[LoginPluginResponse],
+      LoginServerBoundPackets <: Tuple: Includes[LoginStart]: Includes[LoginPluginResponse],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_UUID]: Includes[
         LoginPluginRequest
       ]
@@ -240,7 +240,7 @@ object ClientInitializationImpl {
             val doHandShake: F[Unit] = {
               val transport = ProtocolBasedWriteTransport(
                 packetWriteTransport,
-                CommonProtocol.handshakeProtocol.serverBoundFragment
+                CommonProtocol.handshakeProtocol.serverBound
               )
 
               transport.writePacket(
@@ -258,11 +258,11 @@ object ClientInitializationImpl {
               doLoginEv.doLoginWith(
                 ProtocolBasedWriteTransport(
                   packetWriteTransport,
-                  loginProtocol.serverBoundFragment
+                  loginProtocol.serverBound
                 ),
                 ProtocolBasedReadTransport(
                   packetReadTransport,
-                  loginProtocol.clientBoundFragment
+                  loginProtocol.clientBound
                 ),
                 playerName
               )
@@ -272,13 +272,13 @@ object ClientInitializationImpl {
               val readTransport =
                 ProtocolBasedReadTransport(
                   packetReadTransport,
-                  playProtocol.clientBoundFragment
+                  playProtocol.clientBound
                 )
 
               val writeTransport =
                 ProtocolBasedWriteTransport(
                   packetWriteTransport,
-                  playProtocol.serverBoundFragment
+                  playProtocol.serverBound
                 )
 
               SightedClient.withInitialWorldView(

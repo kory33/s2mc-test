@@ -49,6 +49,13 @@ type IncludedInT[T <: Tuple, A] = IncludedInLockedT[LockTuple[T], A]
 type Includes[A] = [T <: Tuple] =>> Require[IncludedInT[T, A]]
 
 /**
+ * An alias for `Require[IncludedInT[T, *]]`.
+ *
+ * Takes O(|T|) to compute, where T is the input tuple.
+ */
+type IncludedBy[T <: Tuple] = [A] =>> Require[IncludedInT[T, A]]
+
+/**
  * A type-level boolean indicating if [[T]] only contains distinct types.
  *
  * Takes O(|T|^2) to compute.

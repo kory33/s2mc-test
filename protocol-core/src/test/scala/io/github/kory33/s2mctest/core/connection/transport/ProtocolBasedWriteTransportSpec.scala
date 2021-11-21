@@ -33,7 +33,7 @@ class ProtocolBasedWriteTransportSpec extends AnyFlatSpec with should.Matchers {
 
   "writePacket" should "allow writing stuff in binding tuple" in {
     val protocolBasedTransport =
-      ProtocolBasedWriteTransport(writeOnlyTransport, mockedProtocol.serverBoundFragment)
+      ProtocolBasedWriteTransport(writeOnlyTransport, mockedProtocol.serverBound)
 
     protocolBasedTransport.writePacket(0).run._1 should equal(Chunk(42: Byte, 0: Byte))
     protocolBasedTransport.writePacket(10).run._1 should equal(Chunk(42: Byte, 10: Byte))
@@ -42,7 +42,7 @@ class ProtocolBasedWriteTransportSpec extends AnyFlatSpec with should.Matchers {
 
   "writePacket" should "not allow writing stuff not in binding tuple" in {
     val protocolBasedTransport =
-      ProtocolBasedWriteTransport(writeOnlyTransport, mockedProtocol.serverBoundFragment)
+      ProtocolBasedWriteTransport(writeOnlyTransport, mockedProtocol.serverBound)
 
     "protocolBasedTransport.writePacket('').run._1" shouldNot compile
     "protocolBasedTransport.writePacket(0.0).run._1" shouldNot compile

@@ -39,7 +39,7 @@ def lowLevelClient_1_12_2(): Unit = {
         {
           val transport = ProtocolBasedWriteTransport(
             packetWrite,
-            CommonProtocol.handshakeProtocol.serverBoundFragment
+            CommonProtocol.handshakeProtocol.serverBound
           )
 
           val handshakePacket =
@@ -53,9 +53,9 @@ def lowLevelClient_1_12_2(): Unit = {
           transport.writePacket(handshakePacket)
         } >> {
           val writeTransport =
-            ProtocolBasedWriteTransport(packetWrite, loginProtocol.serverBoundFragment)
+            ProtocolBasedWriteTransport(packetWrite, loginProtocol.serverBound)
           val readTransport =
-            ProtocolBasedReadTransport(packetRead, loginProtocol.clientBoundFragment)
+            ProtocolBasedReadTransport(packetRead, loginProtocol.clientBound)
 
           val loginStartPacket = LoginStart("s2mc-client")
 
@@ -71,9 +71,9 @@ def lowLevelClient_1_12_2(): Unit = {
           }
         } >> {
           val writeTransport =
-            ProtocolBasedWriteTransport(packetWrite, playProtocol.serverBoundFragment)
+            ProtocolBasedWriteTransport(packetWrite, playProtocol.serverBound)
           val readTransport =
-            ProtocolBasedReadTransport(packetRead, playProtocol.clientBoundFragment)
+            ProtocolBasedReadTransport(packetRead, playProtocol.clientBound)
 
           Monad[IO].untilDefinedM {
             readTransport.nextPacket >>= {

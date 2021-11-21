@@ -6,11 +6,7 @@ import io.github.kory33.s2mctest.core.connection.codec.interpreters.{
   DecodeFiniteBytesInterpreter,
   ParseResult
 }
-import io.github.kory33.s2mctest.core.connection.protocol.{
-  CodecBinding,
-  PacketIn,
-  ProtocolFragment
-}
+import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, PacketIdBindings}
 
 /**
  * The protocol-aware write transport. This class provides the single operation
@@ -22,7 +18,7 @@ import io.github.kory33.s2mctest.core.connection.protocol.{
  */
 case class ProtocolBasedWriteTransport[F[_], PeerBoundPackets <: Tuple](
   writeTransport: PacketWriteTransport[F],
-  peerBoundFragment: ProtocolFragment[PeerBoundPackets]
+  peerBoundBindings: PacketIdBindings[PeerBoundPackets]
 ) {
 
   import io.github.kory33.s2mctest.core.generic.compiletime.*
@@ -34,25 +30,25 @@ case class ProtocolBasedWriteTransport[F[_], PeerBoundPackets <: Tuple](
   trait Response {
     type Packet
     val data: Packet
-    val ev: peerBoundFragment.bindings.CanEncode[Packet]
+    val ev: peerBoundBindings.CanEncode[Packet]
   }
 
   object Response {
     def apply[P](
       peerBoundPacket: P
-    )(using canEncode: peerBoundFragment.bindings.CanEncode[P]): Response = new Response {
+    )(using canEncode: peerBoundBindings.CanEncode[P]): Response = new Response {
       override type Packet = P
       override val data: P = peerBoundPacket
-      override val ev: peerBoundFragment.bindings.CanEncode[P] = canEncode
+      override val ev: peerBoundBindings.CanEncode[P] = canEncode
     }
   }
 
   /**
    * An action to write a packet object [[peerBoundPacket]] to the transport.
    */
-  def writePacket[P: peerBoundFragment.bindings.CanEncode](peerBoundPacket: P): F[Unit] =
+  def writePacket[P: peerBoundBindings.CanEncode](peerBoundPacket: P): F[Unit] =
     writeTransport.write.tupled {
-      peerBoundFragment.bindings.encode(peerBoundPacket)
+      peerBoundBindings.encode(peerBoundPacket)
     }
 
   /**
@@ -74,7 +70,7 @@ case class ProtocolBasedWriteTransport[F[_], PeerBoundPackets <: Tuple](
  */
 case class ProtocolBasedReadTransport[F[_], SelfBoundPackets <: Tuple](
   readTransport: PacketReadTransport[F],
-  selfBoundFragment: ProtocolFragment[SelfBoundPackets]
+  selfBoundBindings: PacketIdBindings[SelfBoundPackets]
 )(using F: Functor[F]) {
 
   /**
@@ -88,9 +84,8 @@ case class ProtocolBasedReadTransport[F[_], SelfBoundPackets <: Tuple](
   def nextPacket: F[ParseResult[Tuple.Union[SelfBoundPackets]]] =
     F.map(readTransport.readOnePacket) {
       case (packetId, chunk) =>
-        val decoderProgram
-          : DecodeFiniteBytes[PacketIn[Tuple.Map[SelfBoundPackets, CodecBinding]]] =
-          selfBoundFragment.bindings.decoderFor(packetId)
+        val decoderProgram: DecodeFiniteBytes[Tuple.Union[SelfBoundPackets]] =
+          selfBoundBindings.decoderFor(packetId)
 
         DecodeFiniteBytesInterpreter.runProgramOnChunk(
           chunk,
