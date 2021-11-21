@@ -56,61 +56,13 @@ class PacketIdBindings[PacketTup <: Tuple](
   }
 
   /**
-   * A helper class that is able to tell which index of [[PacketTup]] contains the binding for
-   * [[P]].
-   */
-  @implicitNotFound(
-    "Could not find CanEncode instance for ${P}. Please make sure that this protocol supports ${P} as a packet"
-  )
-  class CanEncode[P](
-    val idx: Int,
-    val ev: Tuple.Elem[
-      Tuple.Map[PacketTup, CodecBinding] & NonEmptyTuple,
-      idx.type
-    ] =:= CodecBinding[P]
-  )
-
-  object CanEncode {
-    def apply[P](using ev: CanEncode[P]): CanEncode[P] = ev
-
-    // the IncludedBy constraint will ensure that idx can be materialized at compile time
-    inline given canEncode[P: IncludedBy[PacketTup]]: CanEncode[P] = {
-      val idxP = scala.compiletime.constValue[IndexOfT[
-        CodecBinding[P],
-        Tuple.Map[PacketTup, CodecBinding]
-      ]]
-
-      // PacketTup & NonEmptyTuple is guaranteed to be a concrete tuple type,
-      // because CodecBinding[P] is included in BindingTup so it must be nonempty.
-      //
-      // By IncludedBy constraint, IndexOfT[CodecBinding[P], Tuple.Map[PacketTup, CodecBinding]]
-      // reduces to a singleton type of integer at which PacketTup has P,
-      // so this summoning succeeds.
-      val ev
-        : Tuple.Elem[Tuple.Map[PacketTup, CodecBinding] & NonEmptyTuple, IndexOfT[CodecBinding[P], Tuple.Map[PacketTup, CodecBinding]]] =:= CodecBinding[P] =
-        scala.compiletime.summonInline
-
-      // We know that IndexOfT[CodecBinding[P], BindingTup] and idx.type will reduce to
-      // the same integer types, but somehow Scala 3.0.1 compiler does not seem to recognize this.
-      // Hence the asInstanceOf cast.
-      // TODO can we get rid of this?
-      val ev1
-        : Tuple.Elem[Tuple.Map[PacketTup, CodecBinding] & NonEmptyTuple, idxP.type] =:= CodecBinding[P] =
-        ev.asInstanceOf
-
-      new CanEncode[P](idxP, ev1)
-    }
-  }
-
-  /**
    * Encode the object [[packet]] to its binary form and pair the result up with packet id
    * specifying the datatype [[P]].
    */
-  def encode[P](packet: P)(using ce: CanEncode[P]): (PacketId, fs2.Chunk[Byte]) = {
-    val binding: CodecBinding[P] = ce.ev(
-      // the cast is safe because ce.ev witnesses that BindingTup is nonempty
-      bindings.asInstanceOf[Tuple.Map[PacketTup, CodecBinding] & NonEmptyTuple].apply(ce.idx)
-    )
+  def encode[P](
+    packet: P
+  )(using tei: TupleElementIndex[PacketTup, P]): (PacketId, fs2.Chunk[Byte]) = {
+    val binding: CodecBinding[P] = tei.mapWith[CodecBinding].access(bindings)
     (binding._1, binding._2.encode.write(packet))
   }
 }

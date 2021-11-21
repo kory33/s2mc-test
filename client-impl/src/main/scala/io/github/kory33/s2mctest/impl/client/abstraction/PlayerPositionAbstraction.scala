@@ -42,10 +42,10 @@ object PlayerPositionAbstraction {
         type AbstractedPacket = _AbstractedPacket
       }
 
-    inline given forTeleportPlayerWithConfirm[
+    given forTeleportPlayerWithConfirm[
       F[_]: Applicative,
-      SBPackets <: Tuple: Includes[TeleportConfirm],
-      CBPackets <: Tuple: Includes[TeleportPlayer_WithConfirm]
+      SBPackets <: Tuple: HasKnownIndexOf[TeleportConfirm],
+      CBPackets <: Tuple: HasKnownIndexOf[TeleportPlayer_WithConfirm]
     ]: Aux[F, SBPackets, CBPackets, TeleportPlayer_WithConfirm] =
       new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = TeleportPlayer_WithConfirm

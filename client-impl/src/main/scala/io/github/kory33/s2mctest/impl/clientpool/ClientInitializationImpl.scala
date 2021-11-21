@@ -121,9 +121,9 @@ object ClientInitializationImpl {
     def identityFromUUIDPacket(packet: LoginSuccess_UUID): ClientIdentity =
       ClientIdentity(packet.username, packet.uuid)
 
-    inline given doLoginWithStringWithoutPluginLogin[
+    given doLoginWithStringWithoutPluginLogin[
       F[_]: MonadThrow,
-      LoginServerBoundPackets <: Tuple: Includes[LoginStart],
+      LoginServerBoundPackets <: Tuple: HasKnownIndexOf[LoginStart],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]
     ](
       using scala.util.NotGiven[Includes[LoginPluginRequest][LoginClientBoundPackets]]
@@ -142,9 +142,11 @@ object ClientInitializationImpl {
           })
       }
 
-    inline given doLoginWithStringAndPluginLogin[
+    given doLoginWithStringAndPluginLogin[
       F[_]: MonadThrow,
-      LoginServerBoundPackets <: Tuple: Includes[LoginStart]: Includes[LoginPluginResponse],
+      LoginServerBoundPackets <: Tuple: HasKnownIndexOf[LoginStart]: HasKnownIndexOf[
+        LoginPluginResponse
+      ],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_String]: Includes[
         LoginPluginRequest
       ]
@@ -172,9 +174,11 @@ object ClientInitializationImpl {
           }
         }
 
-    inline given doLoginWithUUIDAndPluginLogin[
+    given doLoginWithUUIDAndPluginLogin[
       F[_]: MonadThrow,
-      LoginServerBoundPackets <: Tuple: Includes[LoginStart]: Includes[LoginPluginResponse],
+      LoginServerBoundPackets <: Tuple: HasKnownIndexOf[LoginStart]: HasKnownIndexOf[
+        LoginPluginResponse
+      ],
       LoginClientBoundPackets <: Tuple: Includes[LoginSuccess_UUID]: Includes[
         LoginPluginRequest
       ]

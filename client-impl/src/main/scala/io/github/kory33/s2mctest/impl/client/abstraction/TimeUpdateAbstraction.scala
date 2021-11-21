@@ -25,10 +25,11 @@ object TimeUpdateAbstraction {
         type AbstractedPacket = _AbstractedPacket
       }
 
-    inline given forTeleportPlayerWithConfirm[F[
-      _
-    ]: Applicative, SBPackets <: Tuple, CBPackets <: Tuple: Includes[TimeUpdate]]
-      : Aux[F, SBPackets, CBPackets, TimeUpdate] =
+    given forTeleportPlayerWithConfirm[
+      F[_]: Applicative,
+      SBPackets <: Tuple,
+      CBPackets <: Tuple: HasKnownIndexOf[TimeUpdate]
+    ]: Aux[F, SBPackets, CBPackets, TimeUpdate] =
       new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = TimeUpdate
         val ev: ProtocolPacketAbstraction[F, SBPackets, CBPackets, TimeUpdate, WorldTime] =

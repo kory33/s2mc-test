@@ -9,6 +9,7 @@ import io.github.kory33.s2mctest.core.connection.transport.{
   ProtocolBasedReadTransport,
   ProtocolBasedWriteTransport
 }
+import io.github.kory33.s2mctest.core.generic.compiletime.IndexKnownIn
 
 /**
  * The class of Minecraft clients that associate incoming packets to updates of state of the
@@ -133,7 +134,7 @@ class SightedClient[
   /**
    * Write a [[packet]] to the underlying transport.
    */
-  def writePacket[P: writeTransport.peerBoundBindings.CanEncode](packet: P): F[Unit] =
+  def writePacket[P: IndexKnownIn[ServerBoundPackets]](packet: P): F[Unit] =
     writeTransport.writePacket(packet)
 
 }

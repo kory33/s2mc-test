@@ -7,6 +7,7 @@ import io.github.kory33.s2mctest.core.connection.codec.interpreters.{
   ParseResult
 }
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, PacketIdBindings}
+import io.github.kory33.s2mctest.core.generic.compiletime.{IndexKnownIn, TupleElementIndex}
 
 /**
  * The protocol-aware write transport. This class provides the single operation
@@ -30,23 +31,23 @@ case class ProtocolBasedWriteTransport[F[_], PeerBoundPackets <: Tuple](
   trait Response {
     type Packet
     val data: Packet
-    val ev: peerBoundBindings.CanEncode[Packet]
+    val tei: TupleElementIndex[PeerBoundPackets, Packet]
   }
 
   object Response {
     def apply[P](
       peerBoundPacket: P
-    )(using canEncode: peerBoundBindings.CanEncode[P]): Response = new Response {
+    )(using _tei: TupleElementIndex[PeerBoundPackets, P]): Response = new Response {
       override type Packet = P
       override val data: P = peerBoundPacket
-      override val ev: peerBoundBindings.CanEncode[P] = canEncode
+      override val tei: TupleElementIndex[PeerBoundPackets, P] = tei
     }
   }
 
   /**
    * An action to write a packet object [[peerBoundPacket]] to the transport.
    */
-  def writePacket[P: peerBoundBindings.CanEncode](peerBoundPacket: P): F[Unit] =
+  def writePacket[P: IndexKnownIn[PeerBoundPackets]](peerBoundPacket: P): F[Unit] =
     writeTransport.write.tupled {
       peerBoundBindings.encode(peerBoundPacket)
     }
@@ -57,7 +58,7 @@ case class ProtocolBasedWriteTransport[F[_], PeerBoundPackets <: Tuple](
    * instead.
    */
   def write(response: Response): F[Unit] =
-    writePacket[response.Packet](response.data)(using response.ev)
+    writePacket[response.Packet](response.data)(using response.tei)
 }
 
 /**
