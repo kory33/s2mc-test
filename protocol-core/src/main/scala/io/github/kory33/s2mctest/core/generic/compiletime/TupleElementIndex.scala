@@ -10,13 +10,15 @@ trait TupleElementIndex[T <: Tuple, A] {
    */
   final def access(t: T): A = elemEv(nonEmptyEv(t)(idx))
 
-  // This is safe, because Map[T, F] has F[A] at idx whenever T has A at idx
-  final def mapWith[F[_]]: TupleElementIndex[Tuple.Map[T, F], F[A]] = this.asInstanceOf
+  final def mapWith[F[_]]: TupleElementIndex[Tuple.Map[T, F], F[A]] = {
+    // This is safe, because Map[T, F] has F[A] at idx whenever T has A at idx
+    this.asInstanceOf
+  }
 }
 
 object TupleElementIndex {
   inline given forTupleAndType[T <: Tuple, A: IncludedBy[T]]: TupleElementIndex[T, A] = {
-    val idxA = scala.compiletime.constValue[IndexOfT[A, T]]
+    val idxA: IndexOfT[A, T] = scala.compiletime.constValue[IndexOfT[A, T]]
 
     // PacketTup & NonEmptyTuple is guaranteed to be a concrete tuple type,
     // because CodecBinding[P] is included in BindingTup so it must be nonempty.
@@ -28,14 +30,17 @@ object TupleElementIndex {
       scala.compiletime.summonInline
 
     // We know that IndexOfT[CodecBinding[P], BindingTup] and idx.type will reduce to
-    // the same integer singleton type, but somehow Scala 3.0.1 compiler does not seem to recognize this.
-    // Hence the asInstanceOf cast.
-    // TODO can we get rid of this?
-    val ev1: Tuple.Elem[T & NonEmptyTuple, idxA.type] =:= A = ev.asInstanceOf
+    // the same integer singleton type, but that can only be done with inline refinement.
+    val ev1: Tuple.Elem[T & NonEmptyTuple, idxA.type] =:= A =
+      inlineRefineTo[Tuple.Elem[T & NonEmptyTuple, idxA.type] =:= A](ev)
 
     new TupleElementIndex[T, A] {
       val idx: idxA.type = idxA
-      val nonEmptyEv: T =:= (T & NonEmptyTuple) = scala.compiletime.summonInline
+      val nonEmptyEv: T =:= (T & NonEmptyTuple) = {
+        // This always succeeds, since T must be a nonempty tuple and
+        // necessarily be a subtype of NonEmptyTuple
+        scala.compiletime.summonInline
+      }
       val elemEv: Tuple.Elem[T & NonEmptyTuple, idxA.type] =:= A = ev1
     }
   }
