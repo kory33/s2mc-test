@@ -10,9 +10,6 @@ import scala.annotation.implicitNotFound
 
 type PacketId = Int
 type CodecBinding[A] = (PacketId, ByteCodec[A])
-type PacketTupleFor[BindingTup <: Tuple] = Tuple.InverseMap[BindingTup, CodecBinding]
-type HasCodecOf[P] =
-  [PacketTuple <: Tuple] =>> Includes[CodecBinding[P]][Tuple.Map[PacketTuple, CodecBinding]]
 
 /**
  * An object that associates packet IDs with corresponding datatypes' codec.

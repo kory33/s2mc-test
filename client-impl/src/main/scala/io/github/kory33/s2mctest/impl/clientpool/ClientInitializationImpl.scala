@@ -12,7 +12,7 @@ import io.github.kory33.s2mctest.core.client.{
 }
 import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
-import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, HasCodecOf, Protocol}
+import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, Protocol}
 import io.github.kory33.s2mctest.core.connection.transport.{
   PacketReadTransport,
   PacketWriteTransport,
