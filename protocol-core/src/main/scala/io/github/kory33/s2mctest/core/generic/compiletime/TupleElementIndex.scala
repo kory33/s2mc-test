@@ -12,7 +12,7 @@ trait TupleElementIndex[T <: Tuple, A] {
 
   final def mapWith[F[_]]: TupleElementIndex[Tuple.Map[T, F], F[A]] = {
     // This is safe, because Map[T, F] has F[A] at idx whenever T has A at idx
-    this.asInstanceOf
+    this.asInstanceOf[TupleElementIndex[Tuple.Map[T, F], F[A]]]
   }
 }
 
