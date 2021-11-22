@@ -39,7 +39,7 @@ object TupleElementIndex {
       val nonEmptyEv: T =:= (T & NonEmptyTuple) = {
         // This always succeeds, since T must be a nonempty tuple and
         // necessarily be a subtype of NonEmptyTuple
-        scala.compiletime.summonInline
+        scala.compiletime.summonInline[T =:= (T & NonEmptyTuple)]
       }
       val elemEv: Tuple.Elem[T & NonEmptyTuple, idxA.type] =:= A = ev1
     }
