@@ -1,4 +1,4 @@
-package io.github.kory33.s2mctest.core.client.worldview
+package io.github.kory33.s2mctest.core.client.api
 
 /**
  * An abstract vector of a 3-dimensional Euclidean space.
