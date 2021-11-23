@@ -2,7 +2,7 @@ package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.Applicative
 import io.github.kory33.s2mctest.core.client.api.Vector3D
-import io.github.kory33.s2mctest.core.client.worldview.PositionAndOrientation
+import io.github.kory33.s2mctest.core.client.api.worldview.PositionAndOrientation
 import io.github.kory33.s2mctest.core.client.{
   ProtocolPacketAbstraction,
   TransportPacketAbstraction

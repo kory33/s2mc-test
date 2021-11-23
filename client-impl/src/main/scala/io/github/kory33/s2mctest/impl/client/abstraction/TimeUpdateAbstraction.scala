@@ -2,7 +2,7 @@ package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.Applicative
 import io.github.kory33.s2mctest.core.client.ProtocolPacketAbstraction
-import io.github.kory33.s2mctest.core.client.worldview.WorldTime
+import io.github.kory33.s2mctest.core.client.api.worldview.WorldTime
 import io.github.kory33.s2mctest.core.connection.protocol.CodecBinding
 import io.github.kory33.s2mctest.impl.client.abstraction.PlayerPositionAbstraction.AbstractionEvidence
 import io.github.kory33.s2mctest.impl.client.abstraction.PlayerPositionAbstraction.AbstractionEvidence.Aux

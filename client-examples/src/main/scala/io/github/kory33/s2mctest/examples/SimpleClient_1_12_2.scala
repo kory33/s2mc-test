@@ -3,7 +3,7 @@ package io.github.kory33.s2mctest.examples
 import cats.Monad
 import cats.effect.IO
 import com.comcast.ip4s.SocketAddress
-import io.github.kory33.s2mctest.core.client.worldview.{PositionAndOrientation, WorldTime}
+import io.github.kory33.s2mctest.core.client.api.worldview.{PositionAndOrientation, WorldTime}
 import io.github.kory33.s2mctest.core.client.{
   ProtocolPacketAbstraction,
   TransportPacketAbstraction

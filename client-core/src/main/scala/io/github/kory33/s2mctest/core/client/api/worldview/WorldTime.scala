@@ -1,4 +1,4 @@
-package io.github.kory33.s2mctest.core.client.worldview
+package io.github.kory33.s2mctest.core.client.api.worldview
 
 /**
  * The datatype describing the cumulative age of the world in which the client resides, along
