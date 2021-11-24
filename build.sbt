@@ -69,7 +69,10 @@ lazy val client_core =
     .in(file("client-core"))
     .settings(
       name := "s2mc-client-core",
-      libraryDependencies ++= Seq("dev.optics" %% "monocle-core" % "3.0.0")
+      libraryDependencies ++= Seq(
+        "dev.optics" %% "monocle-core" % "3.0.0",
+        "org.typelevel" %% "spire" % "0.18.0-M1"
+      )
     )
 
 lazy val client_impl =
