@@ -60,7 +60,7 @@ class DiscretePlanarPath[V, F: Order](
   def concatRebase(another: DiscretePlanarPath[V, F]): DiscretePlanarPath[V, F] =
     concat(another.translate(this.points.last - another.points.head))
 
-  given Field[F] = nvs.scalar
+  import nvs.scalar
 
   /**
    * The partial sum of arc length of this discrete path. `n` th element of this [[Vector]]
