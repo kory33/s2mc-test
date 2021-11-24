@@ -1,33 +1,23 @@
 package io.github.kory33.s2mctest.core.client.api
 
+import spire.algebra.InnerProductSpace
+
 /**
- * An abstract vector of a 2-dimensional Euclidean space.
+ * A vector in 2-dimensional Euclidean space (where reals are approximated by [[Double]]s).
  */
-case class Vector2D(x: Double, y: Double) {
-
-  def add(another: Vector2D): Vector2D = Vector2D(x + another.x, y + another.y)
-
-  def multiply(l: Double): Vector2D = Vector2D(l * x, l * y)
-
-  def negate: Vector2D = Vector2D(-x, -y)
-
-  def minus(another: Vector2D): Vector2D = add(another.negate)
-
-  def lengthSquared: Double = x * x + y * y
-
-  def length: Double = Math.sqrt(lengthSquared)
-
-  /**
-   * Calculate the normalized vector that points to the same direction as this vector. Requires
-   * that this vector is nonzero.
-   */
-  def normalized: Vector2D =
-    val l = length
-    require(l != 0)
-    this multiply (1 / l)
-
-}
+case class Vector2D(x: Double, y: Double)
 
 object Vector2D {
   val zero: Vector2D = Vector2D(0.0, 0.0)
+
+  given InnerProductSpace[Vector2D, Double] with {
+    def negate(v: Vector2D): Vector2D = Vector2D(-v.x, -v.y)
+    def zero: Vector2D = Vector2D.zero
+    def plus(v: Vector2D, w: Vector2D): Vector2D = Vector2D(v.x + w.x, v.y + w.y)
+    def dot(v: Vector2D, w: Vector2D): Double = v.x * w.x + v.y * w.y
+    def timesl(r: Double, v: Vector2D): Vector2D = Vector2D(r * v.x, r * v.y)
+
+    implicit def scalar: spire.algebra.Field[Double] = spire.std.double.DoubleAlgebra
+  }
+
 }

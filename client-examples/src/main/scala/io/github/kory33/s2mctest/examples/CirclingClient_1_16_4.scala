@@ -32,9 +32,11 @@ import scala.concurrent.duration.FiniteDuration
 def circlingClient_1_16_4(): Unit = {
   import io.github.kory33.s2mctest.impl.connection.protocol.versions
   import versions.v1_16_4.{protocolVersion, loginProtocol, playProtocol}
-  import cats.implicits.given
-  import scala.concurrent.duration.given
   import cats.effect.unsafe.implicits.global
+
+  import cats.implicits.given
+  import spire.implicits.given
+  import scala.concurrent.duration.given
 
   case class WorldView(position: PositionAndOrientation, worldTime: WorldTime)
   object WorldView {
@@ -80,7 +82,7 @@ def circlingClient_1_16_4(): Unit = {
           val angularVelocity = velocity / radius
 
           val initPosition: MinecraftVector = initView.position.absPosition
-          val circleCenter = initPosition add MinecraftVector(-radius, 0.0, 0.0)
+          val circleCenter = initPosition + MinecraftVector(-radius, 0.0, 0.0)
 
           def positionAt(realTime: FiniteDuration): PositionAndOrientation = {
             val t = realTime minus initRealTime
@@ -89,7 +91,7 @@ def circlingClient_1_16_4(): Unit = {
               scala.math.cos(angularDisplacement),
               0.0,
               scala.math.sin(angularDisplacement)
-            ) multiply radius
+            ) :* radius
             val direction = MinecraftVector(
               -scala.math.sin(angularDisplacement),
               0.0,
@@ -97,7 +99,7 @@ def circlingClient_1_16_4(): Unit = {
             )
 
             PositionAndOrientation(
-              circleCenter add displacement,
+              circleCenter + displacement,
               direction.yaw.toFloat,
               direction.pitch.toFloat
             )

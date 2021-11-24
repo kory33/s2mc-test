@@ -1,31 +1,11 @@
 package io.github.kory33.s2mctest.core.client.api
 
+import spire.algebra.InnerProductSpace
+
 /**
- * An abstract vector lying in Minecraft space.
+ * A point in the Minecraft space.
  */
 case class MinecraftVector(x: Double, y: Double, z: Double) {
-
-  def add(another: MinecraftVector): MinecraftVector =
-    MinecraftVector(x + another.x, y + another.y, z + another.z)
-
-  def multiply(l: Double): MinecraftVector = MinecraftVector(l * x, l * y, l * z)
-
-  def negate: MinecraftVector = MinecraftVector(-x, -y, -z)
-
-  def minus(another: MinecraftVector): MinecraftVector = add(another.negate)
-
-  def lengthSquared: Double = x * x + y * y + z * z
-
-  def length: Double = Math.sqrt(lengthSquared)
-
-  /**
-   * Calculate the normalized vector that points to the same direction as this vector. Requires
-   * that this vector is nonzero.
-   */
-  def normalized: MinecraftVector =
-    val l = length
-    require(l != 0)
-    this multiply (1 / l)
 
   /**
    * Yaw of an entity whose face direction is collinear to this vector, clamped to the interval
@@ -54,5 +34,17 @@ case class MinecraftVector(x: Double, y: Double, z: Double) {
 object MinecraftVector {
 
   val zero: MinecraftVector = MinecraftVector(0.0, 0.0, 0.0)
+
+  given InnerProductSpace[MinecraftVector, Double] with {
+    def negate(v: MinecraftVector): MinecraftVector = MinecraftVector(-v.x, -v.y, -v.z)
+    def zero: MinecraftVector = MinecraftVector.zero
+    def plus(v: MinecraftVector, w: MinecraftVector): MinecraftVector =
+      MinecraftVector(v.x + w.x, v.y + w.y, v.z + w.z)
+    def dot(v: MinecraftVector, w: MinecraftVector): Double = v.x * w.x + v.y * w.y + v.z * w.z
+    def timesl(r: Double, v: MinecraftVector): MinecraftVector =
+      MinecraftVector(r * v.x, r * v.y, r * v.z)
+
+    implicit def scalar: spire.algebra.Field[Double] = spire.std.double.DoubleAlgebra
+  }
 
 }
