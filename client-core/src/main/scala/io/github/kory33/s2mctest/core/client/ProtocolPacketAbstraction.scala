@@ -5,7 +5,8 @@ import cats.{Applicative, Functor}
 import io.github.kory33.s2mctest.core.connection.protocol.Protocol
 import io.github.kory33.s2mctest.core.connection.transport.{
   PacketWriteTransport,
-  ProtocolBasedWriteTransport
+  ProtocolBasedWriteTransport,
+  WritablePacketIn
 }
 import io.github.kory33.s2mctest.core.generic.givens.GivenEither
 import monocle.Lens
@@ -13,12 +14,10 @@ import monocle.Lens
 import scala.reflect.TypeTest
 
 /**
- * Partially applied factory of [[TransportPacketAbstraction]] which is able to produce
- * [[TransportPacketAbstraction]] when given a packet transport of [[CBPackets]] and
- * [[SBPackets]].
+ * A specialized [[PacketAbstraction]] which keeps track of protocol details.
  *
  * These objects are better suited for composing packet abstractions compared to dealing with
- * [[TransportPacketAbstraction]] directly.
+ * [[PacketAbstraction]] directly.
  */
 trait ProtocolPacketAbstraction[
   F[_],
@@ -28,9 +27,7 @@ trait ProtocolPacketAbstraction[
   WorldView
 ] {
 
-  def abstractOnTransport(
-    packetTransport: ProtocolBasedWriteTransport[F, SBPackets]
-  ): TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
+  val abstraction: PacketAbstraction[Packet, WorldView, F[List[WritablePacketIn[SBPackets]]]]
 
   /**
    * "Defocus" this abstraction to deal with a larger view datatype [[BroaderView]] that
@@ -39,7 +36,7 @@ trait ProtocolPacketAbstraction[
   final def defocus[BroaderView](
     lens: Lens[BroaderView, WorldView]
   ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, BroaderView] =
-    abstractOnTransport(_).defocus(lens)
+    ProtocolPacketAbstraction(abstraction.defocus(lens))
 
   /**
    * Construct an abstraction that keeps track of all past views. This may be better suited for
@@ -47,7 +44,7 @@ trait ProtocolPacketAbstraction[
    */
   final def keepTrackOfViewChanges
     : ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, NonEmptyList[WorldView]] =
-    abstractOnTransport(_).keepTrackOfViewChanges
+    ProtocolPacketAbstraction(abstraction.keepTrackOfViewChanges)
 
   /**
    * Combine this abstraction with another. The obtained abstraction will attempt to update the
@@ -62,8 +59,7 @@ trait ProtocolPacketAbstraction[
       WorldView
     ]
   ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, WorldView] =
-    transport =>
-      this.abstractOnTransport(transport).orElseAbstract(another.abstractOnTransport(transport))
+    ProtocolPacketAbstraction(abstraction.orElseAbstract(another.abstraction))
 
   /**
    * Combine this with another abstraction that deals with a packet type [[P]] that is not a
@@ -79,8 +75,7 @@ trait ProtocolPacketAbstraction[
     // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
     ge: GivenEither[scala.reflect.Typeable[Packet], Packet =:= Nothing]
   ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, P | Packet, WorldView] =
-    transport =>
-      this.abstractOnTransport(transport).thenAbstract(another.abstractOnTransport(transport))
+    ProtocolPacketAbstraction(abstraction.thenAbstract(another.abstraction))
 
   /**
    * Combine this with another abstraction that deals with smaller view [[MagnifiedView]] of the
@@ -108,12 +103,18 @@ object ProtocolPacketAbstraction {
   /**
    * Define an abstraction of packets in a protocol.
    */
-  def apply[F[_], ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, Packet, WorldView](
-    onTransport: (
-      packetTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets]
-    ) => TransportPacketAbstraction[Packet, WorldView, F[List[packetTransport.Response]]]
-  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
-    onTransport(_)
+  def apply[F[_], SBPackets <: Tuple, CBPackets <: Tuple, Packet, WorldView](
+    _abstraction: PacketAbstraction[
+      Packet,
+      WorldView,
+      F[List[WritablePacketIn[SBPackets]]]
+    ]
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, WorldView] =
+    new ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, WorldView] {
+      val abstraction
+        : PacketAbstraction[Packet, WorldView, F[List[WritablePacketIn[SBPackets]]]] =
+        _abstraction
+    }
 
   /**
    * Define an abstraction which abstracts no packet in a protocol.
@@ -129,7 +130,7 @@ object ProtocolPacketAbstraction {
     def apply[ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple](
       _protocol: Protocol[ServerBoundPackets, ClientBoundPackets]
     ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Nothing, WorldView] =
-      ProtocolPacketAbstraction(_ => TransportPacketAbstraction.nothing[WorldView])
+      ProtocolPacketAbstraction(PacketAbstraction.nothing[WorldView])
   }
 
   /**
@@ -137,16 +138,16 @@ object ProtocolPacketAbstraction {
    */
   def silent[
     F[_]: Applicative,
-    ServerBoundPackets <: Tuple,
-    ClientBoundPackets <: Tuple,
+    SBPackets <: Tuple,
+    CBPackets <: Tuple,
     Packet,
     WorldView
   ](
-    abstraction: TransportPacketAbstraction[Packet, WorldView, Unit]
-  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
-    ProtocolPacketAbstraction(transport =>
-      abstraction.mapCmd[F[List[transport.Response]]](_ => Applicative[F].pure(Nil))
-    )
+    abstraction: PacketAbstraction[Packet, WorldView, Unit]
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, WorldView] =
+    ProtocolPacketAbstraction {
+      abstraction.mapCmd[F[List[WritablePacketIn[SBPackets]]]](_ => Applicative[F].pure(Nil))
+    }
 
   /**
    * Define an abstraction which sends back peer-bound acknowledgements without any other
@@ -154,32 +155,32 @@ object ProtocolPacketAbstraction {
    */
   def pure[
     F[_]: Applicative,
-    ServerBoundPackets <: Tuple,
-    ClientBoundPackets <: Tuple,
+    SBPackets <: Tuple,
+    CBPackets <: Tuple,
     Packet,
     WorldView
   ](
-    onTransport: (
-      packetTransport: ProtocolBasedWriteTransport[F, ServerBoundPackets]
-    ) => TransportPacketAbstraction[Packet, WorldView, List[packetTransport.Response]]
-  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
-    ProtocolPacketAbstraction(transport =>
-      onTransport(transport).liftCmd[F, List[transport.Response]]
-    )
+    abstraction: PacketAbstraction[Packet, WorldView, List[WritablePacketIn[SBPackets]]]
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, WorldView] =
+    ProtocolPacketAbstraction {
+      abstraction.liftCmd[F, List[WritablePacketIn[SBPackets]]]
+    }
 
   /**
    * Define an abstraction which causes some side-effect on packet receipt.
    */
   def effectful[
     F[_]: Functor,
-    ServerBoundPackets <: Tuple,
-    ClientBoundPackets <: Tuple,
+    SBPackets <: Tuple,
+    CBPackets <: Tuple,
     Packet,
     WorldView,
     U
   ](
-    abstraction: TransportPacketAbstraction[Packet, WorldView, F[U]]
-  ): ProtocolPacketAbstraction[F, ServerBoundPackets, ClientBoundPackets, Packet, WorldView] =
-    ProtocolPacketAbstraction(_ => abstraction.mapCmd(Functor[F].as(_, Nil)))
+    abstraction: PacketAbstraction[Packet, WorldView, F[U]]
+  ): ProtocolPacketAbstraction[F, SBPackets, CBPackets, Packet, WorldView] =
+    ProtocolPacketAbstraction {
+      abstraction.mapCmd(Functor[F].as(_, Nil))
+    }
 
 }

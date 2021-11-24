@@ -2,7 +2,10 @@ package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.Applicative
 import io.github.kory33.s2mctest.core.client.ProtocolPacketAbstraction
-import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedWriteTransport
+import io.github.kory33.s2mctest.core.connection.transport.{
+  ProtocolBasedWriteTransport,
+  WritablePacketIn
+}
 import io.github.kory33.s2mctest.core.generic.compiletime.HasKnownIndexOf
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{
   KeepAliveClientbound_VarInt,
@@ -42,11 +45,11 @@ object KeepAliveAbstraction {
         type AbstractedPacket = KeepAliveClientbound_i32
         val ev
           : ProtocolPacketAbstraction[F, SBPackets, CBPackets, KeepAliveClientbound_i32, Unit] =
-          ProtocolPacketAbstraction.pure { transport =>
-            {
-              case KeepAliveClientbound_i32(id) =>
-                Some { _ => ((), List(transport.Response(KeepAliveServerbound_i32(id)))) }
-            }
+          ProtocolPacketAbstraction.pure {
+            case KeepAliveClientbound_i32(id) =>
+              Some { _ =>
+                ((), List(WritablePacketIn[SBPackets](KeepAliveServerbound_i32(id))))
+              }
           }
       }
 
@@ -59,11 +62,11 @@ object KeepAliveAbstraction {
         type AbstractedPacket = KeepAliveClientbound_i64
         val ev
           : ProtocolPacketAbstraction[F, SBPackets, CBPackets, KeepAliveClientbound_i64, Unit] =
-          ProtocolPacketAbstraction.pure { transport =>
-            {
-              case KeepAliveClientbound_i64(id) =>
-                Some { _ => ((), List(transport.Response(KeepAliveServerbound_i64(id)))) }
-            }
+          ProtocolPacketAbstraction.pure {
+            case KeepAliveClientbound_i64(id) =>
+              Some { _ =>
+                ((), List(WritablePacketIn[SBPackets](KeepAliveServerbound_i64(id))))
+              }
           }
       }
 
@@ -76,11 +79,11 @@ object KeepAliveAbstraction {
         type AbstractedPacket = KeepAliveClientbound_VarInt
         val ev
           : ProtocolPacketAbstraction[F, SBPackets, CBPackets, KeepAliveClientbound_VarInt, Unit] =
-          ProtocolPacketAbstraction.pure { transport =>
-            {
-              case KeepAliveClientbound_VarInt(id) =>
-                Some { _ => ((), List(transport.Response(KeepAliveServerbound_VarInt(id)))) }
-            }
+          ProtocolPacketAbstraction.pure {
+            case KeepAliveClientbound_VarInt(id) =>
+              Some { _ =>
+                ((), List(WritablePacketIn[SBPackets](KeepAliveServerbound_VarInt(id))))
+              }
           }
       }
   }

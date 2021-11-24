@@ -33,11 +33,9 @@ object TimeUpdateAbstraction {
       new AbstractionEvidence[F, SBPackets, CBPackets] {
         type AbstractedPacket = TimeUpdate
         val ev: ProtocolPacketAbstraction[F, SBPackets, CBPackets, TimeUpdate, WorldTime] =
-          ProtocolPacketAbstraction.pure { transport =>
-            {
-              case TimeUpdate(worldAge, timeOfDay) =>
-                Some(_ => (WorldTime(worldAge, timeOfDay), Nil))
-            }
+          ProtocolPacketAbstraction.pure {
+            case TimeUpdate(worldAge, timeOfDay) =>
+              Some(_ => (WorldTime(worldAge, timeOfDay), Nil))
           }
       }
   }

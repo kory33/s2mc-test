@@ -5,10 +5,7 @@ import cats.effect.{IO, Temporal}
 import com.comcast.ip4s.SocketAddress
 import io.github.kory33.s2mctest.core.client.api.MinecraftVector
 import io.github.kory33.s2mctest.core.client.api.worldview.{PositionAndOrientation, WorldTime}
-import io.github.kory33.s2mctest.core.client.{
-  ProtocolPacketAbstraction,
-  TransportPacketAbstraction
-}
+import io.github.kory33.s2mctest.core.client.{ProtocolPacketAbstraction, PacketAbstraction}
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
 import io.github.kory33.s2mctest.impl.client.abstraction.{
   DisconnectAbstraction,

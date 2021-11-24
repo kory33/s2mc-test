@@ -8,7 +8,7 @@ import io.github.kory33.s2mctest.core.client.{
   ClientIdentity,
   ProtocolPacketAbstraction,
   SightedClient,
-  TransportPacketAbstraction
+  PacketAbstraction
 }
 import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
@@ -220,7 +220,7 @@ object ClientInitializationImpl {
     protocolVersion: VarInt,
     loginProtocol: Protocol[LoginServerBoundPackets, LoginClientBoundPackets],
     playProtocol: Protocol[PlayServerBoundPackets, PlayClientBoundPackets],
-    abstraction: ProtocolPacketAbstraction[
+    protocolPacketAbstraction: ProtocolPacketAbstraction[
       F,
       PlayServerBoundPackets,
       PlayClientBoundPackets,
@@ -290,9 +290,9 @@ object ClientInitializationImpl {
                 readTransport,
                 identity,
                 initialWorldView,
-                abstraction
-                  .abstractOnTransport(writeTransport)
-                  .widenPackets[Tuple.Union[PlayClientBoundPackets]]
+                protocolPacketAbstraction.abstraction.widenPackets[Tuple.Union[
+                  PlayClientBoundPackets
+                ]]
               )
             }
 

@@ -5,9 +5,11 @@ import cats.effect.std.Semaphore
 import cats.{Monad, MonadThrow}
 import fs2.concurrent.Topic
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
+import io.github.kory33.s2mctest.core.connection.transport
 import io.github.kory33.s2mctest.core.connection.transport.{
   ProtocolBasedReadTransport,
-  ProtocolBasedWriteTransport
+  ProtocolBasedWriteTransport,
+  WritablePacketIn
 }
 import io.github.kory33.s2mctest.core.generic.compiletime.IndexKnownIn
 
@@ -43,10 +45,10 @@ class SightedClient[
   readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
   val identity: ClientIdentity,
   viewRef: Ref[F, WorldView],
-  abstraction: TransportPacketAbstraction[
+  abstraction: PacketAbstraction[
     Tuple.Union[ClientBoundPackets],
     WorldView,
-    F[List[writeTransport.Response]]
+    F[List[WritablePacketIn[ServerBoundPackets]]]
   ]
 ) {
 
@@ -153,8 +155,8 @@ object SightedClient {
     readTransport: ProtocolBasedReadTransport[F, ClientBoundPackets],
     identity: ClientIdentity,
     initialWorldView: WorldView,
-    abstraction: TransportPacketAbstraction[Tuple.Union[ClientBoundPackets], WorldView, F[
-      List[writeTransport.Response]
+    abstraction: PacketAbstraction[Tuple.Union[ClientBoundPackets], WorldView, F[
+      List[WritablePacketIn[ServerBoundPackets]]
     ]]
   ): F[SightedClient[F, ServerBoundPackets, ClientBoundPackets, WorldView]] =
     for {

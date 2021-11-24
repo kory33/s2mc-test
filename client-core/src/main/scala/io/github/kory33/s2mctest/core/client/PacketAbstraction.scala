@@ -24,7 +24,7 @@ import scala.reflect.{TypeTest, Typeable}
  * This functional object receives a packet and judges if the packet should invoke a view
  * modification. If so, it returns a `Some[WorldView => (WorldView, Cmd)]` and `None` otherwise.
  */
-trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
+trait PacketAbstraction[Packet, WorldView, +Cmd] {
 
   /**
    * A function that receives a packet and judges if the packet should invoke a view
@@ -38,7 +38,7 @@ trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
    */
   final def widenPackets[WPacket](
     using TypeTest[WPacket, Packet]
-  ): TransportPacketAbstraction[WPacket, WorldView, Cmd] = {
+  ): PacketAbstraction[WPacket, WorldView, Cmd] = {
     case packet: Packet => this.viewUpdate(packet)
     case _              => None
   }
@@ -49,7 +49,7 @@ trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
    */
   final def defocus[BroaderView](
     lens: Lens[BroaderView, WorldView]
-  ): TransportPacketAbstraction[Packet, BroaderView, Cmd] = {
+  ): PacketAbstraction[Packet, BroaderView, Cmd] = {
     // shapeless-derivation does not work for tuples as of Scala 3.1.0 and shapeless 3.0.3
     // https://github.com/typelevel/shapeless-3/issues/46
     given Functor[(*, Cmd)] with
@@ -62,8 +62,7 @@ trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
    * Construct an abstraction that keeps track of all past views. This may be better suited for
    * debugging purposes.
    */
-  final def keepTrackOfViewChanges
-    : TransportPacketAbstraction[Packet, NonEmptyList[WorldView], Cmd] =
+  final def keepTrackOfViewChanges: PacketAbstraction[Packet, NonEmptyList[WorldView], Cmd] =
     // This is essentially
     //   defocus(Lens[NonEmptyList[WorldView], WorldView](_.head)(s => ls => NonEmptyList(s, ls.toList)))
     // However the lens described as above violates many laws like getReplace and hence is invalid.
@@ -82,9 +81,9 @@ trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
    * view using [[another]] if this object rejects to update the view.
    */
   final def orElseAbstract[C2 >: Cmd](
-    another: TransportPacketAbstraction[Packet, WorldView, C2]
-  ): TransportPacketAbstraction[Packet, WorldView, C2] = { packet =>
-    TransportPacketAbstraction.this.viewUpdate(packet).orElse(another.viewUpdate(packet))
+    another: PacketAbstraction[Packet, WorldView, C2]
+  ): PacketAbstraction[Packet, WorldView, C2] = { packet =>
+    PacketAbstraction.this.viewUpdate(packet).orElse(another.viewUpdate(packet))
   }
 
   /**
@@ -94,15 +93,15 @@ trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
    *   - if `p: Packet`, then `this.viewUpdate(p)`
    *   - if otherwise `p: P`, then `another.viewUpdate(p)`
    */
-  final def thenAbstract[P, C2](another: TransportPacketAbstraction[P, WorldView, C2])(
+  final def thenAbstract[P, C2](another: PacketAbstraction[P, WorldView, C2])(
     using ng: scala.util.NotGiven[P <:< Packet],
     // Because Scala 3.1.0 does not provide Typeable[Nothing], we condition on Packet explicitly
     ge: GivenEither[Typeable[Packet], Packet =:= Nothing]
-  ): TransportPacketAbstraction[Packet | P, WorldView, C2 | Cmd] = ge match {
+  ): PacketAbstraction[Packet | P, WorldView, C2 | Cmd] = ge match {
     case GivenEither(Left(_ @ given Typeable[Packet])) =>
       (packet: Packet | P) =>
         packet match {
-          case packet: Packet => TransportPacketAbstraction.this.viewUpdate(packet)
+          case packet: Packet => PacketAbstraction.this.viewUpdate(packet)
           case packet         =>
             // this cast is safe because `packet` was `Packet | P` but
             // the case `packet: Packet` has been already tried with a `Typeable` instance
@@ -115,9 +114,9 @@ trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
   }
 
   /**
-   * Obtain a new [[TransportPacketAbstraction]] by mapping the output [[Cmd]].
+   * Obtain a new [[PacketAbstraction]] by mapping the output [[Cmd]].
    */
-  final def mapCmd[C2](f: Cmd => C2): TransportPacketAbstraction[Packet, WorldView, C2] =
+  final def mapCmd[C2](f: Cmd => C2): PacketAbstraction[Packet, WorldView, C2] =
     (p: Packet) =>
       viewUpdate(p).map { update => s =>
         val (newS, cmd) = update(s)
@@ -129,7 +128,7 @@ trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
    */
   final def liftCmd[F[_], C2 >: Cmd](
     using F: Applicative[F]
-  ): TransportPacketAbstraction[Packet, WorldView, F[C2]] =
+  ): PacketAbstraction[Packet, WorldView, F[C2]] =
     mapCmd(F.pure)
 
   /**
@@ -137,43 +136,43 @@ trait TransportPacketAbstraction[Packet, WorldView, +Cmd] {
    */
   final def liftCmdCovariant[F[+_]](
     using F: Applicative[F]
-  ): TransportPacketAbstraction[Packet, WorldView, F[Cmd]] = mapCmd(F.pure)
+  ): PacketAbstraction[Packet, WorldView, F[Cmd]] = mapCmd(F.pure)
 }
 
-object TransportPacketAbstraction {
+object PacketAbstraction {
 
   /**
-   * A [[TransportPacketAbstraction]] that abstracts no packet. This is a two-sided identity for
-   * the [[TransportPacketAbstraction.orElseAbstract]] method.
+   * A [[PacketAbstraction]] that abstracts no packet. This is a two-sided identity for the
+   * [[PacketAbstraction.orElseAbstract]] method.
    */
-  def none[P, S, C]: TransportPacketAbstraction[P, S, C] = (_: P) => None
+  def none[P, S, C]: PacketAbstraction[P, S, C] = (_: P) => None
 
   /**
-   * A [[TransportPacketAbstraction]] that abstracts no packet. This is a version of [[none]]
-   * that needs less type arguments.
+   * A [[PacketAbstraction]] that abstracts no packet. This is a version of [[none]] that needs
+   * less type arguments.
    */
-  def nothing[S]: TransportPacketAbstraction[Nothing, S, Nothing] = (_: Nothing) => None
+  def nothing[S]: PacketAbstraction[Nothing, S, Nothing] = (_: Nothing) => None
 
-  given abstractionMonoid[P, S, C]: Monoid[TransportPacketAbstraction[P, S, C]] =
-    Monoid.instance[TransportPacketAbstraction[P, S, C]](
+  given abstractionMonoid[P, S, C]: Monoid[PacketAbstraction[P, S, C]] =
+    Monoid.instance[PacketAbstraction[P, S, C]](
       none[P, S, C],
       (pa1, pa2) => pa1.orElseAbstract(pa2)
     )
 
-  given abstractionFunctor[P, S]: Functor[TransportPacketAbstraction[P, S, *]] =
-    new Functor[TransportPacketAbstraction[P, S, *]] {
-      override def map[A, B](fa: TransportPacketAbstraction[P, S, A])(
+  given abstractionFunctor[P, S]: Functor[PacketAbstraction[P, S, *]] =
+    new Functor[PacketAbstraction[P, S, *]] {
+      override def map[A, B](fa: PacketAbstraction[P, S, A])(
         f: A => B
-      ): TransportPacketAbstraction[P, S, B] = fa.mapCmd(f)
+      ): PacketAbstraction[P, S, B] = fa.mapCmd(f)
     }
 
   /**
    * Combine all given abstractions with the same type parameters using
-   * [[TransportPacketAbstraction.orElseAbstract]] method.
+   * [[PacketAbstraction.orElseAbstract]] method.
    */
   def orElseInOrder[P, S, C](
-    abstractions: TransportPacketAbstraction[P, S, C]*
-  ): TransportPacketAbstraction[P, S, C] =
+    abstractions: PacketAbstraction[P, S, C]*
+  ): PacketAbstraction[P, S, C] =
     abstractionMonoid.combineAll(abstractions)
 
 }
