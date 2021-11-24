@@ -35,6 +35,12 @@ object MinecraftVector {
 
   val zero: MinecraftVector = MinecraftVector(0.0, 0.0, 0.0)
 
+  /**
+   * A linear map embedding 2D plane to ZX plane of the Minecraft space.
+   */
+  def fromZXVector(vector2D: Vector2D): MinecraftVector =
+    MinecraftVector(vector2D.y, 0.0, vector2D.x)
+
   given InnerProductSpace[MinecraftVector, Double] with {
     def negate(v: MinecraftVector): MinecraftVector = MinecraftVector(-v.x, -v.y, -v.z)
     def zero: MinecraftVector = MinecraftVector.zero
