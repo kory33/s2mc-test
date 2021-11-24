@@ -40,7 +40,7 @@ case class ProtocolBasedWriteTransport[F[_], PeerBoundPackets <: Tuple](
     )(using _tei: TupleElementIndex[PeerBoundPackets, P]): Response = new Response {
       override type Packet = P
       override val data: P = peerBoundPacket
-      override val tei: TupleElementIndex[PeerBoundPackets, P] = tei
+      override val tei: TupleElementIndex[PeerBoundPackets, P] = _tei
     }
   }
 
