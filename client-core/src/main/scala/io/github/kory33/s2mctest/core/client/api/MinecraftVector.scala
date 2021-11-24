@@ -1,17 +1,18 @@
 package io.github.kory33.s2mctest.core.client.api
 
 /**
- * An abstract vector of a 3-dimensional Euclidean space.
+ * An abstract vector lying in Minecraft space.
  */
-case class Vector3D(x: Double, y: Double, z: Double) {
+case class MinecraftVector(x: Double, y: Double, z: Double) {
 
-  def add(another: Vector3D): Vector3D = Vector3D(x + another.x, y + another.y, z + another.z)
+  def add(another: MinecraftVector): MinecraftVector =
+    MinecraftVector(x + another.x, y + another.y, z + another.z)
 
-  def multiply(l: Double): Vector3D = Vector3D(l * x, l * y, l * z)
+  def multiply(l: Double): MinecraftVector = MinecraftVector(l * x, l * y, l * z)
 
-  def negate: Vector3D = Vector3D(-x, -y, -z)
+  def negate: MinecraftVector = MinecraftVector(-x, -y, -z)
 
-  def minus(another: Vector3D): Vector3D = add(another.negate)
+  def minus(another: MinecraftVector): MinecraftVector = add(another.negate)
 
   def lengthSquared: Double = x * x + y * y + z * z
 
@@ -21,7 +22,7 @@ case class Vector3D(x: Double, y: Double, z: Double) {
    * Calculate the normalized vector that points to the same direction as this vector. Requires
    * that this vector is nonzero.
    */
-  def normalized: Vector3D =
+  def normalized: MinecraftVector =
     val l = length
     require(l != 0)
     this multiply (1 / l)
@@ -44,14 +45,14 @@ case class Vector3D(x: Double, y: Double, z: Double) {
    * See https://wiki.vg/index.php?title=Protocol&oldid=16681#Player_Rotation for details.
    */
   def pitch: Double =
-    require(this != Vector3D.zero)
+    require(this != MinecraftVector.zero)
     val horizontalComponent = Math.sqrt(x * x + z * z)
     Math.atan2(-y, horizontalComponent) / Math.PI * 180.0
 
 }
 
-object Vector3D {
+object MinecraftVector {
 
-  val zero: Vector3D = Vector3D(0.0, 0.0, 0.0)
+  val zero: MinecraftVector = MinecraftVector(0.0, 0.0, 0.0)
 
 }

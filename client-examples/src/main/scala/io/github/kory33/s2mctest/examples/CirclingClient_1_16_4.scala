@@ -3,7 +3,7 @@ package io.github.kory33.s2mctest.examples
 import cats.Monad
 import cats.effect.{IO, Temporal}
 import com.comcast.ip4s.SocketAddress
-import io.github.kory33.s2mctest.core.client.api.Vector3D
+import io.github.kory33.s2mctest.core.client.api.MinecraftVector
 import io.github.kory33.s2mctest.core.client.api.worldview.{PositionAndOrientation, WorldTime}
 import io.github.kory33.s2mctest.core.client.{
   ProtocolPacketAbstraction,
@@ -79,18 +79,18 @@ def circlingClient_1_16_4(): Unit = {
           val velocity = 5.0
           val angularVelocity = velocity / radius
 
-          val initPosition: Vector3D = initView.position.absPosition
-          val circleCenter = initPosition add Vector3D(-radius, 0.0, 0.0)
+          val initPosition: MinecraftVector = initView.position.absPosition
+          val circleCenter = initPosition add MinecraftVector(-radius, 0.0, 0.0)
 
           def positionAt(realTime: FiniteDuration): PositionAndOrientation = {
             val t = realTime minus initRealTime
             val angularDisplacement = t.toMillis * angularVelocity / 1000.0
-            val displacement = Vector3D(
+            val displacement = MinecraftVector(
               scala.math.cos(angularDisplacement),
               0.0,
               scala.math.sin(angularDisplacement)
             ) multiply radius
-            val direction = Vector3D(
+            val direction = MinecraftVector(
               -scala.math.sin(angularDisplacement),
               0.0,
               scala.math.cos(angularDisplacement)
@@ -105,7 +105,7 @@ def circlingClient_1_16_4(): Unit = {
 
           Monad[IO].foreverM {
             IO.sleep(50.milliseconds) >> IO.realTime.map(positionAt).flatMap {
-              case PositionAndOrientation(Vector3D(x, y, z), yaw, pitch) =>
+              case PositionAndOrientation(MinecraftVector(x, y, z), yaw, pitch) =>
                 client.writePacket(PlayerPositionLook(x, y, z, yaw, pitch, onGround = true))
             }
           }
