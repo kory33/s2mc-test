@@ -13,12 +13,17 @@ import scala.collection.immutable.Queue
  * on [[V]]) paths represented by `[0, 1]` -> [[V]], has lost information on how fast these
  * points should be traversed.
  *
+ * [[V]] must be a normed vector space over an ordered field [[F]], which should be a subfield
+ * of the set of real numbers. It is required that the field operations are compatible with
+ * order relations. For more details, see
+ * https://en.wikipedia.org/w/index.php?title=Ordered_field&oldid=1049796158#Definitions.
+ *
  * @param points
  *   a nonempty sequence of points of [[V]]
  */
-class DiscretePath[V, F: Order](
+class DiscretePath[V, F](
   val points: Vector[V]
-)(using nvs: NormedVectorSpace[V, F]) {
+)(using nvs: NormedVectorSpace[V, F], order: Order[F]) {
   require(points.nonEmpty)
 
   import cats.implicits.given
@@ -70,9 +75,12 @@ class DiscretePath[V, F: Order](
   /**
    * The partial sum of arc length of this discrete path. `n` th element of this [[Vector]]
    * contains a total distance travelled from the first point upto `n` th element in [[points]].
+   *
+   * This sequence is increasing, because the field is ordered and norm returns non-negative
+   * field elements.
    */
   lazy val cumulativeDistance: Vector[F] =
-    points.scanLeft[(V, F)]((points.head, Field[F].additive.empty)) { (pair, next) =>
+    points.drop(1).scanLeft[(V, F)]((points.head, Field[F].additive.empty)) { (pair, next) =>
       val (lastPoint, lastCumulative) = pair
       (next, lastCumulative + nvs.norm(next - lastPoint))
     }.map(_._2)
@@ -89,21 +97,25 @@ class DiscretePath[V, F: Order](
     require(distance >= Field[F].zero, "distance must be non-negative")
     require(distance <= totalDistance, "distance must be less than or equal to totalDistance")
 
-    cumulativeDistance.search(distance)(using Order[F].toOrdering) match {
-      case scala.collection.Searching.Found(idx) =>
-        points(idx)
-      case scala.collection.Searching.InsertionPoint(idx) =>
-        // by the requirement that distance >= 0, idx must be at least 1
-        val previousPoint = points(idx - 1)
+    if distance == totalDistance then
+      points.last
+    else
+      cumulativeDistance.search(distance)(using Order[F].toOrdering) match {
+        case scala.collection.Searching.Found(idx) =>
+          points(idx)
+        case scala.collection.Searching.InsertionPoint(idx) =>
+          // by the requirement that distance >= 0, idx must be at least 1
+          val previousPoint = points(idx - 1)
 
-        // by the requirement that distance <= totalDistance, idx must be less than points.length
-        val nextPoint = points(idx)
+          // by the requirement that distance <= totalDistance and the condition distance != totalDistance,
+          // idx must be strictly less than points.length
+          val nextPoint = points(idx)
 
-        val lengthToCoverInSegment = distance - cumulativeDistance(idx - 1)
-        val unitVectorAlongSegment = (nextPoint - previousPoint).normalize
+          val lengthToCoverInSegment = distance - cumulativeDistance(idx - 1)
+          val unitVectorAlongSegment = (nextPoint - previousPoint).normalize
 
-        previousPoint + (lengthToCoverInSegment *: unitVectorAlongSegment)
-    }
+          previousPoint + (lengthToCoverInSegment *: unitVectorAlongSegment)
+      }
   }
 
   /**
@@ -145,7 +157,7 @@ class DiscretePath[V, F: Order](
 
             val average = previousSegment + nextSegment
 
-            if average != Field[F].zero then average
+            if average != nvs.zero then average
             else {
               // we are in an unlikely case of previousSegment being opposite of nextSegment
               // so just take this as previousSegment, since this must be nonzero
@@ -191,8 +203,8 @@ object DiscretePath {
     def midT(t1: UnitInterval, t2: UnitInterval): UnitInterval = (t1 + t2) / 2.0
 
     def sufficientlyClose(p1: SampledPoint, p2: SampledPoint): Boolean = {
-      nvs.distance(p2.ft, p1.ft) < maximumRangeGap ||
-      (Math.abs(p1.t - p2.t) < maximumDomainGap)
+      (Math.abs(p1.t - p2.t) < maximumDomainGap) &&
+      (nvs.distance(p2.ft, p1.ft) < maximumRangeGap)
     }
 
     /**
@@ -212,10 +224,14 @@ object DiscretePath {
 
       nextSampleTOption match {
         case Some(nextSampleT) =>
+          // we must sample at nextSampleT
           val nextSample: SampledPoint = sampleAt(nextSampleT)
+
           if sufficientlyClose(lastSampledPoint, nextSample) then
+            // there is no more sampling to do until nextSampleT
             go(nextSample :: results, None, sampledAhead)
           else
+            // otherwise sample in between last t and nextSampleT
             go(
               results,
               Some(midT(lastSampledPoint.t, nextSample.t)),
@@ -224,26 +240,27 @@ object DiscretePath {
         case None =>
           sampledAhead match {
             case nextSampledAhead :: sampledAheadTail =>
-              val nextSampleTOption: Option[UnitInterval] =
-                if sufficientlyClose(lastSampledPoint, nextSampledAhead) then
-                  None
-                else
-                  Some(midT(lastSampledPoint.t, nextSampledAhead.t))
-
-              go(nextSampledAhead :: results, nextSampleTOption, sampledAheadTail)
+              if sufficientlyClose(lastSampledPoint, nextSampledAhead) then
+                // there is no point in between the last result and next sampled-ahead point,
+                // so record next sampled-ahead point
+                go(nextSampledAhead :: results, None, sampledAheadTail)
+              else
+                // we must sample the point in between
+                go(results, Some(midT(lastSampledPoint.t, nextSampledAhead.t)), sampledAhead)
             case Nil =>
+              // there is no more point to sample, so reverse the result and return as path
               DiscretePath(results.map(_.ft).toList.reverse.toVector)
           }
       }
     }
 
-    go(NonEmptyList.one(sampleAt(0.0)), Some(1.0), Nil)
+    go(NonEmptyList.one(sampleAt(0.0)), None, List(sampleAt(1.0)))
   }
 
   def sampleDouble[V](
     f: Double => V,
-    maximumRangeGap: Double = 0.01,
-    maximumDomainGap: Double = 0.01
+    maximumRangeGap: Double = 0.1,
+    maximumDomainGap: Double = 0.1
   )(using nvs: NormedVectorSpace[V, Double]): DiscretePath[V, Double] =
     sampleContinuous[V, Double](f, maximumRangeGap, maximumDomainGap)(
       using spire.std.double.DoubleAlgebra,
