@@ -10,6 +10,8 @@ import io.github.kory33.s2mctest.core.client.api.{
   PathTraverseStrategy,
   Vector2D
 }
+import io.github.kory33.s2mctest.core.generic.compiletime.HasKnownIndexOf
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.PlayerPositionLook
 import monocle.Getter
 
 import scala.concurrent.duration
@@ -18,10 +20,32 @@ import scala.concurrent.duration.FiniteDuration
 object MoveClient {
   import cats.implicits.given
 
-  trait MoveClientEv[F[_], SBPackets <: Tuple, CBPackets <: Tuple] {
-    def claimMoved[WV](client: SightedClient[F, SBPackets, CBPackets, WV],
-                       positionAndOrientation: PositionAndOrientation
+  trait MoveClientEv[F[_], SBPackets <: Tuple, CBPackets <: Tuple, WV] {
+    def claimMoved(client: SightedClient[F, SBPackets, CBPackets, WV],
+                   positionAndOrientation: PositionAndOrientation
     ): F[Unit]
+  }
+
+  object MoveClientEv {
+
+    def forPlayerPositionLook[
+      F[_],
+      SBPackets <: Tuple: HasKnownIndexOf[PlayerPositionLook],
+      CBPackets <: Tuple,
+      WV
+    ]: MoveClientEv[F, SBPackets, CBPackets, WV] =
+      (client, pao) => {
+        val vector = pao.absPosition
+        client.writePacket(PlayerPositionLook(
+          vector.x,
+          vector.y,
+          vector.z,
+          pao.yaw,
+          pao.pitch,
+          onGround = true
+        ))
+      }
+
   }
 
   def apply[F[_]: Temporal, SBPackets <: Tuple, CBPackets <: Tuple, WV](
@@ -38,7 +62,7 @@ object MoveClient {
      */
     def claimMovedTo(
       positionAndOrientation: PositionAndOrientation
-    )(using ev: MoveClientEv[F, SBPackets, CBPackets]): F[Unit] =
+    )(using ev: MoveClientEv[F, SBPackets, CBPackets, WV]): F[Unit] =
       ev.claimMoved(client, positionAndOrientation)
 
     /**
@@ -47,7 +71,7 @@ object MoveClient {
     def along(relativePath: DiscretePlanarPath[Vector2D, Double],
               strategy: PathTraverseStrategy = PathTraverseStrategy.default
     )(
-      using ev: MoveClientEv[F, SBPackets, CBPackets],
+      using ev: MoveClientEv[F, SBPackets, CBPackets, WV],
       getPosition: Getter[WV, PositionAndOrientation]
     ): F[Unit] = {
       for {
