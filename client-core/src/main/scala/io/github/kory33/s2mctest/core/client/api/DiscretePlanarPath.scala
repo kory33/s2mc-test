@@ -167,6 +167,21 @@ object DiscretePlanarPath {
   def empty[V, F](using NormedVectorSpace[V, F], Order[F]): DiscretePlanarPath[V, F] =
     DiscretePlanarPath(Vector.empty)
 
+  /**
+   * The default semigroup instance that concats paths by rebasing.
+   *
+   * Notice that this structure
+   *   - is associative
+   *   - is only unital if you identify `x concatRebase empty` with `x`, where the former has an
+   *     extra point.
+   *   - does not admit inverses. Concatenating a reverse path does not erase the original path.
+   */
+  given [V, F]: Semigroup[DiscretePlanarPath[V, F]] with
+    override def combine(x: DiscretePlanarPath[V, F],
+                         y: DiscretePlanarPath[V, F]
+    ): DiscretePlanarPath[V, F] =
+      x concatRebase y
+
   def sampleContinuous[V, F: Order](f: Double => V,
                                     maximumRangeGap: F,
                                     maximumDomainGap: Double = 0.01
