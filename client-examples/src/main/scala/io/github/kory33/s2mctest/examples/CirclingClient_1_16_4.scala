@@ -3,7 +3,7 @@ package io.github.kory33.s2mctest.examples
 import cats.Monad
 import cats.effect.{IO, Temporal}
 import com.comcast.ip4s.SocketAddress
-import io.github.kory33.s2mctest.core.client.api.MinecraftVector
+import io.github.kory33.s2mctest.core.client.api.{DiscretePath, MinecraftVector, Vector2D}
 import io.github.kory33.s2mctest.core.client.api.worldview.{PositionAndOrientation, WorldTime}
 import io.github.kory33.s2mctest.core.client.{PacketAbstraction, ProtocolPacketAbstraction}
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
@@ -13,6 +13,7 @@ import io.github.kory33.s2mctest.impl.client.abstraction.{
   PlayerPositionAbstraction,
   TimeUpdateAbstraction
 }
+import io.github.kory33.s2mctest.impl.client.api.MoveClient
 import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{
   Player,
@@ -37,9 +38,9 @@ def circlingClient_1_16_4(): Unit = {
 
   case class WorldView(position: PositionAndOrientation, worldTime: WorldTime)
   object WorldView {
-    val unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
-    val worldTimeLens: Lens[WorldView, WorldTime] = GenLens[WorldView](_.worldTime)
-    val positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
+    given unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
+    given worldTimeLens: Lens[WorldView, WorldTime] = GenLens[WorldView](_.worldTime)
+    given positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
   }
 
   val address = SocketAddress.fromString("localhost:25565").get
@@ -70,42 +71,13 @@ def circlingClient_1_16_4(): Unit = {
     .recycledClient
     .use { client =>
       for {
-        _ <- client.readLoopAndDiscard.use { _ => IO.sleep(3.seconds) }
-        initView <- client.worldView
-        initRealTime <- IO.realTime
         _ <- client.readLoopAndDiscard.use { _ =>
-          val radius = 5.0
-          val velocity = 5.0
-          val angularVelocity = velocity / radius
-
-          val initPosition: MinecraftVector = initView.position.absPosition
-          val circleCenter = initPosition + MinecraftVector(-radius, 0.0, 0.0)
-
-          def positionAt(realTime: FiniteDuration): PositionAndOrientation = {
-            val t = realTime minus initRealTime
-            val angularDisplacement = t.toMillis * angularVelocity / 1000.0
-            val displacement = MinecraftVector(
-              scala.math.cos(angularDisplacement),
-              0.0,
-              scala.math.sin(angularDisplacement)
-            ) :* radius
-            val direction = MinecraftVector(
-              -scala.math.sin(angularDisplacement),
-              0.0,
-              scala.math.cos(angularDisplacement)
-            )
-
-            PositionAndOrientation(
-              circleCenter + displacement,
-              direction.yaw.toFloat,
-              direction.pitch.toFloat
-            )
-          }
-
-          Monad[IO].foreverM {
-            IO.sleep(50.milliseconds) >> IO.realTime.map(positionAt).flatMap {
-              case PositionAndOrientation(MinecraftVector(x, y, z), yaw, pitch) =>
-                client.writePacket(PlayerPositionLook(x, y, z, yaw, pitch, onGround = true))
+          IO.sleep(3.seconds) >> Monad[IO].foreverM {
+            MoveClient(client).along {
+              DiscretePath.sampleDouble {
+                t =>
+                  Vector2D(5.0 * Math.cos(t * 2.0 * Math.PI), 5.0 * Math.sin(t * 2.0 * Math.PI))
+              }
             }
           }
         }

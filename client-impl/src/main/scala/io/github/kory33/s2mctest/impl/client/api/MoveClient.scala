@@ -28,7 +28,7 @@ object MoveClient {
 
   object MoveClientEv {
 
-    def forPlayerPositionLook[
+    given forPlayerPositionLook[
       F[_],
       SBPackets <: Tuple: HasKnownIndexOf[PlayerPositionLook],
       CBPackets <: Tuple,
@@ -53,7 +53,7 @@ object MoveClient {
   ): ClientPartiallyApplied[F, SBPackets, CBPackets, WV] =
     ClientPartiallyApplied(client)
 
-  case class ClientPartiallyApplied[F[_]: Temporal, SBPackets <: Tuple, CBPackets <: Tuple, WV](
+  class ClientPartiallyApplied[F[_]: Temporal, SBPackets <: Tuple, CBPackets <: Tuple, WV](
     client: SightedClient[F, SBPackets, CBPackets, WV]
   ) {
 
@@ -90,8 +90,8 @@ object MoveClient {
           val pathDivisionCount: Int =
             Math.ceil(travelTime / strategy.movementPacketInterval).toInt
 
-          (0 to pathDivisionCount).map { i =>
-            (i.toDouble / pathDivisionCount) * absolutePath.totalDistance
+          (1 to pathDivisionCount).map { i =>
+            absolutePath.totalDistance * i.toDouble / pathDivisionCount.toDouble
           }.toList
         }
 
@@ -109,9 +109,8 @@ object MoveClient {
           val positionAndOrientation =
             PositionAndOrientation(absPosition, yaw, initialClientPosition.pitch)
 
-          claimMovedTo(positionAndOrientation) >> Temporal[F].sleep(
-            strategy.movementPacketInterval
-          )
+          Temporal[F].sleep(strategy.movementPacketInterval) >>
+            claimMovedTo(positionAndOrientation)
         }
       } yield ()
     }
