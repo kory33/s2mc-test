@@ -3,8 +3,8 @@ package io.github.kory33.s2mctest.examples
 import cats.Monad
 import cats.effect.{IO, Temporal}
 import com.comcast.ip4s.SocketAddress
-import io.github.kory33.s2mctest.core.client.api.{DiscretePath, MinecraftVector, Vector2D}
 import io.github.kory33.s2mctest.core.client.api.worldview.{PositionAndOrientation, WorldTime}
+import io.github.kory33.s2mctest.core.client.api.{DiscretePath, MinecraftVector, Vector2D}
 import io.github.kory33.s2mctest.core.client.{PacketAbstraction, ProtocolPacketAbstraction}
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
 import io.github.kory33.s2mctest.impl.client.abstraction.{
@@ -74,9 +74,11 @@ def circlingClient_1_16_4(): Unit = {
         _ <- client.readLoopAndDiscard.use { _ =>
           IO.sleep(3.seconds) >> Monad[IO].foreverM {
             MoveClient(client).along {
-              DiscretePath.sampleDouble {
-                t =>
-                  Vector2D(5.0 * Math.cos(t * 2.0 * Math.PI), 5.0 * Math.sin(t * 2.0 * Math.PI))
+              DiscretePath.sampleDouble { t =>
+                Vector2D(
+                  5.0 * Math.cos(t * 2.0 * Math.PI),
+                  5.0 * Math.sin(t * 2.0 * Math.PI)
+                )
               }
             }
           }
