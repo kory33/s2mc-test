@@ -5,7 +5,7 @@ import cats.effect.Temporal
 import io.github.kory33.s2mctest.core.client.SightedClient
 import io.github.kory33.s2mctest.core.client.api.worldview.PositionAndOrientation
 import io.github.kory33.s2mctest.core.client.api.{
-  DiscretePlanarPath,
+  DiscretePath,
   MinecraftVector,
   PathTraverseStrategy,
   Vector2D
@@ -68,7 +68,7 @@ object MoveClient {
     /**
      * Move the client along a path that will be rebased at the client's initial position.
      */
-    def along(relativePath: DiscretePlanarPath[Vector2D, Double],
+    def along(relativePath: DiscretePath[Vector2D, Double],
               strategy: PathTraverseStrategy = PathTraverseStrategy.default
     )(
       using ev: MoveClientEv[F, SBPackets, CBPackets, WV],

@@ -16,7 +16,7 @@ import scala.collection.immutable.Queue
  * @param points
  *   a nonempty sequence of points of [[V]]
  */
-class DiscretePlanarPath[V, F: Order](
+class DiscretePath[V, F: Order](
   val points: Vector[V]
 )(using nvs: NormedVectorSpace[V, F]) {
   require(points.nonEmpty)
@@ -28,41 +28,41 @@ class DiscretePlanarPath[V, F: Order](
    * Concatenate another path. The last point of this path will be connected to the initial
    * point of [[another]].
    */
-  def concat(another: DiscretePlanarPath[V, F]): DiscretePlanarPath[V, F] =
-    DiscretePlanarPath(points ++ another.points)
+  def concat(another: DiscretePath[V, F]): DiscretePath[V, F] =
+    DiscretePath(points ++ another.points)
 
   /**
    * Return
    */
-  def inverse: DiscretePlanarPath[V, F] =
-    DiscretePlanarPath(points.reverse)
+  def inverse: DiscretePath[V, F] =
+    DiscretePath(points.reverse)
 
   /**
    * Translate this path using a linear transformation [[f]].
    */
-  def mapLinear[W: NormedVectorSpace[_, F]](f: V => W): DiscretePlanarPath[W, F] =
-    DiscretePlanarPath(points.map(f))
+  def mapLinear[W: NormedVectorSpace[_, F]](f: V => W): DiscretePath[W, F] =
+    DiscretePath(points.map(f))
 
   /**
    * Translate the entire path with [[vector2D]].
    */
-  def translate(v: V): DiscretePlanarPath[V, F] = mapLinear(_ + v)
+  def translate(v: V): DiscretePath[V, F] = mapLinear(_ + v)
 
   /**
    * Translate this path so that the initial data point is at the specified vector.
    */
-  def rebaseAt(v: V): DiscretePlanarPath[V, F] = translate(v - points.head)
+  def rebaseAt(v: V): DiscretePath[V, F] = translate(v - points.head)
 
   /**
    * Translate this path so that the initial data point is at zero.
    */
-  def rebaseAtZero: DiscretePlanarPath[V, F] = rebaseAt(nvs.zero)
+  def rebaseAtZero: DiscretePath[V, F] = rebaseAt(nvs.zero)
 
   /**
    * Concatenate another path in such a way that the last point of this path coincides the first
    * point of [[another]] by translating [[another]].
    */
-  def concatRebase(another: DiscretePlanarPath[V, F]): DiscretePlanarPath[V, F] =
+  def concatRebase(another: DiscretePath[V, F]): DiscretePath[V, F] =
     concat(another.rebaseAt(points.last))
 
   import nvs.scalar
@@ -160,12 +160,12 @@ class DiscretePlanarPath[V, F: Order](
   }
 }
 
-object DiscretePlanarPath {
+object DiscretePath {
   import cats.implicits.given
   import spire.implicits.{partialOrderOps as _, given}
 
-  def empty[V, F](using NormedVectorSpace[V, F], Order[F]): DiscretePlanarPath[V, F] =
-    DiscretePlanarPath(Vector.empty)
+  def empty[V, F](using NormedVectorSpace[V, F], Order[F]): DiscretePath[V, F] =
+    DiscretePath(Vector.empty)
 
   /**
    * The default semigroup instance that concats paths by rebasing.
@@ -176,16 +176,14 @@ object DiscretePlanarPath {
    *     extra point.
    *   - does not admit inverses. Concatenating a reverse path does not erase the original path.
    */
-  given [V, F]: Semigroup[DiscretePlanarPath[V, F]] with
-    override def combine(x: DiscretePlanarPath[V, F],
-                         y: DiscretePlanarPath[V, F]
-    ): DiscretePlanarPath[V, F] =
+  given [V, F]: Semigroup[DiscretePath[V, F]] with
+    override def combine(x: DiscretePath[V, F], y: DiscretePath[V, F]): DiscretePath[V, F] =
       x concatRebase y
 
   def sampleContinuous[V, F: Order](f: Double => V,
                                     maximumRangeGap: F,
                                     maximumDomainGap: Double = 0.01
-  )(using nvs: NormedVectorSpace[V, F]): DiscretePlanarPath[V, F] = {
+  )(using nvs: NormedVectorSpace[V, F]): DiscretePath[V, F] = {
     type UnitInterval = Double
     case class SampledPoint(t: UnitInterval, ft: V)
 
@@ -209,7 +207,7 @@ object DiscretePlanarPath {
     @tailrec def go(results: NonEmptyList[SampledPoint],
                     nextSampleTOption: Option[UnitInterval],
                     sampledAhead: List[SampledPoint]
-    ): DiscretePlanarPath[V, F] = {
+    ): DiscretePath[V, F] = {
       val lastSampledPoint = results.head
 
       nextSampleTOption match {
@@ -234,7 +232,7 @@ object DiscretePlanarPath {
 
               go(nextSampledAhead :: results, nextSampleTOption, sampledAheadTail)
             case Nil =>
-              DiscretePlanarPath(results.map(_.ft).toList.reverse.toVector)
+              DiscretePath(results.map(_.ft).toList.reverse.toVector)
           }
       }
     }
@@ -246,7 +244,7 @@ object DiscretePlanarPath {
     f: Double => V,
     maximumRangeGap: Double = 0.01,
     maximumDomainGap: Double = 0.01
-  )(using nvs: NormedVectorSpace[V, Double]): DiscretePlanarPath[V, Double] =
+  )(using nvs: NormedVectorSpace[V, Double]): DiscretePath[V, Double] =
     sampleContinuous[V, Double](f, maximumRangeGap, maximumDomainGap)(
       using spire.std.double.DoubleAlgebra,
       nvs
