@@ -13,10 +13,11 @@ case class MinecraftVector(x: Double, y: Double, z: Double) {
    *
    * See https://wiki.vg/index.php?title=Protocol&oldid=16681#Player_Rotation for details.
    */
-  def yaw: Double =
+  def yaw: Float = {
     require(x != 0.0 || z != 0.0)
     val atanInDeg = Math.atan2(-x, z) / Math.PI * 180.0
     if atanInDeg < 0.0 then atanInDeg + 360.0 else atanInDeg
+  }.toFloat
 
   /**
    * Pitch of an entity whose face direction is collinear to this vector. Requires that this
@@ -24,10 +25,16 @@ case class MinecraftVector(x: Double, y: Double, z: Double) {
    *
    * See https://wiki.vg/index.php?title=Protocol&oldid=16681#Player_Rotation for details.
    */
-  def pitch: Double =
+  def pitch: Float = {
     require(this != MinecraftVector.zero)
     val horizontalComponent = Math.sqrt(x * x + z * z)
     Math.atan2(-y, horizontalComponent) / Math.PI * 180.0
+  }.toFloat
+
+  /**
+   * The linear map projecting this vector onto XZ plane of the Minecraft space.
+   */
+  def projectZX: Vector2D = Vector2D(z, x)
 
 }
 
