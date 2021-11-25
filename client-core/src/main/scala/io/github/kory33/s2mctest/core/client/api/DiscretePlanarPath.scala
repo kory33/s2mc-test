@@ -2,7 +2,7 @@ package io.github.kory33.s2mctest.core.client.api
 
 import cats.Order
 import cats.data.NonEmptyList
-import spire.algebra.{Field, NormedVectorSpace}
+import spire.algebra.{Field, NormedVectorSpace, Semigroup}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
@@ -49,16 +49,21 @@ class DiscretePlanarPath[V, F: Order](
   def translate(v: V): DiscretePlanarPath[V, F] = mapLinear(_ + v)
 
   /**
-   * Translate this path so that the initial data point is at zero
+   * Translate this path so that the initial data point is at the specified vector.
    */
-  def rebaseAtZero: DiscretePlanarPath[V, F] = translate(-points.head)
+  def rebaseAt(v: V): DiscretePlanarPath[V, F] = translate(v - points.head)
+
+  /**
+   * Translate this path so that the initial data point is at zero.
+   */
+  def rebaseAtZero: DiscretePlanarPath[V, F] = rebaseAt(nvs.zero)
 
   /**
    * Concatenate another path in such a way that the last point of this path coincides the first
    * point of [[another]] by translating [[another]].
    */
   def concatRebase(another: DiscretePlanarPath[V, F]): DiscretePlanarPath[V, F] =
-    concat(another.translate(this.points.last - another.points.head))
+    concat(another.rebaseAt(points.last))
 
   import nvs.scalar
 
