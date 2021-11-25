@@ -4,12 +4,7 @@ import cats.MonadThrow
 import cats.effect.{GenConcurrent, IO, Ref, Resource}
 import com.comcast.ip4s.{Host, SocketAddress}
 import fs2.io.net.Network
-import io.github.kory33.s2mctest.core.client.{
-  ClientIdentity,
-  ProtocolPacketAbstraction,
-  SightedClient,
-  PacketAbstraction
-}
+import io.github.kory33.s2mctest.core.client.{ClientIdentity, PacketAbstraction, ProtocolPacketAbstraction, SightedClient}
 import io.github.kory33.s2mctest.core.clientpool.ClientInitialization
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, Protocol}

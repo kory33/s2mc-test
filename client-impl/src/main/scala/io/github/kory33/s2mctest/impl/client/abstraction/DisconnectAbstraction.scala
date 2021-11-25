@@ -1,7 +1,7 @@
 package io.github.kory33.s2mctest.impl.client.abstraction
 
 import cats.{Applicative, MonadError}
-import io.github.kory33.s2mctest.core.client.{ProtocolPacketAbstraction, PacketAbstraction}
+import io.github.kory33.s2mctest.core.client.{PacketAbstraction, ProtocolPacketAbstraction}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes.ChatComponent
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.Disconnect
 
