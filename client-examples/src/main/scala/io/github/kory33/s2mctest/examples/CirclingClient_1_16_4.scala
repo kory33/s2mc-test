@@ -70,20 +70,18 @@ def circlingClient_1_16_4(): Unit = {
   val program: IO[Unit] = clientPool
     .recycledClient
     .use { client =>
-      for {
-        _ <- client.readLoopAndDiscard.use { _ =>
-          IO.sleep(3.seconds) >> Monad[IO].foreverM {
-            MoveClient(client).along {
-              DiscretePath.sampleDouble { t =>
-                Vector2D(
-                  5.0 * Math.cos(t * 2.0 * Math.PI),
-                  5.0 * Math.sin(t * 2.0 * Math.PI)
-                )
-              }
+      client.readLoopAndDiscard.use { _ =>
+        IO.sleep(3.seconds) >> Monad[IO].foreverM {
+          MoveClient(client).along {
+            DiscretePath.sampleDouble { t =>
+              Vector2D(
+                5.0 * Math.cos(t * 2.0 * Math.PI),
+                5.0 * Math.sin(t * 2.0 * Math.PI)
+              )
             }
           }
         }
-      } yield ()
+      }
     }
     .void
 
