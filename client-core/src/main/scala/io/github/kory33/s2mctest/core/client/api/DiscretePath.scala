@@ -37,7 +37,7 @@ class DiscretePath[V, F](
     DiscretePath(points ++ another.points)
 
   /**
-   * Return
+   * Return the reversed path, which contains elements of [[points]] in the reverse order.
    */
   def inverse: DiscretePath[V, F] =
     DiscretePath(points.reverse)
@@ -176,15 +176,18 @@ object DiscretePath {
   import cats.implicits.given
   import spire.implicits.{partialOrderOps as _, given}
 
-  def empty[V, F](using NormedVectorSpace[V, F], Order[F]): DiscretePath[V, F] =
-    DiscretePath(Vector.empty)
+  /**
+   * The constant path containing just one zero vector.
+   */
+  def zero[V, F](using nvs: NormedVectorSpace[V, F], order: Order[F]): DiscretePath[V, F] =
+    DiscretePath(Vector(nvs.zero))
 
   /**
    * The default semigroup instance that concats paths by rebasing.
    *
    * Notice that this structure
    *   - is associative
-   *   - is only unital if you identify `x concatRebase empty` with `x`, where the former has an
+   *   - is only unital if you identify `x concatRebase zero` with `x`, where the former has an
    *     extra point.
    *   - does not admit inverses. Concatenating a reverse path does not erase the original path.
    */
@@ -192,6 +195,22 @@ object DiscretePath {
     override def combine(x: DiscretePath[V, F], y: DiscretePath[V, F]): DiscretePath[V, F] =
       x concatRebase y
 
+  /**
+   * Sample the continuous function [[f]] on the closed interval `I = [0.0, 1.0]`.
+   *
+   * The sampled path `π` satisfies the following conditions:
+   *   - `π` starts with `f(0.0): V` and ends with `f(1.0): V`
+   *   - each point `v: V` of `π` is a "sample" of [[f]], in a sense that there is `t_v: Double`
+   *     in the closed interval `I` such that `f(t_v) = v`. Moreover, the sampling is done in an
+   *     increasing order, meaning that if `v` appears before `w` in `π`, then `t_v < t_w`.
+   *   - two consecutive `v: V` and `w: V` of `π` are "sufficiently close" samples, in a sense
+   *     that
+   *     - `|t_v - w_v| < maximumDomainGap`
+   *     - `distance(v, w) < maximumRangeGap`
+   *
+   * This function is undefined for [[f]] which is not continuous (with respect to the metric
+   * induced by the norm structure of [[V]]; see [[NormedVectorSpace]]).
+   */
   def sampleContinuous[V, F: Order](f: Double => V,
                                     maximumRangeGap: F,
                                     maximumDomainGap: Double = 0.01
@@ -257,6 +276,9 @@ object DiscretePath {
     go(NonEmptyList.one(sampleAt(0.0)), None, List(sampleAt(1.0)))
   }
 
+  /**
+   * A wrapper for [[sampleContinuous]] that operates on a normed vector space over [[Double]].
+   */
   def sampleDouble[V](
     f: Double => V,
     maximumRangeGap: Double = 0.1,
