@@ -59,6 +59,10 @@ def simpleClient_1_12_2(): Unit = {
       client.readLoopUntilDefined[Nothing] {
         case client.ReadLoopStepResult.WorldUpdate(worldView) =>
           IO(println(s"WorldView updated: $worldView")) >> IO.pure(None)
+
+        // CAUTION: Receiving a parameter `packet` here *SIGNIFICANTLY* (about 6s to 60s) increases
+        // compilation time. You may wish to ignore the parameter with
+        // `PacketArrived(_)` to reduce compilation time.
         case client.ReadLoopStepResult.PacketArrived(packet) =>
           IO(println(s"Visible packet: $packet")) >> IO.pure(None)
       }
