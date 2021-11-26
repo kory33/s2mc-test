@@ -97,7 +97,7 @@ object ByteCodecs {
       } yield LenPrefixedSeq(aList.toVector)
 
       val encode: ByteEncode[LenPrefixedSeq[L, A]] = { (lenSeq: LenPrefixedSeq[L, A]) =>
-        ByteCodec[L].encode.write(lenSeq.lLength) ++ ByteEncode[Vector[A]]
+        ByteCodec[L].encode.write(lenSeq.lLength) ++ ByteEncode.forVector[A]
           .write(lenSeq.asVector)
       }
 
@@ -180,14 +180,14 @@ object ByteCodecs {
           case EntityEquipment(slot, _) =>
             (slot & 0x80) != 0
         },
-        summon[ByteEncode[Vector[EntityEquipment]]]
+        ByteEncode.forVector[EntityEquipment]
       )
     }
 
     given ByteCodec[Biomes3D] =
       ByteCodec[Biomes3D](
         ByteCodec[Int].decode.replicateA(1024).map { intList => Biomes3D(intList.toArray) },
-        biome => ByteEncode[Vector[Int]].write(biome.arrayData.toVector)
+        biome => ByteEncode.forVector[Int].write(biome.arrayData.toVector)
       )
 
     given ByteCodec[PlayerProperty] = autogenerateFor[PlayerProperty]
