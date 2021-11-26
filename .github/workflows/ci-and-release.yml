@@ -59,7 +59,8 @@ jobs:
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        if: !startsWith(github.ref, 'refs/tags/v')
+        # we need quotation: https://github.community/t/expression-syntax-for-not-startswith/17040
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         run: sbt publishSigned
 
       - name: Publish artifacts to Maven central
