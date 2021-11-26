@@ -81,7 +81,7 @@ jobs:
           sed -i -e "s~ThisBuild / version := \".*\"~ThisBuild / version := \"$DECLARED_VERSION\"~" build.sbt
 
           # publish to local repository, and then release bundle
-          sbt "publishSigned; releaseSonatypeBundle"
+          sbt "publishSigned; sonatypeBundleRelease"
 
   create-release:
     runs-on: ubuntu-latest
