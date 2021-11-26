@@ -1,17 +1,15 @@
 name: Run cached tests
 
-# Build script adopted from itemstack-count-infrastructure (https://github.com/kory33/itemstack-count-infrastructure/blob/22721250c3e8bb2688538e3933a5f5f998406c2c/.github/workflows/create-release.yml)
+# Build script adopted from itemstack-count-infrastructure
+# https://github.com/kory33/itemstack-count-infrastructure/blob/22721250c3e8bb2688538e3933a5f5f998406c2c/.github/workflows/create-release.yml
 
 on:
   push:
     branches:
       - 'master'
-      - 'develop'
       - 'feature/**'
-  pull_request:
-    branches:
-      - 'master'
-      - 'develop'
+    tags:
+      - 'v*'
 
 jobs:
   lint_and_test:
@@ -50,7 +48,6 @@ jobs:
         with:
           cache-version: v-2
 
-      # releasing (possibly snapshot) artifacts
       - name: Import signing PGP key
         env:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
@@ -58,8 +55,29 @@ jobs:
           gpg --version
           echo "$PGP_SECRET" | gpg --import
 
-      - name: Publish
+      - name: Publish snapshot artifacts
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        if: !startsWith(github.ref, 'refs/tags/v')
         run: sbt publishSigned
+
+      - name: Publish artifacts to Maven central
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          DECLARED_VERSION=$(cat build.sbt | grep -oP "(?<=ThisBuild / version := \")((\d+\.)+\d+)(?=-SNAPSHOT\")")
+          TAGGED_VERSION=$(echo ${{ github.ref }} | sed -e "s~^refs/tags/v~~")
+
+          if [ $DECLARED_VERSION != $TAGGED_VERSION ]; then
+            echo "Found $DECLARED_VERSION on build.sbt, but tagged $TAGGED_VERSION. Exiting..."
+            exit 1
+          fi
+
+          # set the artifact version to DECLARED_VERSION
+          sed -i -e "s~ThisBuild / version := \".*\"~ThisBuild / version := \"$DECLARED_VERSION\"~" build.sbt
+
+          # publish to local repository, and then release bundle
+          sbt "publishSigned; releaseSonatypeBundle"
