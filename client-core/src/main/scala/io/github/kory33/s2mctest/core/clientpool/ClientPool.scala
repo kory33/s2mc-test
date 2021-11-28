@@ -3,7 +3,7 @@ package io.github.kory33.s2mctest.core.clientpool
 import cats.effect.MonadCancelThrow
 import cats.effect.kernel.{Ref, Resource}
 import cats.{Monad, MonadThrow}
-import io.github.kory33.s2mctest.core.client.SightedClient
+import io.github.kory33.s2mctest.core.client.{ClientIdentity, SightedClient}
 
 trait ClientPool[F[_], ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView] {
 
@@ -27,6 +27,21 @@ trait ClientPool[F[_], ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple,
    * This resource may block (semantically) on initialisation if the pool is full.
    */
   val recycledClient: Resource[F, Client]
+
+  type Identity
+
+  /**
+   * A [[Resource]] that acquires a new [[Identity]] that can be used to create a [[Client]] via
+   * [[uncachedClientWith]] method.
+   */
+  val freshIdentity: Resource[F, Identity]
+
+  /**
+   * Create a client that is guaranteed to have [[Identity]] as an identity. The acquired client
+   * is never cached; it is guaranteed that the client has been disconnected by the time the
+   * returned resource went out of scope.
+   */
+  def uncachedClientWith(account: Identity): Resource[F, Client]
 
 }
 
@@ -134,6 +149,13 @@ object ClientPool {
             case None         => freshClient
           }
         }
+
+        override type Identity = String
+
+        override val freshIdentity: Resource[F, Identity] = Resource.eval(accountPool.getFresh)
+
+        override def uncachedClientWith(account: Identity): Resource[F, Client] =
+          init.initializeFresh(account, initialState)
       }
     }
   }
