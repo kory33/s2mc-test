@@ -7,14 +7,7 @@ import io.github.kory33.s2mctest.core.client.SightedClient
 
 trait ClientPool[F[_], ServerBoundPackets <: Tuple, ClientBoundPackets <: Tuple, WorldView] {
 
-  final type AssociatedServerBoundPackets = ServerBoundPackets
-  final type AssociatedClientBoundPackets = ClientBoundPackets
   final type Client = SightedClient[F, ServerBoundPackets, ClientBoundPackets, WorldView]
-
-  /**
-   * The account pool from which client usernames are atomically generated.
-   */
-  val accountPool: AccountPool[F]
 
   /**
    * [[Resource]] of a client that is guaranteed to be in a state right after login has
@@ -45,15 +38,10 @@ object ClientPool {
     ClientBoundPackets <: Tuple,
     State
   ](
-    _accountPool: AccountPool[F],
+    accountPool: AccountPool[F],
     initialState: State,
     init: ClientInitialization[F, ServerBoundPackets, ClientBoundPackets, State]
   ) {
-
-    final type PoolWith[AccountPool] =
-      ClientPool[F, ServerBoundPackets, ClientBoundPackets, State] {
-        val accountPool: AccountPool
-      }
 
     import cats.implicits.given
 
@@ -62,7 +50,8 @@ object ClientPool {
      * connections, but will stop caching the connections once the total number of clients
      * reaches [[softBound]].
      */
-    def cached(softBound: Int): F[PoolWith[_accountPool.type]] = {
+    def cached(softBound: Int)
+      : F[ClientPool[F, ServerBoundPackets, ClientBoundPackets, State]] = {
 
       /**
        * A dormant client cached inside the pool.
@@ -115,8 +104,6 @@ object ClientPool {
             }
             _ <- if cached then Monad[F].unit else cancelPacketReadLoop >> clientFinalizer
           } yield ()
-
-        override val accountPool: _accountPool.type = _accountPool
 
         override val freshClient: Resource[F, Client] = {
           val allocate: F[(Client, F[Unit])] =
