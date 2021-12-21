@@ -10,6 +10,8 @@ import java.util.UUID
 import PacketDataPrimitives.*
 import PacketDataCompoundTypes.*
 
+import scala.collection.BitSet
+
 /**
  * -- from Stevenarella(https://github.com/iceiix/stevenarella),
  * -- which is based on Steven (https://github.com/thinkofname/steven)
@@ -393,6 +395,11 @@ object PacketIntent {
         require(craftingBookOpen.nonEmpty == (action == VarInt(1)))
         require(craftingFilter.nonEmpty == (action == VarInt(1)))
       }
+
+      /**
+       * Pong is used to response to the Ping
+       */
+      case class Pong(id: Int)
 
       /**
        * SetDisplayedRecipe replaces CraftingBookData, type 0.
@@ -873,6 +880,22 @@ object PacketIntent {
       )
 
       /**
+       * SculkVibration is used for SculkSensor's animation. If destinationIdentifier contains
+       * entity, then data1 means destinationEntityId and data2 means arrivalTicks, else
+       * destinationPosition means block position and data1 means arrivalTicks.
+       */
+      case class SculkVibrationSignal(
+        sourcePosition: Position,
+        destinationIdentifier: String,
+        destinationPosition: Option[Position],
+        data1: VarInt,
+        data2: Option[VarInt]
+      ) {
+        require(destinationPosition.nonEmpty == destinationIdentifier.contains("block"))
+        require(data2.nonEmpty == destinationIdentifier.contains("entity"))
+      }
+
+      /**
        * Animation is sent by the server to play an animation on a specific entity.
        */
       case class Animation(entityId: VarInt, animationId: UByte)
@@ -1053,6 +1076,13 @@ object PacketIntent {
        */
       case class WindowItems[S <: Slot](id: UByte, items: LenPrefixedSeq[Short, S])
 
+      case class WindowItems_withState[S <: Slot](
+        windowId: UByte,
+        stateId: VarInt,
+        items: LenPrefixedSeq[VarInt, S],
+        cursorItem: S
+      )
+
       /**
        * WindowProperty changes the value of a property of a window. Properties vary depending
        * on the window type.
@@ -1063,6 +1093,11 @@ object PacketIntent {
        * WindowSetSlot changes an itemstack in one of the slots in a window.
        */
       case class WindowSetSlot[S <: Slot](id: UByte, property: Short, item: S)
+
+      /**
+       * SetSlot is alternative to WindowSetSlot(since 1.17). StateId is used to ClickWindow.
+       */
+      case class SetSlot[S <: Slot](windowId: UByte, stateId: VarInt, slot: Short, item: S)
 
       /**
        * SetCooldown disables a set item (by id) for the set number of ticks
@@ -1246,6 +1281,16 @@ object PacketIntent {
         bitmask: UShort,
         addBitmask: UShort,
         compressedData: LenPrefixedByteSeq[Int]
+      )
+
+      case class ChunkData_withBlockEntity(
+        chunkX: Int,
+        chunkZ: Int,
+        bitMask: LenPrefixedSeq[VarInt, Long],
+        heightMaps: NBTCompound,
+        biomes: LenPrefixedSeq[VarInt, VarInt],
+        data: LenPrefixedByteSeq[VarInt],
+        blockEntity: LenPrefixedSeq[VarInt, NBTCompound]
       )
 
       case class ChunkDataBulk(
@@ -1814,6 +1859,11 @@ object PacketIntent {
       case class SignEditorOpen_i32(x: Int, y: Int, z: Int)
 
       /**
+       * When Ping received, client needs to responds with a Pong packet with the same id.
+       */
+      case class Ping(id: Int)
+
+      /**
        * CraftRecipeResponse is a response to CraftRecipeRequest, notifies the UI.
        */
       case class CraftRecipeResponse(windowId: UByte, recipe: VarInt)
@@ -1839,6 +1889,22 @@ object PacketIntent {
         require(entityId.nonEmpty == (event == VarInt(1) || event == VarInt(2)))
         require(message.nonEmpty == (event == VarInt(2)))
       }
+
+      /**
+       * EndCombatEvent is used to notify player ends combat. Duration is tick time since last
+       * entity attack.
+       */
+      case class EndCombatEvent(duration: VarInt, entityId: Int)
+
+      /**
+       * EnterCombatEvent is used to notify player is in combat.
+       */
+      case class EnterCombatEvent()
+
+      /**
+       * DeathCombatEvent is used to send a respawn screen.
+       */
+      case class DeathCombatEvent(playerId: VarInt, entityId: Int, message: ChatComponent)
 
       /**
        * PlayerInfo is sent by the server for every player connected to the server to provide
@@ -2019,6 +2085,11 @@ object PacketIntent {
       }
 
       /**
+       * ActionBar displays a message above the hotbar
+       */
+      case class ActionBar(chat: ChatComponent)
+
+      /**
        * WorldBorder configures the world's border.
        */
       case class WorldBorder(
@@ -2045,6 +2116,46 @@ object PacketIntent {
         require(warningTime.nonEmpty == (action == VarInt(3) || action == VarInt(4)))
         require(warningBlocks.nonEmpty == (action == VarInt(3) || action == VarInt(5)))
       }
+
+      /**
+       * WorldBorderInitialize is used to create world's border
+       */
+      case class WorldBorderInitialize(
+        x: Double,
+        z: Double,
+        oldDiameter: Double,
+        newDiameter: Double,
+        speed: VarLong,
+        portalTeleportBoundary: VarInt,
+        warningBlocks: VarInt,
+        warningTime: VarInt
+      )
+
+      /**
+       * WorldBorderCenter changes world's border center location.
+       */
+      case class WorldBorderCenter(x: Double, z: Double)
+
+      /**
+       * WorldBorderLerpSize changes world's border size.(Border will move smoothly.) Speed is
+       * number of real-time milliseconds.
+       */
+      case class WorldBorderLerpSize(oldDiameter: Double, newDiameter: Double, speed: VarLong)
+
+      /**
+       * WorldBorderSize changes world's border size.
+       */
+      case class WorldBorderSize(diameter: Double)
+
+      /**
+       * WorldBorderWarningDelay changes world's border warning time.(seconds)
+       */
+      case class WorldBorderWarningDelay(warningTime: VarInt)
+
+      /**
+       * WorldBorderWarningReach changes world's border warning length from world's border.
+       */
+      case class WorldBorderWarningReach(warningBlocks: VarInt)
 
       /**
        * Camera causes the client to spectate the entity with the passed id. Use the player's id
@@ -2305,6 +2416,21 @@ object PacketIntent {
         require(fadeStay.nonEmpty == (action == VarInt(2)))
         require(fadeOut.nonEmpty == (action == VarInt(2)))
       }
+
+      /**
+       * New Title(since 1.17)
+       */
+      case class Title_v2(title: ChatComponent)
+
+      case class SubTitle(subtitle: ChatComponent)
+
+      case class TitleFade(
+        fadeIn: Int,
+        fadeStay: Int,
+        fadeOut: Int
+      )
+
+      case class ClearTitle(reset: Boolean)
 
       /**
        * UpdateSign sets or changes the text on a sign.
