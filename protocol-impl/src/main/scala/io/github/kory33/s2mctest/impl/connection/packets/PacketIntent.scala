@@ -10,8 +10,6 @@ import java.util.UUID
 import PacketDataPrimitives.*
 import PacketDataCompoundTypes.*
 
-import scala.collection.BitSet
-
 /**
  * -- from Stevenarella(https://github.com/iceiix/stevenarella),
  * -- which is based on Steven (https://github.com/thinkofname/steven)
