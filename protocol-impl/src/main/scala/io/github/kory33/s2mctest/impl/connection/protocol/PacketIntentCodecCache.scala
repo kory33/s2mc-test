@@ -300,7 +300,7 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[Title] = autogenerateFor[Title]
   given ByteCodec[Title_notext] = autogenerateFor[Title_notext]
   given ByteCodec[Title_notext_component] = autogenerateFor[Title_notext_component]
-  given ByteCodec[Title_v2] = autogenerateFor[Title_v2]
+  given ByteCodec[Title_onlytext] = autogenerateFor[Title_onlytext]
   given ByteCodec[SubTitle] = autogenerateFor[SubTitle]
   given ByteCodec[TitleFade] = autogenerateFor[TitleFade]
   given ByteCodec[ClearTitle] = autogenerateFor[ClearTitle]

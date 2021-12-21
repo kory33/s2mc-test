@@ -161,7 +161,7 @@ object v1_17_1 {
       0x56 -> ByteCodec[UpdateScore],
       0x57 -> ByteCodec[SubTitle],
       0x58 -> ByteCodec[TimeUpdate],
-      0x59 -> ByteCodec[Title_v2],
+      0x59 -> ByteCodec[Title_onlytext],
       0x5a -> ByteCodec[TitleFade],
       0x5b -> ByteCodec[EntitySoundEffect],
       0x5c -> ByteCodec[SoundEffect],

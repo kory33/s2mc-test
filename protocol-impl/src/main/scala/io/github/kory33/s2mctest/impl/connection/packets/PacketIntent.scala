@@ -2415,10 +2415,7 @@ object PacketIntent {
         require(fadeOut.nonEmpty == (action == VarInt(2)))
       }
 
-      /**
-       * New Title(since 1.17)
-       */
-      case class Title_v2(title: ChatComponent)
+      case class Title_onlytext(title: ChatComponent)
 
       case class SubTitle(subtitle: ChatComponent)
 
