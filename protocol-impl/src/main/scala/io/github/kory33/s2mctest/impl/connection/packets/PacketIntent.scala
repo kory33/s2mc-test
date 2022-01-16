@@ -878,20 +878,13 @@ object PacketIntent {
       )
 
       /**
-       * SculkVibration is used for SculkSensor's animation. If destinationIdentifier contains
-       * entity, then data1 means destinationEntityId and data2 means arrivalTicks, else
-       * destinationPosition means block position and data1 means arrivalTicks.
+       * SculkVibration is used for SculkSensor's animation.
        */
       case class SculkVibrationSignal(
         sourcePosition: Position,
-        destinationIdentifier: String,
-        destinationPosition: Option[Position],
-        data1: VarInt,
-        data2: Option[VarInt]
-      ) {
-        require(destinationPosition.nonEmpty == destinationIdentifier.contains("block"))
-        require(data2.nonEmpty == destinationIdentifier.contains("entity"))
-      }
+        destination: SculkVibrationSignalDestination,
+        arrivalTicks: VarInt
+      )
 
       /**
        * Animation is sent by the server to play an animation on a specific entity.

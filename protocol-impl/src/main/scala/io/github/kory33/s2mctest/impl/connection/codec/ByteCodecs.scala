@@ -462,6 +462,32 @@ object ByteCodecs {
         case NBTCompoundOrEnd.End => fs2.Chunk(0x00: Byte)
       }
     )
+
+    given sculkVibrationSignalDestination(
+      using pc: ByteCodec[Position]
+    ): ByteCodec[SculkVibrationSignalDestination] =
+      ByteCodec[SculkVibrationSignalDestination](
+        {
+          ByteCodec[String].decode.flatMap {
+            case "block" =>
+              pc.decode.map(SculkVibrationSignalDestination.Block.apply)
+            case "entity" =>
+              ByteCodec[VarInt].decode.map(SculkVibrationSignalDestination.Entity.apply)
+            case tpe =>
+              DecodeFiniteBytes.giveUp(
+                s"The SculkVibrationSignalDestination type $tpe is unknown to the parser."
+              )
+          }
+        },
+        {
+          case SculkVibrationSignalDestination.Block(position) =>
+            ByteCodec[String].encode.write("block") ++
+              ByteCodec[Position].encode.write(position)
+          case SculkVibrationSignalDestination.Entity(id) =>
+            ByteCodec[String].encode.write("entity") ++
+              ByteCodec[VarInt].encode.write(id)
+        }
+      )
   }
 
   object PositionCodec {

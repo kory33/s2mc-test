@@ -465,3 +465,7 @@ object PacketDataCompoundTypes:
    * We use [[Slot.Upto_1_17_1]] because protocols earlier than 1.13 don't declare recipes
    */
   @NoGenByteDecode case class Recipe(identifier: String, data: RecipeData)
+
+  enum SculkVibrationSignalDestination:
+    @NoGenByteDecode case Block(position: Position)
+    @NoGenByteDecode case Entity(id: VarInt)
