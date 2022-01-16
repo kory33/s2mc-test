@@ -1288,7 +1288,7 @@ object PacketIntent {
         heightMaps: NBTCompound,
         biomes: LenPrefixedSeq[VarInt, VarInt],
         data: LenPrefixedByteSeq[VarInt],
-        blockEntity: LenPrefixedSeq[VarInt, NBTCompound]
+        blockEntities: LenPrefixedSeq[VarInt, NBTCompound]
       )
 
       case class ChunkDataBulk(
