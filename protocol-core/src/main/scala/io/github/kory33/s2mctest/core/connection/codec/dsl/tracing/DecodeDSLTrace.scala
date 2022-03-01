@@ -5,11 +5,6 @@ sealed trait DecodeDSLTrace
 object DecodeDSLTrace {
 
   /**
-   * A value indicating that no tracing information is available
-   */
-  case object NotAvailable extends DecodeDSLTrace
-
-  /**
    * A [[DecodeDSLTrace]] which is also a [[Throwable]].
    *
    * These objects encapsulate the stack trace information (as filled in by the [[Throwable]]
