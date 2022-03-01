@@ -1,12 +1,14 @@
 package io.github.kory33.s2mctest.core.connection.codec.interpreters
 
+import io.github.kory33.s2mctest.core.connection.codec.dsl.tracing.DecodeDSLTrace
+
 /**
  * Errors that could be encountered while parsing a binary data source.
  */
 enum ParseError:
-  case RanOutOfBytes
+  case RanOutOfBytes(trace: DecodeDSLTrace)
   case Raised(error: Throwable)
-  case GaveUp(reason: String)
+  case GaveUp(reason: String, trace: DecodeDSLTrace)
 
 /**
  * The result of parsing a meaningful block (e.g. a packet body) of binary data.
