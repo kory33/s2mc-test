@@ -6,7 +6,7 @@ import io.github.kory33.s2mctest.core.connection.codec.dsl.tracing.DecodeDSLTrac
  * Errors that could be encountered while parsing a binary data source.
  */
 enum ParseError:
-  case RanOutOfBytes(trace: DecodeDSLTrace)
+  case RanOutOfBytes(remainingChunk: fs2.Chunk[Byte], requiredBytes: Int, trace: DecodeDSLTrace)
   case Raised(error: Throwable)
   case GaveUp(reason: String, trace: DecodeDSLTrace)
 

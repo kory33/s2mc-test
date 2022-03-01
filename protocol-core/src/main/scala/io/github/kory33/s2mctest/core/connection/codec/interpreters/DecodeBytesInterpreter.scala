@@ -23,7 +23,7 @@ object DecodeBytesInterpreter {
               EitherT {
                 State { remainingChunk =>
                   if remainingChunk.size < n then
-                    (remainingChunk, Left(ParseError.RanOutOfBytes(trace)))
+                    (remainingChunk, Left(ParseError.RanOutOfBytes(remainingChunk, n, trace)))
                   else
                     val (read, newRemaining) = remainingChunk.splitAt(n)
                     (newRemaining, Right(read))
