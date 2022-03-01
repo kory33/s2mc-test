@@ -2,6 +2,8 @@ package io.github.kory33.s2mctest.core.connection.codec.interpreters
 
 import io.github.kory33.s2mctest.core.connection.codec.dsl.tracing.DecodeDSLTrace
 
+import java.io.{PrintWriter, StringWriter}
+
 /**
  * Errors that could be encountered while parsing a binary data source.
  */
@@ -9,6 +11,26 @@ enum ParseError:
   case RanOutOfBytes(remainingChunk: fs2.Chunk[Byte], requiredBytes: Int, trace: DecodeDSLTrace)
   case Raised(error: Throwable)
   case GaveUp(reason: String, trace: DecodeDSLTrace)
+
+object ParseError {
+  def show(error: ParseError): String = {
+    def showStackTrace(trace: DecodeDSLTrace): String = trace match {
+      case trace: DecodeDSLTrace.StackTrace =>
+        val sw = new StringWriter
+        trace.printStackTrace(new PrintWriter(sw))
+        sw.toString
+    }
+
+    error match {
+      case ParseError.RanOutOfBytes(remainingChunk, requiredBytes, trace) =>
+        s"RanOutBytes($remainingChunk, $requiredBytes), stacktrace: \n${showStackTrace(trace)}"
+      case ParseError.Raised(error) =>
+        s"Raised($error)"
+      case ParseError.GaveUp(reason, trace) =>
+        s"GiveUp($reason), stacktrace: \n${showStackTrace(trace)}"
+    }
+  }
+}
 
 /**
  * The result of parsing a meaningful block (e.g. a packet body) of binary data.

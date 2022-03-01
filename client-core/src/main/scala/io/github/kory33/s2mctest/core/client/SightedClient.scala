@@ -4,7 +4,8 @@ import cats.effect.*
 import cats.effect.std.Semaphore
 import cats.{Monad, MonadThrow}
 import fs2.concurrent.Topic
-import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
+import io.github.kory33.s2mctest.core.connection.codec.dsl.tracing.DecodeDSLTrace
+import io.github.kory33.s2mctest.core.connection.codec.interpreters.{ParseError, ParseResult}
 import io.github.kory33.s2mctest.core.connection.transport
 import io.github.kory33.s2mctest.core.connection.transport.{
   ProtocolBasedReadTransport,
@@ -12,6 +13,8 @@ import io.github.kory33.s2mctest.core.connection.transport.{
   WritablePacketIn
 }
 import io.github.kory33.s2mctest.core.generic.compiletime.IndexKnownIn
+
+import java.io.{PrintWriter, StringWriter}
 
 /**
  * The class of Minecraft clients that associate incoming packets to updates of state of the
@@ -87,7 +90,9 @@ class SightedClient[
             }
           case ParseResult.Errored(error, input) =>
             MonadThrow[F].raiseError {
-              java.io.IOException(s"Error while reading packets: got $error on $input")
+              java.io.IOException(
+                s"Error while reading packets:\n${ParseError.show(error)}\n\tWhen parsing:\n\t$input"
+              )
             }
         }
         updateFunction = abstraction.viewUpdate(packet)
