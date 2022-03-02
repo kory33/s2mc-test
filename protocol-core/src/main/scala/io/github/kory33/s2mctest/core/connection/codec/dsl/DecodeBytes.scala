@@ -1,7 +1,6 @@
 package io.github.kory33.s2mctest.core.connection.codec.dsl
 
 import cats.free.Free
-import io.github.kory33.s2mctest.core.connection.codec.dsl.tracing.DecodeDSLTrace
 
 /**
  * The instruction set for an embedded domain specific language (eDSL) that is able to express
@@ -15,21 +14,14 @@ enum ReadBytesInstruction[R]:
    * An instruction to read precisely [[n]] bytes from the data source. If an interpreter cannot
    * fulfill this requirement, it must interrupt the execution (i.e. throw with EitherT
    * capability or early-return with OptionT capability).
-   *
-   * `trace` contains information describing where this instruction is constructed, and is used
-   * by interpreters for reporting internal errors.
    */
-  case ReadWithSize(n: Int, trace: DecodeDSLTrace)
-      extends ReadBytesInstruction[fs2.Chunk[Byte] /* Size: n */ ]
+  case ReadWithSize(n: Int) extends ReadBytesInstruction[fs2.Chunk[Byte] /* Size: n */ ]
 
   /**
    * An instruction to abort parsing of the data source for an encounter with invalid input
    * data.
    *
    * This instruction does not read any input.
-   *
-   * Note: no tracing is provided here because the [[Throwable]] object should already contain
-   * enough tracing information.
    */
   case RaiseError(error: Throwable) extends ReadBytesInstruction[Nothing]
 
@@ -42,11 +34,8 @@ enum ReadBytesInstruction[R]:
    * This is semantically different from [[SignalInvalidData]], because [[SignalInvalidData]]
    * says that input data is known to be invalid while [[GiveUp]] says that the data is in an
    * unknown format.
-   *
-   * `trace` contains information describing where this instruction is constructed, and is used
-   * by interpreters for reporting internal errors.
    */
-  case GiveUp(reason: String, trace: DecodeDSLTrace) extends ReadBytesInstruction[Nothing]
+  case GiveUp(reason: String) extends ReadBytesInstruction[Nothing]
 
 /**
  * Programs of ReadBytes DSL.
@@ -66,13 +55,13 @@ object DecodeBytes:
   def pure[A](a: A): DecodeBytes[A] = Free.pure(a)
 
   def read(n: Int): DecodeBytes[fs2.Chunk[Byte]] =
-    Free.liftF(ReadBytesInstruction.ReadWithSize(n, DecodeDSLTrace.computeCurrentTrace()))
+    Free.liftF(ReadBytesInstruction.ReadWithSize(n))
 
   def raiseError[A](error: Throwable): DecodeBytes[A] =
     Free.liftF(ReadBytesInstruction.RaiseError(error)).widen
 
   def giveUp[A](reason: String): DecodeBytes[A] =
-    Free.liftF(ReadBytesInstruction.GiveUp(reason, DecodeDSLTrace.computeCurrentTrace())).widen
+    Free.liftF(ReadBytesInstruction.GiveUp(reason)).widen
 
   def catchThrowableIn[A](a: => A): DecodeBytes[A] =
     try pure(a)

@@ -19,11 +19,11 @@ object DecodeBytesInterpreter {
       [A] =>
         (instruction: ReadBytesInstruction[A]) =>
           instruction match {
-            case ReadBytesInstruction.ReadWithSize(n, trace) =>
+            case ReadBytesInstruction.ReadWithSize(n) =>
               EitherT {
                 State { remainingChunk =>
                   if remainingChunk.size < n then
-                    (remainingChunk, Left(ParseError.RanOutOfBytes(remainingChunk, n, trace)))
+                    (remainingChunk, Left(ParseError.RanOutOfBytes))
                   else
                     val (read, newRemaining) = remainingChunk.splitAt(n)
                     (newRemaining, Right(read))
@@ -31,8 +31,8 @@ object DecodeBytesInterpreter {
               }
             case ReadBytesInstruction.RaiseError(error) =>
               EitherT.leftT(ParseError.Raised(error))
-            case ReadBytesInstruction.GiveUp(message, trace) =>
-              EitherT.leftT(ParseError.GaveUp(message, trace))
+            case ReadBytesInstruction.GiveUp(message) =>
+              EitherT.leftT(ParseError.GaveUp(message))
           }: EitherParseErrorTState[A] // help type inference
     }
   }
@@ -52,7 +52,7 @@ object DecodeBytesInterpreter {
             [X] =>
               (instruction: ReadBytesInstruction[X]) =>
                 instruction match {
-                  case ReadBytesInstruction.ReadWithSize(n, _) =>
+                  case ReadBytesInstruction.ReadWithSize(n) =>
                     EitherT.liftF {
                       Monad[F].ifM(hasCompletedARead.get)(
                         readBytes(n),
@@ -61,8 +61,8 @@ object DecodeBytesInterpreter {
                     }
                   case ReadBytesInstruction.RaiseError(error) =>
                     EitherT.leftT(ParseError.Raised(error))
-                  case ReadBytesInstruction.GiveUp(message, trace) =>
-                    EitherT.leftT(ParseError.GaveUp(message, trace))
+                  case ReadBytesInstruction.GiveUp(message) =>
+                    EitherT.leftT(ParseError.GaveUp(message))
                 }: EitherT[F, ParseError, X] // help type inference
           }
 
