@@ -1933,6 +1933,17 @@ object PacketIntent {
         teleportId: VarInt
       )
 
+      case class TeleportPlayer_WithDismount(
+        x: Double,
+        y: Double,
+        z: Double,
+        yaw: Float,
+        pitch: Float,
+        flags: UByte,
+        teleportId: VarInt,
+        dismount: Boolean
+      )
+
       case class TeleportPlayer_NoConfirm(
         x: Double,
         y: Double,

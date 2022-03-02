@@ -238,6 +238,7 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[PlayerInfo_String] = autogenerateFor[PlayerInfo_String]
   given ByteCodec[FacePlayer] = autogenerateFor[FacePlayer]
   given ByteCodec[TeleportPlayer_WithConfirm] = autogenerateFor[TeleportPlayer_WithConfirm]
+  given ByteCodec[TeleportPlayer_WithDismount] = autogenerateFor[TeleportPlayer_WithDismount]
   given ByteCodec[TeleportPlayer_NoConfirm] = autogenerateFor[TeleportPlayer_NoConfirm]
   given ByteCodec[TeleportPlayer_OnGround] = autogenerateFor[TeleportPlayer_OnGround]
   given ByteCodec[EntityUsedBed] = autogenerateFor[EntityUsedBed]
