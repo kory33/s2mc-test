@@ -16,7 +16,7 @@ object ParseError {
   /**
    * A [[Throwable]] value indicating that the parser gave up parsing for a reason
    */
-  case class GaveUp(reason: String) extends Throwable
+  case class GaveUp(reason: String) extends Throwable(reason)
 }
 
 /**
