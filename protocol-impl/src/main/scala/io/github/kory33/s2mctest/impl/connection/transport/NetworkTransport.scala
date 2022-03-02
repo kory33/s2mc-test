@@ -80,13 +80,12 @@ object NetworkTransport {
                         case Left(parseError) =>
                           cats.MonadThrow[F].raiseError {
                             parseError match {
-                              case ParseError.Raised(error)                             => error
-                              case ParseError.RanOutOfBytes(remaining, required, trace) =>
-                                // runProgramCancellably with a socket should not result in this error,
-                                // because failure to read enough bytes should fail this entire uncancelable block
-                                // instead of reporting the situation back as a ParseError.
-                                RuntimeException("unreachable")
-                              case ParseError.GaveUp(reason, trace) =>
+                              case ParseError.Raised(error) => error
+                              case ParseError.RanOutOfBytes =>
+                                RuntimeException(
+                                  "unreachable (Sockets should not run out of bytes)"
+                                )
+                              case ParseError.GaveUp(reason) =>
                                 IOException(
                                   s"Parsing gave up while reading packet length: $reason"
                                 )
@@ -102,11 +101,9 @@ object NetworkTransport {
                           cats.MonadThrow[F].raiseError {
                             error match {
                               case ParseError.Raised(error) => error
-                              case ParseError.RanOutOfBytes(remaining, required, trace) =>
-                                IOException(
-                                  "Ran out of bytes while reading the packet ID"
-                                )
-                              case ParseError.GaveUp(reason, trace) =>
+                              case ParseError.RanOutOfBytes =>
+                                IOException("Ran out of bytes while reading the packet ID")
+                              case ParseError.GaveUp(reason) =>
                                 IOException(
                                   s"Parsing gave up while reading the packet ID: $reason"
                                 )

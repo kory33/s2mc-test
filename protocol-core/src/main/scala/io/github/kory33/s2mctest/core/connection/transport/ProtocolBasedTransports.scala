@@ -68,6 +68,14 @@ case class ProtocolBasedReadTransport[F[_], SelfBoundPackets <: Tuple](
         val decoderProgram: DecodeFiniteBytes[Tuple.Union[SelfBoundPackets]] =
           selfBoundBindings.decoderFor(packetId)
 
-        DecodeFiniteBytesInterpreter.runProgramOnChunk(chunk, decoderProgram)
+        DecodeFiniteBytesInterpreter.runProgramOnChunk(
+          chunk,
+          // this unchecked cast is safe as
+          //   PacketIn[Map[Ps, CodecBinding]]
+          //     = Union[PacketTupleFor[Map[Ps, CodecBinding]]]
+          //     = Union[InverseMap[Map[Ps, CodecBinding], CodecBinding]]
+          //     = Union[Ps] // InverseMap[Map[T, F], F] always equals T for T <: Tuple
+          decoderProgram.asInstanceOf[DecodeFiniteBytes[Tuple.Union[SelfBoundPackets]]]
+        )
     }
 }
