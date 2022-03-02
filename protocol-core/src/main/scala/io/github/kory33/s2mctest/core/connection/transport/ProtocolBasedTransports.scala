@@ -4,6 +4,7 @@ import cats.Functor
 import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import io.github.kory33.s2mctest.core.connection.codec.interpreters.{
   DecodeFiniteBytesInterpreter,
+  ParseError,
   ParseResult
 }
 import io.github.kory33.s2mctest.core.connection.protocol.{CodecBinding, PacketIdBindings}
@@ -68,6 +69,12 @@ case class ProtocolBasedReadTransport[F[_], SelfBoundPackets <: Tuple](
         val decoderProgram: DecodeFiniteBytes[Tuple.Union[SelfBoundPackets]] =
           selfBoundBindings.decoderFor(packetId)
 
-        DecodeFiniteBytesInterpreter.runProgramOnChunk(chunk, decoderProgram)
+        DecodeFiniteBytesInterpreter
+          .runProgramOnChunk(chunk, decoderProgram)
+          .transformError { e =>
+            ParseError.Raised(
+              new Throwable(s"Encountered an error while parsing (packet id: $packetId)", e)
+            )
+          }
     }
 }
