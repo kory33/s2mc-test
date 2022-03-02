@@ -128,7 +128,7 @@ object v1_17_1 {
       0x35 -> ByteCodec[DeathCombatEvent],
       0x36 -> ByteCodec[PlayerInfo],
       0x37 -> ByteCodec[FacePlayer],
-      0x38 -> ByteCodec[TeleportPlayer_WithConfirm],
+      0x38 -> ByteCodec[TeleportPlayer_WithDismount],
       0x39 -> ByteCodec[UnlockRecipes_WithBlastSmoker],
       0x3a -> ByteCodec[EntityDestroy],
       0x3b -> ByteCodec[EntityRemoveEffect],
