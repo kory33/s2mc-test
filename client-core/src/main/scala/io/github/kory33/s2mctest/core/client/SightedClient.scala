@@ -87,7 +87,7 @@ class SightedClient[
             }
           case ParseResult.Errored(error, input) =>
             MonadThrow[F].raiseError {
-              java.io.IOException(s"Error while reading packets: got $error on $input")
+              java.io.IOException(s"Error while reading packets on $input", error)
             }
         }
         updateFunction = abstraction.viewUpdate(packet)
