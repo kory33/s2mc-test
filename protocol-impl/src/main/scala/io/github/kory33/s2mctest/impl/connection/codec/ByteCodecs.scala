@@ -155,6 +155,8 @@ object ByteCodecs {
 
     given ByteCodec[Tag] = autogenerateFor[Tag]
 
+    given ByteCodec[TagArrayWithType] = autogenerateFor[TagArrayWithType]
+
     given ByteCodec[Slot.Upto_1_12_2] = autogenerateFor[Slot.Upto_1_12_2]
 
     given ByteCodec[Slot.Upto_1_17_1] = autogenerateFor[Slot.Upto_1_17_1]

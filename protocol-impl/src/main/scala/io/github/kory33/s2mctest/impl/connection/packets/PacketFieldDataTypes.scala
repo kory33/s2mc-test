@@ -238,9 +238,17 @@ object PacketDataCompoundTypes:
     final val Current = Upto_1_17_1
   }
 
+  /**
+   * See https://wiki.vg/index.php?title=Protocol&oldid=16866#Tags for more details
+   */
   case class Tag(identifier: String, ids: LenPrefixedSeq[VarInt, VarInt])
 
   type TagArray = LenPrefixedSeq[VarInt, Tag]
+
+  /**
+   * See https://wiki.vg/index.php?title=Protocol&oldid=16866#Tags for more details
+   */
+  case class TagArrayWithType(tagType: String, tagArray: TagArray)
 
   /**
    * see https://wiki.vg/index.php?title=Protocol&oldid=7077#Map_Chunk_Bulk for details

@@ -174,7 +174,7 @@ object v1_17_1 {
       0x63 -> ByteCodec[EntityProperties],
       0x64 -> ByteCodec[EntityEffect],
       0x65 -> ByteCodec[DeclareRecipes],
-      0x66 -> ByteCodec[TagsWithEntities],
+      0x66 -> ByteCodec[TagsWithTypes],
     ))
   )
   // format: on

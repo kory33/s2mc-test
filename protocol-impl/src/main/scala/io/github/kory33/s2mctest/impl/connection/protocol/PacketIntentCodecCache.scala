@@ -324,6 +324,7 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[DeclareRecipes] = autogenerateFor[DeclareRecipes]
   given ByteCodec[Tags] = autogenerateFor[Tags]
   given ByteCodec[TagsWithEntities] = autogenerateFor[TagsWithEntities]
+  given ByteCodec[TagsWithTypes] = autogenerateFor[TagsWithTypes]
   given ByteCodec[AcknowledgePlayerDigging] = autogenerateFor[AcknowledgePlayerDigging]
   given ByteCodec[UpdateLight_WithTrust] = autogenerateFor[UpdateLight_WithTrust]
   given ByteCodec[UpdateLight_NoTrust] = autogenerateFor[UpdateLight_NoTrust]

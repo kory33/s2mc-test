@@ -2571,14 +2571,19 @@ object PacketIntent {
 
       case class DeclareRecipes(recipes: LenPrefixedSeq[VarInt, Recipe])
 
+      // "Tags" on 1.13
       case class Tags(blockTags: TagArray, itemTags: TagArray, fluidTags: TagArray)
 
+      // "Tags" from 1.14 until 1.16
       case class TagsWithEntities(
         blockTags: TagArray,
         itemTags: TagArray,
         fluidTags: TagArray,
         entityTags: TagArray
       )
+
+      // "Tags" from 1.17. See https://wiki.vg/index.php?title=Protocol&oldid=16866#Tags for more details
+      case class TagsWithTypes(tags: LenPrefixedSeq[VarInt, TagArrayWithType])
 
       case class AcknowledgePlayerDigging(
         location: Position,
