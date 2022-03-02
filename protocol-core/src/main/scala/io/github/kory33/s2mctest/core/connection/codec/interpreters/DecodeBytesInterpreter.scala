@@ -30,7 +30,7 @@ object DecodeBytesInterpreter {
                 }
               }
             case ReadBytesInstruction.RaiseError(error) =>
-              EitherT.leftT(ParseError.Raised(error))
+              EitherT.leftT(error)
             case ReadBytesInstruction.GiveUp(message) =>
               EitherT.leftT(ParseError.GaveUp(message))
           }: EitherParseErrorTState[A] // help type inference
@@ -60,7 +60,7 @@ object DecodeBytesInterpreter {
                       )
                     }
                   case ReadBytesInstruction.RaiseError(error) =>
-                    EitherT.leftT(ParseError.Raised(error))
+                    EitherT.leftT(error)
                   case ReadBytesInstruction.GiveUp(message) =>
                     EitherT.leftT(ParseError.GaveUp(message))
                 }: EitherT[F, ParseError, X] // help type inference

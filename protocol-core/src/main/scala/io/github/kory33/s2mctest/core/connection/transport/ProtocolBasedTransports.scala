@@ -72,9 +72,7 @@ case class ProtocolBasedReadTransport[F[_], SelfBoundPackets <: Tuple](
         DecodeFiniteBytesInterpreter
           .runProgramOnChunk(chunk, decoderProgram)
           .transformError { e =>
-            ParseError.Raised(
-              new Throwable(s"Encountered an error while parsing (packet id: $packetId)", e)
-            )
+            new Throwable(s"Encountered an error while parsing (packet id: $packetId)", e)
           }
     }
 }

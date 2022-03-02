@@ -3,10 +3,21 @@ package io.github.kory33.s2mctest.core.connection.codec.interpreters
 /**
  * Errors that could be encountered while parsing a binary data source.
  */
-enum ParseError extends Throwable:
-  case Raised(error: Throwable)
-  case RanOutOfBytes
-  case GaveUp(reason: String)
+type ParseError = Throwable
+
+object ParseError {
+  // some special parse-errors
+
+  /**
+   * A [[Throwable]] value indicating that the parser has reached an unexpected end of input
+   */
+  case object RanOutOfBytes extends Throwable
+
+  /**
+   * A [[Throwable]] value indicating that the parser gave up parsing for a reason
+   */
+  case class GaveUp(reason: String) extends Throwable
+}
 
 /**
  * The result of parsing a meaningful block (e.g. a packet body) of binary data.

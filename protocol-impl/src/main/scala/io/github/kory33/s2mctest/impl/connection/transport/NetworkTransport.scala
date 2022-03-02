@@ -80,7 +80,6 @@ object NetworkTransport {
                         case Left(parseError) =>
                           cats.MonadThrow[F].raiseError {
                             parseError match {
-                              case ParseError.Raised(error) => error
                               case ParseError.RanOutOfBytes =>
                                 RuntimeException(
                                   "unreachable (Sockets should not run out of bytes)"
@@ -89,6 +88,7 @@ object NetworkTransport {
                                 IOException(
                                   s"Parsing gave up while reading packet length: $reason"
                                 )
+                              case error => error
                             }
                           }
                       }
@@ -100,13 +100,13 @@ object NetworkTransport {
                         case ParseResult.Errored(error, _) =>
                           cats.MonadThrow[F].raiseError {
                             error match {
-                              case ParseError.Raised(error) => error
                               case ParseError.RanOutOfBytes =>
                                 IOException("Ran out of bytes while reading the packet ID")
                               case ParseError.GaveUp(reason) =>
                                 IOException(
                                   s"Parsing gave up while reading the packet ID: $reason"
                                 )
+                              case error => error
                             }
                           }
                         case ParseResult.WithExcessBytes(_, _, _) =>
