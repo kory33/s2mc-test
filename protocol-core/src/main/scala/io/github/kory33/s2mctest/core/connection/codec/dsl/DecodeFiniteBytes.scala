@@ -2,7 +2,6 @@ package io.github.kory33.s2mctest.core.connection.codec.dsl
 
 import cats.data.EitherK
 import cats.free.Free
-import io.github.kory33.s2mctest.core.connection.codec.dsl.tracing.DecodeDSLTrace
 
 /**
  * The instructions present in [[DecodeFiniteBytes]], except those already present in
@@ -11,9 +10,6 @@ import io.github.kory33.s2mctest.core.connection.codec.dsl.tracing.DecodeDSLTrac
 enum ReadFiniteBytesInstruction[T]:
   /**
    * An instruction to read all bytes until the end of the data source.
-   *
-   * Note: no tracing is provided here because a sensible interpreter always succeeds in
-   * interpreting this instruction.
    */
   case ReadUntilTheEnd extends ReadFiniteBytesInstruction[fs2.Chunk[Byte]]
 
