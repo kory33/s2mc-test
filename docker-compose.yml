@@ -1,20 +1,19 @@
 version: '3.7'
 
-volumes:
-  mc_data:
-
 services:
   mc-server:
     image: itzg/minecraft-server
     environment:
       # see https://github.com/itzg/docker-minecraft-server for configuration details
       - EULA=TRUE
-      - LEVEL_TYPE=flat
-      - VERSION=1.12.2
+      - VERSION=1.16.4
+      - MAX_PLAYERS=2000
       - ONLINE_MODE=false
+      - NETWORK_COMPRESSION_THRESHOLD=-1
+      - VIEW_DISTANCE=2
+      - LEVEL_TYPE=flat
       - DIFFICULTY=peaceful
       - GENERATE_STRUCTURES=false
-    volumes:
-      - mc_data:/data
+      - SPAWN_ANIMALS=false
     ports:
       - '25565:25565'
