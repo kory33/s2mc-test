@@ -296,6 +296,7 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[UpdateScore_i32] = autogenerateFor[UpdateScore_i32]
   given ByteCodec[SpawnPosition] = autogenerateFor[SpawnPosition]
   given ByteCodec[SpawnPosition_i32] = autogenerateFor[SpawnPosition_i32]
+  given ByteCodec[SpawnPositionWithAngle] = autogenerateFor[SpawnPositionWithAngle]
   given ByteCodec[TimeUpdate] = autogenerateFor[TimeUpdate]
   given ByteCodec[StopSound] = autogenerateFor[StopSound]
   given ByteCodec[Title] = autogenerateFor[Title]

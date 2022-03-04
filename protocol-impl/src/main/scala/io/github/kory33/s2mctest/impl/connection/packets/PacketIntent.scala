@@ -2351,10 +2351,20 @@ object PacketIntent {
       /**
        * SpawnPosition is sent to change the player's current spawn point. Currently only used
        * by the client for the compass.
+       *
+       * This packet intent is used for 1.8.9 ~ 1.16.4
        */
       case class SpawnPosition(location: Position)
 
+      /**
+       * This packet intent is used for 1.7.10
+       */
       case class SpawnPosition_i32(x: Int, y: Int, z: Int)
+
+      /**
+       * This packet intent is used for 1.17.1 ~
+       */
+      case class SpawnPositionWithAngle(location: Position, angle: Float)
 
       /**
        * TimeUpdate is sent to sync the world's time to the client, the client will manually

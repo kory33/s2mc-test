@@ -147,7 +147,7 @@ object v1_17_1 {
       0x48 -> ByteCodec[SetCurrentHotbarSlot],
       0x49 -> ByteCodec[UpdateViewPosition],
       0x4a -> ByteCodec[UpdateViewDistance],
-      0x4b -> ByteCodec[SpawnPosition],
+      0x4b -> ByteCodec[SpawnPositionWithAngle],
       0x4c -> ByteCodec[ScoreboardDisplay],
       0x4d -> ByteCodec[EntityMetadata],
       0x4e -> ByteCodec[EntityAttach],
