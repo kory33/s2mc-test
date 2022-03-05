@@ -2561,12 +2561,25 @@ object PacketIntent {
 
       /**
        * EntityProperties updates the properties for an entity.
+       *
+       * Used in versions 1.8 ~ 1.16
        */
       case class EntityProperties(
         entityId: VarInt,
         properties: LenPrefixedSeq[Int, EntityProperty]
       )
 
+      /**
+       * Used in versions 1.17 ~
+       */
+      case class EntityProperties_VarIntLength(
+        entityId: VarInt,
+        properties: LenPrefixedSeq[VarInt, EntityProperty]
+      )
+
+      /**
+       * Used in version 1.7
+       */
       case class EntityProperties_i32(
         entityId: Int,
         properties: LenPrefixedSeq[Int, EntityPropertyShort]

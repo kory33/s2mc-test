@@ -320,6 +320,7 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[EntityTeleport_i32_i32_NoGround] = autogenerateFor[EntityTeleport_i32_i32_NoGround]
   given ByteCodec[Advancements] = autogenerateFor[Advancements]
   given ByteCodec[EntityProperties] = autogenerateFor[EntityProperties]
+  given ByteCodec[EntityProperties_VarIntLength] = autogenerateFor[EntityProperties_VarIntLength]
   given ByteCodec[EntityProperties_i32] = autogenerateFor[EntityProperties_i32]
   given ByteCodec[EntityEffect] = autogenerateFor[EntityEffect]
   given ByteCodec[EntityEffect_i32] = autogenerateFor[EntityEffect_i32]

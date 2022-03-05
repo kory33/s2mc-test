@@ -171,7 +171,7 @@ object v1_17_1 {
       0x60 -> ByteCodec[CollectItem],
       0x61 -> ByteCodec[EntityTeleport_f64],
       0x62 -> ByteCodec[Advancements],
-      0x63 -> ByteCodec[EntityProperties],
+      0x63 -> ByteCodec[EntityProperties_VarIntLength],
       0x64 -> ByteCodec[EntityEffect],
       0x65 -> ByteCodec[DeclareRecipes],
       0x66 -> ByteCodec[TagsWithTypes],
