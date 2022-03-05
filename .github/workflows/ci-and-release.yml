@@ -34,6 +34,9 @@ jobs:
   publish:
     runs-on: ubuntu-20.04
     needs: lint_and_test
+    # we wish to publish on tags (non-SNAPSHOT versions)
+    # and on master branch (SNAPSHOT versions)
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.ref == 'refs/heads/master') }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -59,8 +62,7 @@ jobs:
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        # we need quotation: https://github.community/t/expression-syntax-for-not-startswith/17040
-        if: "!startsWith(github.ref, 'refs/tags/v')"
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: sbt publishSigned
 
       - name: Publish artifacts to Maven central
