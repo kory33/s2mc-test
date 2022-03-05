@@ -6,8 +6,7 @@ name: Run cached tests
 on:
   push:
     branches:
-      - 'master'
-      - 'feature/**'
+      - '*'
     tags:
       - 'v*'
 
@@ -33,7 +32,12 @@ jobs:
 
   publish:
     runs-on: ubuntu-20.04
+
+    # we wish to publish on tags (non-SNAPSHOT versions)
+    # and on master branch (SNAPSHOT versions) as long as lint_and_test passed
     needs: lint_and_test
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.ref == 'refs/heads/master') }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -55,19 +59,18 @@ jobs:
           gpg --version
           echo "$PGP_SECRET" | gpg --import
 
-      - name: Publish snapshot artifacts
+      - name: Publish SNAPSHOT artifacts to Sonatype
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        # we need quotation: https://github.community/t/expression-syntax-for-not-startswith/17040
-        if: "!startsWith(github.ref, 'refs/tags/v')"
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: sbt publishSigned
 
-      - name: Publish artifacts to Maven central
+      - name: Publish non-SNAPSHOT version to Maven central
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
           DECLARED_VERSION=$(cat build.sbt | grep -oP "(?<=ThisBuild / version := \")((\d+\.)+\d+)(?=-SNAPSHOT\")")
           TAGGED_VERSION=$(echo ${{ github.ref }} | sed -e "s~^refs/tags/v~~")
@@ -83,10 +86,13 @@ jobs:
           # publish to local repository, and then release bundle
           sbt "publishSigned; sonatypeBundleRelease"
 
-  create-release:
+  create-github-release:
     runs-on: ubuntu-latest
+
+    # when we published a non-SNAPSHOT version
     needs: publish
     if: startsWith(github.ref, 'refs/tags/v')
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
