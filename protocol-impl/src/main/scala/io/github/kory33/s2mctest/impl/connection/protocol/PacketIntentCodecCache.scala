@@ -132,6 +132,7 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[SpawnPlayer_i32_HeldItem] = autogenerateFor[SpawnPlayer_i32_HeldItem]
   given ByteCodec[SpawnPlayer_i32_HeldItem_String] = autogenerateFor[SpawnPlayer_i32_HeldItem_String]
   given ByteCodec[Animation] = autogenerateFor[Animation]
+  given ByteCodec[SculkVibrationSignal] = autogenerateFor[SculkVibrationSignal]
   given ByteCodec[Statistics] = autogenerateFor[Statistics]
   given ByteCodec[BlockBreakAnimation] = autogenerateFor[BlockBreakAnimation]
   given ByteCodec[BlockBreakAnimation_i32] = autogenerateFor[BlockBreakAnimation_i32]
@@ -376,10 +377,5 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given entityEquipment_VarInt_1_17_1: ByteCodec[EntityEquipment_VarInt[Slot.Upto_1_17_1]] = entityEquipment_VarInt[Slot.Upto_1_17_1]
   // endregion
 
-  // region Position-dependent codecs
-  given sculkVibrationSignal(using pc: ByteCodec[Position]): ByteCodec[SculkVibrationSignal] =
-    autogenerateFor[SculkVibrationSignal]
-  // endregion
-  
   // format: on
 }
