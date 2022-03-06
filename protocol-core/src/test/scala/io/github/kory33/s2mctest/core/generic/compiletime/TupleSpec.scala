@@ -16,20 +16,6 @@ class TupleSpec extends AnyFlatSpec with should.Matchers {
     summon[IncludedInT[(Int, String, Double), Float] =:= false]
   }
 
-  "ContainsDistinctT" should "tell whether a tuple contains distinct types" in {
-    summon[ContainsDistinctT[EmptyTuple] =:= true]
-    summon[ContainsDistinctT[Int *: EmptyTuple] =:= true]
-    summon[ContainsDistinctT[(Int, String, Double)] =:= true]
-    summon[ContainsDistinctT[(Int, 1, 2)] =:= true]
-    summon[ContainsDistinctT[(Int, Int | String, String)] =:= true]
-
-    summon[ContainsDistinctT[(Int, Int)] =:= false]
-    summon[ContainsDistinctT[(Int, String, Int)] =:= false]
-    summon[ContainsDistinctT[(String, Int, Int)] =:= false]
-    summon[ContainsDistinctT[(Int | String, String, Int, Int | String)] =:= false]
-    summon[ContainsDistinctT[(true, 1, 2, 3, 1, false)] =:= false]
-  }
-
   "IndexOfT" should "extract the index of a specific type from a tuple" in {
     summon[IndexOfT[Int, (String, Int)] =:= 1]
     summon[IndexOfT[42, (String, Int, 42)] =:= 2]
