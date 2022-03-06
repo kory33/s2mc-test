@@ -14,12 +14,12 @@ type CodecBinding[A] = (PacketId, ByteCodec[A])
 /**
  * An object that associates packet IDs with corresponding datatypes' codec.
  *
- * [[PacketTup]] is a tuple of packets with no duplicates, used in associating codecs. It is
- * also required that [[bindings]] should not contain two entries with the same packet ID.
+ * [[PacketTup]] is a tuple of packets with no duplicates, and is used in associating codecs. It
+ * is also required that [[bindings]] should not contain two entries with the same packet ID.
  */
 class PacketIdBindings[PacketTup <: Tuple](
   bindings: Tuple.Map[PacketTup, CodecBinding]
-)(using Require[ContainsDistinctT[PacketTup]]) {
+) {
 
   require(
     {
@@ -65,12 +65,8 @@ class PacketIdBindings[PacketTup <: Tuple](
 }
 
 object PacketIdBindings {
-  def apply[BindingsTup <: Tuple](
-    bindingsTup: BindingsTup
-  )(
+  def apply[BindingsTup <: Tuple](bindingsTup: BindingsTup)(
     using ev: Tuple.IsMappedBy[CodecBinding][BindingsTup]
-  )(
-    using Require[ContainsDistinctT[Tuple.InverseMap[BindingsTup, CodecBinding]]]
   ): PacketIdBindings[Tuple.InverseMap[BindingsTup, CodecBinding]] = {
     new PacketIdBindings[InverseMap[BindingsTup, CodecBinding]](
       ev(bindingsTup)
