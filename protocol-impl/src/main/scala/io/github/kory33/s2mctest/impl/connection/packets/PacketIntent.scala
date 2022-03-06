@@ -186,9 +186,9 @@ object PacketIntent {
         id: UByte,
         state: VarInt,
         slot: Short,
-        button: UByte,
+        button: Byte,
         mode: VarInt,
-        slots: LenPrefixedSeq[Short, S],
+        slots: LenPrefixedSeq[VarInt, S],
         clickedItem: S
       )
 
