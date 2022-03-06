@@ -5,7 +5,6 @@ import io.github.kory33.s2mctest.impl.connection.packets.PacketDataCompoundTypes
   Position,
   Slot
 }
-
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Handshaking.ClientBound.*
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Handshaking.ServerBound.*
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.*
@@ -258,7 +257,7 @@ private class PacketIntentCodecCacheNonGiven(using ByteCodec[Position]) {
   val codec_WorldBorderInitialize: ByteCodec[WorldBorderInitialize] = autogenerateFor[WorldBorderInitialize]
   val codec_WorldBorderCenter: ByteCodec[WorldBorderCenter] = autogenerateFor[WorldBorderCenter]
   val codec_WorldBorderLerpSize: ByteCodec[WorldBorderLerpSize] = autogenerateFor[WorldBorderLerpSize]
-  val codec_WorldBorderSize  = autogenerateFor[WorldBorderSize]
+  val codec_WorldBorderSize: ByteCodec[WorldBorderSize] = autogenerateFor[WorldBorderSize]
   val codec_WorldBorderWarningDelay: ByteCodec[WorldBorderWarningDelay] = autogenerateFor[WorldBorderWarningDelay]
   val codec_WorldBorderWarningReach: ByteCodec[WorldBorderWarningReach] = autogenerateFor[WorldBorderWarningReach]
   val codec_Camera: ByteCodec[Camera] = autogenerateFor[Camera]
