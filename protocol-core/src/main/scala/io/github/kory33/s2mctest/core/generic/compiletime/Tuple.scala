@@ -18,18 +18,6 @@ type IncludedInLockedT[T <: Tuple, A] <: Boolean =
   }
 
 /**
- * INTERNAL. A type-level boolean indicating if T, mapped with [[Lock]], contains no duplicate
- * types.
- *
- * Takes O(|T|^2) to compute.
- */
-type ContainsDistinctLockedT[T <: Tuple] <: Boolean =
-  T match {
-    case Lock[head] *: tail => ![IncludedInLockedT[tail, head]] && ContainsDistinctLockedT[tail]
-    case EmptyTuple         => true
-  }
-
-/**
  * INTERNAL. Lock tuple [[T]] using [[Lock]] constructor.
  */
 type LockTuple[T <: Tuple] = Tuple.Map[T, Lock]
@@ -54,13 +42,6 @@ type Includes[A] = [T <: Tuple] =>> Require[IncludedInT[T, A]]
  * Takes O(|T|) to compute, where T is the input tuple.
  */
 type IncludedBy[T <: Tuple] = [A] =>> Require[IncludedInT[T, A]]
-
-/**
- * A type-level boolean indicating if [[T]] only contains distinct types.
- *
- * Takes O(|T|^2) to compute.
- */
-type ContainsDistinctT[T <: Tuple] = ContainsDistinctLockedT[LockTuple[T]]
 
 /**
  * INTERNAL. The index of [[A]] in a tuple [[T]] mapped with [[Lock]].
