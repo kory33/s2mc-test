@@ -352,7 +352,8 @@ class PacketIntentCodecCache(using ByteCodec[Position]) {
   given ByteCodec[StatusPong] = autogenerateFor[StatusPong]
   given ByteCodec[WindowItems_withState[Slot.Upto_1_17_1]] = autogenerateFor[WindowItems_withState[Slot.Upto_1_17_1]]
   given ByteCodec[SetSlot[Slot.Upto_1_17_1]] = autogenerateFor[SetSlot[Slot.Upto_1_17_1]]
-  
+  given ByteCodec[ClickWindow_State[Slot.Upto_1_17_1]] = autogenerateFor[ClickWindow_State[Slot.Upto_1_17_1]]
+
   // region polymorphic givens
   private def clickWindow[S <: Slot: ByteCodec]: ByteCodec[ClickWindow[S]] = autogenerateFor[ClickWindow[S]]
   private def creativeInventoryActions[S <: Slot: ByteCodec]: ByteCodec[CreativeInventoryAction[S]] = autogenerateFor[CreativeInventoryAction[S]]

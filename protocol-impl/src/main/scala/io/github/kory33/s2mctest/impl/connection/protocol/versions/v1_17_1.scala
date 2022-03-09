@@ -30,7 +30,7 @@ object v1_17_1 {
       0x05 -> ByteCodec[ClientSettings],
       0x06 -> ByteCodec[TabComplete],
       0x07 -> ByteCodec[ClickWindowButton],
-      0x08 -> ByteCodec[ClickWindow[VersionSpecificSlot]],
+      0x08 -> ByteCodec[ClickWindow_State[VersionSpecificSlot]],
       0x09 -> ByteCodec[CloseWindow],
       0x0a -> ByteCodec[PluginMessageServerbound],
       0x0b -> ByteCodec[EditBook],

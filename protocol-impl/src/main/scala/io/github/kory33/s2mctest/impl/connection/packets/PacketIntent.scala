@@ -182,6 +182,16 @@ object PacketIntent {
       /**
        * ClickWindow is sent when the client clicks in a window.
        */
+      case class ClickWindow_State[S <: Slot](
+        id: UByte,
+        state: VarInt,
+        slot: Short,
+        button: Byte,
+        mode: VarInt,
+        slots: LenPrefixedSeq[VarInt, S],
+        clickedItem: S
+      )
+
       case class ClickWindow[S <: Slot](
         id: UByte,
         slot: Short,
