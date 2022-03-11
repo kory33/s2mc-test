@@ -183,7 +183,7 @@ object GenByteDecode {
       constructorParameters: Queue[Term]
     ): Expr[DecodeFiniteBytes[A]] =
       '{
-        ${ byteDecodeMonad }.pure {
+        ${ byteDecodeMonad }.pure[A] {
           ${
             Apply(
               ResolveConstructors.primaryConstructorTermOf[A](using quotes),
@@ -210,8 +210,8 @@ object GenByteDecode {
                       // ut is a type such that Option[ut] =:= ft
                       case '[ut] => '{
                         if ${ replaceFieldReferencesWithParameters(parametersSoFar)(cond) } then 
-                          ${ byteDecodeMonad }.map(${ summonDecoderExpr[ut] })(Some(_))
-                        else ${ byteDecodeMonad }.pure(None)
+                          ${ byteDecodeMonad }.map[ut, Option[ut]](${ summonDecoderExpr[ut] })(Some(_))
+                        else ${ byteDecodeMonad }.pure[Option[ut]](None)
                       } // Expr of type DecodeFiniteBytes[Option[ut]]
                       // format: on
                   case RequiredField(_, fieldType) => summonDecoderExpr[ft]
@@ -238,7 +238,11 @@ object GenByteDecode {
                     }
                 ).asExprOf[ft => DecodeFiniteBytes[A]]
 
-              '{ ${ byteDecodeMonad }.flatMap(${ fieldDecoder })(${ continuation }) }
+              '{
+                ${ byteDecodeMonad }.flatMap[ft, A](${ fieldDecoder })(
+                  ${ continuation }
+                ): DecodeFiniteBytes[A]
+              }
         case Nil => mapConstructorParamsToPureDecoder(parametersSoFar)
       }
 
