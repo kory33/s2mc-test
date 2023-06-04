@@ -17,7 +17,7 @@ ThisBuild / developers := List(
 ThisBuild / resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/"
 
 ThisBuild / semanticdbEnabled := true
-ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
 ThisBuild / libraryDependencies ++= Seq(
   // cats libraries
