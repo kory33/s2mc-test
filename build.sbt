@@ -59,7 +59,7 @@ lazy val protocol_impl =
         ("net.katsstuff" %% "typenbt" % "0.5.1").cross(CrossVersion.for3Use2_13),
 
         // to easily deal with byte/bit vectors
-        "org.scodec" %% "scodec-bits" % "1.1.28"
+        "org.scodec" %% "scodec-bits" % "1.1.37"
       )
     )
 
