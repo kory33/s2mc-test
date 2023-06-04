@@ -11,7 +11,7 @@ runs:
   using: "composite"
   steps:
     - name: Prepare build dependencies cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: cache-build-dependencies
       with:
