@@ -24,7 +24,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-free" % "2.6.1",
 
   // effect libraries
-  "org.typelevel" %% "cats-effect" % "3.2.2",
+  "org.typelevel" %% "cats-effect" % "3.6-0142603",
   // fs2.Chunk is used on protocol_core too
   "co.fs2" %% "fs2-core" % "3.7.0",
 
