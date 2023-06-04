@@ -56,7 +56,7 @@ lazy val protocol_impl =
         "co.fs2" %% "fs2-io" % "3.7.0",
 
         // our protocol implementation will use typenbt as a foundation to deal with NBTs
-        ("net.katsstuff" %% "typenbt" % "0.5.1").cross(CrossVersion.for3Use2_13),
+        ("net.katsstuff" %% "typenbt" % "0.6.0").cross(CrossVersion.for3Use2_13),
 
         // to easily deal with byte/bit vectors
         "org.scodec" %% "scodec-bits" % "1.1.37"
