@@ -33,7 +33,7 @@ ThisBuild / libraryDependencies ++= Seq(
 
   // test libraries
   "org.scalatest" %% "scalatest" % "3.2.16" % "test",
-  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.10.0" % "test"
+  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % "test"
 )
 
 ThisBuild / scalacOptions ++= Seq(
