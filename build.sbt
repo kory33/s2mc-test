@@ -87,7 +87,7 @@ lazy val client_examples =
     .in(file("client-examples"))
     .settings(
       name := "s2mc-client-examples",
-      libraryDependencies ++= Seq("dev.optics" %% "monocle-macro" % "3.0.0")
+      libraryDependencies ++= Seq("dev.optics" %% "monocle-macro" % "3.2.0")
     )
 
 lazy val testing =
