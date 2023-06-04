@@ -71,7 +71,7 @@ lazy val client_core =
       name := "s2mc-client-core",
       libraryDependencies ++= Seq(
         "dev.optics" %% "monocle-core" % "3.0.0",
-        "org.typelevel" %% "spire" % "0.18.0-M1"
+        "org.typelevel" %% "spire" % "0.18.0"
       )
     )
 
