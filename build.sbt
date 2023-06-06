@@ -37,6 +37,8 @@ ThisBuild / libraryDependencies ++= Seq(
 )
 
 ThisBuild / scalacOptions ++= Seq(
+  "--deprecation",
+  "--explain",
   "-Yretain-trees",
   "-Xcheck-macros",
   "-Ykind-projector:underscores"

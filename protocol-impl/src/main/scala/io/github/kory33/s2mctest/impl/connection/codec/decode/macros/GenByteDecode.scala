@@ -20,7 +20,7 @@ object GenByteDecode {
     Expr.summon[DecodeFiniteBytes[T]] match {
       case Some(d) => d
       case _ =>
-        report.throwError(
+        report.errorAndAbort(
           s"\tAttemped to summon DecodeFiniteBytes[${TypeRepr.of[T].show}] but could not be resolved.\n"
         )
     }
@@ -106,7 +106,7 @@ object GenByteDecode {
             val condition =
               fieldConditions
                 .uniqueConditionOn(fieldName)
-                .getOrElse(report.throwError {
+                .getOrElse(report.errorAndAbort {
                   s"\tExpected single nonemptyness test for the optional field $fieldName.\n" +
                     "\tIt is possible that the macro could not inspect the class definition body.\n" +
                     "\tMake sure to:\n" +
@@ -120,15 +120,15 @@ object GenByteDecode {
     }
 
     if typeSymbol.hasAnnotation(TypeRepr.of[NoGenByteDecode].typeSymbol) then
-      report.throwError(s"The symbol ${typeSymbol} has NoGenByteDecode annotation.")
+      report.errorAndAbort(s"The symbol ${typeSymbol} has NoGenByteDecode annotation.")
 
     if !typeSymbol.flags.is(Flags.Case) then
-      report.throwError(s"Expected a case class but found ${typeSymbol}")
+      report.errorAndAbort(s"Expected a case class but found ${typeSymbol}")
 
     val d = typeSymbol.tree match {
       case d: ClassDef => d
       case _ =>
-        report.throwError(
+        report.errorAndAbort(
           s"Class definition of the given type (${TypeRepr.of[A]}) was not found"
         )
     }
@@ -146,7 +146,7 @@ object GenByteDecode {
       }
       !(hasSingleParamClause || hasSingleTypeAndParamClasuses)
     } then
-      report.throwError {
+      report.errorAndAbort {
         "Class definition of the given type should have at most one " +
           "type parameter clause and at most one parameter clause"
       }
@@ -170,7 +170,7 @@ object GenByteDecode {
                     case t @ Ident(paramName) if paramName == name => true
                     case _                                         => false
                   }
-                  .getOrElse(report.throwError {
+                  .getOrElse(report.errorAndAbort {
                     s"\tReference to an identifier \"$name\" in the expression ${expr.show} is invalid.\n" +
                       s"\tNote that a nonemptiness condition of an optional field can only refer to class fields declared before the optional field."
                   })
@@ -234,7 +234,7 @@ object GenByteDecode {
                           // see https://github.com/lampepfl/dotty/issues/12309#issuecomment-831240766 for details
                           .changeOwner(innerOwner)
                       case p =>
-                        report.throwError(s"Expected an identifier, got unexpected $p")
+                        report.errorAndAbort(s"Expected an identifier, got unexpected $p")
                     }
                 ).asExprOf[ft => DecodeFiniteBytes[A]]
 
