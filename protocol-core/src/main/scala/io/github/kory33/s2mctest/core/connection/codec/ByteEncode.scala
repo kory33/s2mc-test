@@ -42,5 +42,5 @@ object ByteEncode:
         ),
       (obj: A) =>
         summon[K0.CoproductInstances[ByteEncode, A]]
-          .fold(obj)([t] => (encodeT: ByteEncode[t], tValue: t) => encodeT.write(tValue))
+          .fold(obj)([t <: A] => (encodeT: ByteEncode[t], tValue: t) => encodeT.write(tValue))
     )
