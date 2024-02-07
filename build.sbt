@@ -32,7 +32,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.typelevel" %% "shapeless3-deriving" % "3.4.1",
 
   // test libraries
-  "org.scalatest" %% "scalatest" % "3.2.17" % "test",
+  "org.scalatest" %% "scalatest" % "3.2.18" % "test",
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % "test"
 )
 
@@ -99,7 +99,7 @@ lazy val testing =
     .settings(
       name := "s2mc-testing",
       libraryDependencies ++= Seq(
-        "org.scalatest" %% "scalatest" % "3.2.17",
+        "org.scalatest" %% "scalatest" % "3.2.18",
         "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0"
       )
     )
