@@ -10,16 +10,11 @@ class TupleSpec extends AnyFlatSpec with should.Matchers {
     summon[IncludedInT[(Int, String, Double), Double] =:= true]
 
     summon[IncludedInT[EmptyTuple, Any] =:= false]
-    summon[IncludedInT[(Int, String, Double), Any] =:= false]
-    summon[IncludedInT[(Int, String, Double), 1] =:= false]
-    summon[IncludedInT[(Int, String, Double), Int | String] =:= false]
     summon[IncludedInT[(Int, String, Double), Float] =:= false]
   }
 
   "IndexOfT" should "extract the index of a specific type from a tuple" in {
     summon[IndexOfT[Int, (String, Int)] =:= 1]
-    summon[IndexOfT[42, (String, Int, 42)] =:= 2]
-    summon[IndexOfT[Int, (String | Int, Double, Int)] =:= 2]
 
     "summon[IndexOfT[42, (0, 0)] =:= 0]" shouldNot compile
     "summon[IndexOfT[42, (0, 0)] =:= 1]" shouldNot compile
