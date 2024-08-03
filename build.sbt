@@ -99,7 +99,7 @@ lazy val testing =
     .settings(
       name := "s2mc-testing",
       libraryDependencies ++= Seq(
-        "org.scalatest" %% "scalatest" % "3.2.19",
+        "org.scalatest" %% "scalatest" % "3.3.0-alpha.1",
         "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0"
       )
     )
