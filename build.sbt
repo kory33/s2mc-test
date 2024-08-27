@@ -55,7 +55,7 @@ lazy val protocol_impl =
       name := "s2mc-protocol-impl",
       libraryDependencies ++= Seq(
         // effect libraries
-        "co.fs2" %% "fs2-io" % "3.10.2",
+        "co.fs2" %% "fs2-io" % "3.11.0",
 
         // our protocol implementation will use typenbt as a foundation to deal with NBTs
         ("net.katsstuff" %% "typenbt" % "0.6.0").cross(CrossVersion.for3Use2_13),
