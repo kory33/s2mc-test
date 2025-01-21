@@ -21,7 +21,7 @@ ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports"
 
 ThisBuild / libraryDependencies ++= Seq(
   // cats libraries
-  "org.typelevel" %% "cats-free" % "2.12.0",
+  "org.typelevel" %% "cats-free" % "2.13.0",
 
   // effect libraries
   "org.typelevel" %% "cats-effect" % "3.6-623178c",
