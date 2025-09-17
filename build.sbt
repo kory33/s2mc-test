@@ -100,7 +100,7 @@ lazy val testing =
       name := "s2mc-testing",
       libraryDependencies ++= Seq(
         "org.scalatest" %% "scalatest" % "3.3.0-SNAP4",
-        "org.typelevel" %% "cats-effect-testing-scalatest" % "1.6.0"
+        "org.typelevel" %% "cats-effect-testing-scalatest" % "1.7.0"
       )
     )
 
