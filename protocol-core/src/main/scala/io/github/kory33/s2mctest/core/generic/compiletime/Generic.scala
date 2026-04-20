@@ -9,7 +9,7 @@ import scala.annotation.implicitNotFound
  * @see
  *   [[IncludedInLockedT]] for an example usage.
  */
-type Lock[X]
+sealed trait Lock[X]
 
 /**
  * An implicit evidence that the type [[S]] can be reduced to the singleton type [[true]].
