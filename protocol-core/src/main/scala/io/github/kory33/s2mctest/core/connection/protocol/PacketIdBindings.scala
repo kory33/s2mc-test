@@ -5,7 +5,6 @@ import io.github.kory33.s2mctest.core.connection.codec.dsl.DecodeFiniteBytes
 import io.github.kory33.s2mctest.core.generic.compiletime.*
 import io.github.kory33.s2mctest.core.generic.extensions.MappedTupleExt.mapToList
 
-import scala.Tuple.{Elem, InverseMap}
 import scala.annotation.implicitNotFound
 
 type PacketId = Int
@@ -66,10 +65,16 @@ class PacketIdBindings[PacketTup <: Tuple](
 
 object PacketIdBindings {
   def apply[BindingsTup <: Tuple](bindingsTup: BindingsTup)(
-    using ev: Tuple.IsMappedBy[CodecBinding][BindingsTup]
-  ): PacketIdBindings[Tuple.InverseMap[BindingsTup, CodecBinding]] = {
-    new PacketIdBindings[InverseMap[BindingsTup, CodecBinding]](
+    using ev: BindingsTup =:= Tuple.Map[InverseCodecBindings[BindingsTup], CodecBinding]
+  ): PacketIdBindings[InverseCodecBindings[BindingsTup]] = {
+    new PacketIdBindings[InverseCodecBindings[BindingsTup]](
       ev(bindingsTup)
     )
+  }
+
+  /** Converts a tuple `(CodecBinding[T1], ..., CodecBinding[Tn])` to `(T1,  ... Tn)` */
+  type InverseCodecBindings[X <: Tuple] <: Tuple = X match {
+    case (PacketId, ByteCodec[x]) *: t => x *: InverseCodecBindings[t]
+    case EmptyTuple => EmptyTuple
   }
 }
